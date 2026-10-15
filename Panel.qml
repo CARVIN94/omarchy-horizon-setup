@@ -32,7 +32,7 @@ Item {
 
   readonly property var macItems: [
     { key: "keys", label: "Mac 快捷键",
-      description: "Command 键按 Ctrl 语义发键；另桥接全选/行首尾/保存/查找等 16 组", checked: switches.keys },
+      description: "Command 键按 Ctrl 语义发键；含关闭窗口、行首尾、保存、查找等 15 组", checked: switches.keys },
     { key: "scroll", label: "自然滚动",
       description: "滚轮方向改为「内容跟手」；鼠标与触控板都改", checked: switches.scroll },
     { key: "clip", label: "剪贴板快捷键",

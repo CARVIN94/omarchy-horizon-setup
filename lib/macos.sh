@@ -140,9 +140,13 @@ LUAEOF
 # 天花板：Option+←/→ 的"按词移动"无法在 Hyprland 层做（Chrome 的 Alt+← 是
 # 后退，会打架），升级路径是 per-app 配置，当前不做。
 mac_write_textedit_bindings() {
+  # 先删旧块再按需重写——不能用「块已存在就跳过」：块是用户上次开启时写下的，
+  # 内容可能已过时，跳过会让老用户永远拿不到桥接修复。幂等的正确含义是
+  # 「结果恒等于本文件的内容」，不是「写过就不动」。
+  sed -i.bak "/^${TSTART}\$/,/^${TEND}\$/d" "$MAC_BIND" 2>/dev/null && rm -f "$MAC_BIND.bak"
   if [[ "$1" == 1 ]]; then
-    grep -q "^${TSTART}\$" "$MAC_BIND" || {
-      cat >> "$MAC_BIND" <<'LUAEOF'
+    {
+      cat <<'LUAEOF'
 
 -- horizon.setup:textedit-key
 -- Mac Command 键输出 Super；Linux 文本光标/删除/应用操作用 Ctrl。桥接如下：
@@ -150,10 +154,11 @@ mac_write_textedit_bindings() {
 --   Command+Shift+←/→  → Shift+Home/End  选到行首/行尾
 --   Command+↑/↓        → Ctrl+Home/End   文档首/尾
 --   Command+Backspace  → Ctrl+U          删到行首
---   Command+W/Q/N/S/O/F/Z            → Ctrl+W/Q/N/S/O/F/Z（关窗/退出/新建/保存/打开/查找/撤销）
---   Command+Shift+Z                  → Ctrl+Shift+Z（重做）
--- 依赖 hl.unbind 接管 Omarchy 占用的组合（全宽 FULLSCREEN 等）；关闭本开关
--- 时块被删，默认绑定由 hyprctl reload 自动恢复。
+--   Command+Q          → 关闭窗口（WM 动作，见下）
+--   Command+N/S/O/F/Z            → Ctrl+N/S/O/F/Z（新建/保存/打开/查找/撤销）
+--   Command+Shift+Z              → Ctrl+Shift+Z（重做）
+-- 依赖 hl.unbind 接管 Omarchy 占用的组合（全屏、scratchpad、pop window 等）；
+-- 关闭本开关时块被删，默认绑定由 hyprctl reload 自动恢复。
 local function send_once(mods, key)
   hl.dispatch(hl.dsp.send_key_state({ mods = mods, key = key, state = "down" }))
   hl.timer(function()
@@ -172,9 +177,17 @@ bridge("SUPER + UP", "CTRL", "Home")
 bridge("SUPER + DOWN", "CTRL", "End")
 bridge("SUPER + BACKSPACE", "CTRL", "U")
 
+-- Command+Q = 关闭窗口。这里必须用 WM 的 window.close()，而不是发 Ctrl+Q：
+-- 后者是「把按键交给应用」，各应用解释不一（很多应用 Ctrl+Q 并不关窗），
+-- 而关窗在平铺 WM 下本就是 WM 动作，与焦点应用无关（终端里同样应关窗）。
+-- 注意 Super+W 是 Omarchy 原生的关窗绑定，本插件不碰它（早期版本曾把它
+-- unbind 成 Ctrl+W，反而弄坏了原生关窗，已移除）。
+o.bind("SUPER + Q", "Close window", hl.dsp.window.close())
+
 -- 应用通用操作（P1）：Command+字母 直通 Ctrl+字母，Linux/GTK 应用原生语义。
--- 终端里 Ctrl+W=删词、Ctrl+S=XOFF 冻结、Ctrl+Q=XOFF 恢复，与 Mac 语义冲突，
--- 终端焦点时 W/S/Q 不桥接（保留终端原生行为）——与 Omarchy 剪贴板绑定同法。
+-- 终端里 Ctrl+S=XOFF 冻结，与保存语义冲突，故终端焦点时 S 不桥接
+-- （保留终端原生行为）——与 Omarchy 剪贴板绑定同法。
+-- Q/W 不在列：它们走上面的 window.close()，是 WM 动作，不需要终端分流。
 local function active_is_terminal()
   local w = hl.get_active_window()
   if not w then return false end
@@ -186,12 +199,10 @@ end
 local function bridge_app(combo, mods, key)
   hl.unbind(combo)
   o.bind(combo, "macOS app action", function()
-    if active_is_terminal() and (key == "W" or key == "S" or key == "Q") then return end
+    if active_is_terminal() and key == "S" then return end
     send_once(mods, key)
   end)
 end
-bridge_app("SUPER + W", "CTRL", "W")
-bridge_app("SUPER + Q", "CTRL", "Q")
 bridge_app("SUPER + N", "CTRL", "N")
 bridge_app("SUPER + S", "CTRL", "S")
 bridge_app("SUPER + O", "CTRL", "O")
@@ -200,9 +211,7 @@ bridge_app("SUPER + Z", "CTRL", "Z")
 bridge_app("SUPER + SHIFT + Z", "CTRL+SHIFT", "Z")
 -- horizon.setup:textedit-key-end
 LUAEOF
-    }
-  else
-    sed -i.bak "/^${TSTART}\$/,/^${TEND}\$/d" "$MAC_BIND" && rm -f "$MAC_BIND.bak"
+    } >> "$MAC_BIND"
   fi
   mac_reload
 }
