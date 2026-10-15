@@ -1,0 +1,13 @@
+*filter
+:ufw6-user-input - [0:0]
+
+### tuple ### allow udp 53317 ::/0 any ::/0 in
+-A ufw6-user-input -p udp --dport 53317 -j ACCEPT
+
+### tuple ### allow tcp 53317 ::/0 any ::/0 in
+-A ufw6-user-input -p tcp --dport 53317 -j ACCEPT
+
+### tuple ### limit tcp 22 ::/0 any ::/0 in comment=6578616d706c652d73736864
+-A ufw6-user-input -p tcp --dport 22 -m conntrack --ctstate NEW -m recent --set
+
+### END RULES ###

@@ -1,0 +1,41 @@
+*filter
+:ufw-user-input - [0:0]
+:ufw-user-output - [0:0]
+:ufw-user-forward - [0:0]
+:ufw-user-logging-input - [0:0]
+:ufw-before-logging-input - [0:0]
+:ufw-after-logging-input - [0:0]
+
+### tuple ### allow udp 53317 0.0.0.0/0 any 0.0.0.0/0 in
+-A ufw-user-input -p udp --dport 53317 -j ACCEPT
+
+### tuple ### allow tcp 53317 0.0.0.0/0 any 0.0.0.0/0 in
+-A ufw-user-input -p tcp --dport 53317 -j ACCEPT
+
+### tuple ### allow udp 53 172.17.0.1 any 172.16.0.0/12 in comment=616c6c6f772d646f636b65722d646e73
+-A ufw-user-input -p udp -d 172.17.0.1 --dport 53 -s 172.16.0.0/12 -j ACCEPT
+
+### tuple ### allow udp 53 172.17.0.1 any 10.20.30.0/24 in comment=616c6c6f772d646f636b65722d646e73
+-A ufw-user-input -p udp -d 172.17.0.1 --dport 53 -s 10.20.30.0/24 -j ACCEPT
+
+### tuple ### limit tcp 22 0.0.0.0/0 any 0.0.0.0/0 in comment=6578616d706c652d73736864
+-A ufw-user-input -p tcp --dport 22 -m conntrack --ctstate NEW -m recent --set
+-A ufw-user-input -p tcp --dport 22 -m conntrack --ctstate NEW -m recent --update --seconds 30 --hitcount 6 -j ufw-user-limit
+-A ufw-user-input -p tcp --dport 22 -j ufw-user-limit-accept
+
+### tuple ### allow tcp 9000 0.0.0.0/0 any 10.20.30.0/24 in comment=6578616d706c6520776562
+-A ufw-user-input -p tcp --dport 9000 -s 10.20.30.0/24 -j ACCEPT
+
+### tuple ### allow udp 9000 0.0.0.0/0 any 10.20.30.0/24 in comment=6578616d706c6520776562
+-A ufw-user-input -p udp --dport 9000 -s 10.20.30.0/24 -j ACCEPT
+
+### tuple ### allow tcp 7000:7999 0.0.0.0/0 any 10.20.30.0/24 in comment=6578616d706c652072616e6765
+-A ufw-user-input -p tcp -m multiport --dports 7000:7999 -s 10.20.30.0/24 -j ACCEPT
+
+### tuple ### allow udp 7000:7999 0.0.0.0/0 any 10.20.30.0/24 in comment=6578616d706c652072616e6765
+-A ufw-user-input -p udp -m multiport --dports 7000:7999 -s 10.20.30.0/24 -j ACCEPT
+
+### tuple ### allow any any 0.0.0.0/0 any 172.17.0.0/16 in_docker0
+-A ufw-user-input -i docker0 -s 172.17.0.0/16 -j ACCEPT
+
+### END RULES ###

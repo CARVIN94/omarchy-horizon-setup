@@ -8,18 +8,50 @@ import qs.Ui
 // Horizon Setup 配置面板：全屏 overlay 居中小卡（与剪贴板同形态），
 // 不占顶栏。呼出：omarchy-shell shell toggle horizon.setup（菜单/快捷键）。
 //
-// 检测/写盘逻辑全部在同目录 setup.sh（status / toggle），
-// 本文件只是展示壳，不持有任何状态副本。
+// 三个 Tab 按「这块配置属于谁」分组，而不是按实现方式：
+//   Mac 习惯   —— 与 macOS 肌肉记忆直接相关
+//   开发环境   —— npm / GitHub，与 Mac 习惯无关
+//   局域网放行 —— ufw 规则（读写分离：读免权限，写走 pkexec 授权）
+//
+// 检测/写盘逻辑全部在 setup.sh 与 lib/*.sh，本文件只是展示壳，
+// 不持有任何状态副本。
 Item {
   id: root
 
   property bool opened: false
-  property var state: ({ keys: false, scroll: false, clip: false, npm: false, ghproxy: false })
+  property var switches: ({ keys: false, scroll: false, clip: false,
+                         npm: false, ghproxy: false, ufw: false, rules: 0 })
   property bool busy: false
+  property string activeTab: "mac"
 
-  readonly property int enabledCount: (state.keys ? 1 : 0) + (state.scroll ? 1 : 0)
-      + (state.clip ? 1 : 0) + (state.npm ? 1 : 0) + (state.ghproxy ? 1 : 0)
-  readonly property int totalCount: 5
+  readonly property var tabs: [
+    { value: "mac", label: "Mac 习惯" },
+    { value: "dev", label: "开发环境" },
+    { value: "lan", label: "局域网放行" }
+  ]
+
+  readonly property var macItems: [
+    { key: "keys", label: "Mac 快捷键",
+      description: "Cmd→Ctrl；全选/行首尾/保存/查找/撤销等 16 组", checked: switches.keys },
+    { key: "scroll", label: "自然滚动",
+      description: "鼠标与触控板均为 Mac 方向", checked: switches.scroll },
+    { key: "clip", label: "剪贴板快捷键",
+      description: "Super+Alt+C 呼出剪贴板", checked: switches.clip }
+  ]
+
+  readonly property var devItems: [
+    { key: "npm", label: "npm 换源",
+      description: "registry → npmmirror（国内镜像）", checked: switches.npm },
+    { key: "ghproxy", label: "GitHub 代理",
+      description: "clone/fetch 自动走 gh-proxy.org", checked: switches.ghproxy }
+  ]
+
+  readonly property int enabledCount: (switches.keys ? 1 : 0) + (switches.scroll ? 1 : 0)
+      + (switches.clip ? 1 : 0) + (switches.npm ? 1 : 0) + (switches.ghproxy ? 1 : 0)
+      + (switches.ufw ? 1 : 0)
+  readonly property int totalCount: 6
+
+  readonly property string setupSh: Qt.resolvedUrl("setup.sh").toString().replace("file://", "")
 
   // ---- overlay 生命周期（omarchy-shell IPC 调用的入口）----
 
@@ -37,26 +69,28 @@ Item {
   function applyToggle(target) {
     if (root.busy) return
     root.busy = true
-    toggleProc.command = [Qt.resolvedUrl("setup.sh").toString().replace("file://", ""), "toggle", target]
+    toggleProc.command = [root.setupSh, "toggle", target]
     toggleProc.running = false
     toggleProc.running = true
   }
 
   function applyStatus(text) {
-    // status 行形如：keys=1 scroll=0 clip=1 npm=1 ghproxy=1
+    // status 行形如：keys=1 scroll=0 clip=1 npm=1 ghproxy=1 ufw=1 rules=10
     var out = String(text).trim()
     var next = {}
     out.split(/\s+/).forEach(function(pair) {
       var kv = pair.split("=")
-      if (kv.length === 2) next[kv[0]] = kv[1] === "1"
+      if (kv.length !== 2) return
+      // 布尔开关是 0/1；rules 是计数，保留原值。
+      next[kv[0]] = (kv[1] === "0") ? false : (kv[1] === "1" ? true : kv[1])
     })
-    if (next.keys !== undefined) root.state = next
+    if (next.keys !== undefined) root.switches = next
     root.busy = false
   }
 
   Process {
     id: statusProc
-    command: [Qt.resolvedUrl("setup.sh").toString().replace("file://", ""), "status"]
+    command: [root.setupSh, "status"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: root.applyStatus(text)
@@ -102,8 +136,9 @@ Item {
     BorderSurface {
       id: card
       anchors.centerIn: parent
-      width: Style.space(430)
-      height: rows.implicitHeight + contentTopInset + contentBottomInset
+      width: Style.space(560)
+      height: Math.min(rows.implicitHeight + contentTopInset + contentBottomInset,
+                       panel.height - Style.space(80))
       radius: root.cornerRadius
       color: root.background
       borderSpec: root.borderSpec
@@ -158,7 +193,7 @@ Item {
 
               Text {
                 textFormat: Text.PlainText
-                text: "Omarchy · Mac 习惯定制"
+                text: "Omarchy · Mac 习惯与开发环境定制"
                 color: Qt.darker(root.foreground, 1.5)
                 font.family: Style.font.menuFamily
                 font.pixelSize: Style.font.caption
@@ -191,69 +226,62 @@ Item {
             }
           }
 
+          // ---- Tab 栏 ----
+          ButtonGroup {
+            width: parent.width
+            options: root.tabs
+            value: root.activeTab
+            foreground: root.foreground
+            fontFamily: Style.font.menuFamily
+            onChanged: function(v) { root.activeTab = v }
+          }
+
           PanelSeparator {
             width: parent.width
             foreground: root.foreground
           }
 
-          // ---- 开关组 ----
-          Column {
+          // ---- Tab 内容 ----
+          Item {
             width: parent.width
-            spacing: Style.space(6)
+            implicitHeight: root.activeTab === "lan"
+                ? lanTab.implicitHeight
+                : Math.max(macList.implicitHeight, devList.implicitHeight)
 
-            Toggle {
+            ToggleList {
+              id: macList
               width: parent.width
-              label: "Mac 快捷键"
-              description: "Cmd→Ctrl；全选/行首尾/保存/查找/撤销等 16 组"
-              checked: root.state.keys
-              enabled: !root.busy
+              visible: root.activeTab === "mac"
+              title: "与 macOS 肌肉记忆相关"
+              items: root.macItems
+              busy: root.busy
               foreground: root.foreground
-              fontFamily: Style.font.menuFamily
-              onClicked: root.applyToggle("keys")
+              onToggled: function(key) { root.applyToggle(key) }
             }
 
-            Toggle {
+            ToggleList {
+              id: devList
               width: parent.width
-              label: "自然滚动"
-              description: "鼠标与触控板均为 Mac 方向"
-              checked: root.state.scroll
-              enabled: !root.busy
+              visible: root.activeTab === "dev"
+              title: "与 Mac 习惯无关的工具链设置"
+              items: root.devItems
+              busy: root.busy
               foreground: root.foreground
-              fontFamily: Style.font.menuFamily
-              onClicked: root.applyToggle("scroll")
+              onToggled: function(key) { root.applyToggle(key) }
             }
 
-            Toggle {
+            FirewallTab {
+              id: lanTab
               width: parent.width
-              label: "剪贴板快捷键"
-              description: "Super+Alt+C 呼出剪贴板"
-              checked: root.state.clip
-              enabled: !root.busy
+              height: implicitHeight
+              visible: root.activeTab === "lan"
+              // busy 由本组件独占持有：防火墙 Tab 只上报开始/结束，
+              // 避免它反过来覆写 root.busy 的绑定（会静默破坏防连点）。
+              externalBusy: root.busy
               foreground: root.foreground
-              fontFamily: Style.font.menuFamily
-              onClicked: root.applyToggle("clip")
-            }
-
-            Toggle {
-              width: parent.width
-              label: "npm 换源"
-              description: "registry → npmmirror（国内镜像）"
-              checked: root.state.npm
-              enabled: !root.busy
-              foreground: root.foreground
-              fontFamily: Style.font.menuFamily
-              onClicked: root.applyToggle("npm")
-            }
-
-            Toggle {
-              width: parent.width
-              label: "GitHub 代理"
-              description: "clone/fetch 自动走 gh-proxy.org"
-              checked: root.state.ghproxy
-              enabled: !root.busy
-              foreground: root.foreground
-              fontFamily: Style.font.menuFamily
-              onClicked: root.applyToggle("ghproxy")
+              onBusyStarted: root.busy = true
+              onBusyFinished: root.busy = false
+              onVisibleChanged: if (visible) refresh()
             }
           }
 

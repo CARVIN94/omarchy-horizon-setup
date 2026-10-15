@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# 测试桩：模拟 /usr/bin/ufw。不修改任何真实防火墙，只把收到的 argv
+# 逐条记录到 $FW_FAKE_LOG（每行一条命令，参数以单元分隔符 \x1f 连接），
+# 让测试能断言「将要送进 root 侧的参数向量」精确等于预期。
+{
+  printf '%s' "$1"
+  shift || true
+  for a in "$@"; do printf '\x1f%s' "$a"; done
+  printf '\n'
+} >> "${FW_FAKE_LOG:?FW_FAKE_LOG not set}"
+exit "${FW_FAKE_EXIT:-0}"

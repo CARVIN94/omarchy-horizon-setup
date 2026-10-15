@@ -1,6 +1,6 @@
 <h1 align="center">horizon.setup</h1>
 
-<p align="center">Omarchy 的 Mac 习惯配置面板</p>
+<p align="center">Omarchy 的 Mac 习惯与开发环境配置面板</p>
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-10b981?style=flat-square" alt="MIT license"></a>
@@ -11,19 +11,18 @@
 
 <p align="center">
   <a href="#快速安装">安装</a> ·
-  <a href="#它解决什么问题">功能</a> ·
-  <a href="#快捷键桥接">快捷键桥接</a> ·
   <a href="#面板">面板</a> ·
+  <a href="#快捷键桥接">快捷键桥接</a> ·
+  <a href="#局域网放行ufw">局域网放行</a> ·
   <a href="#工作原理">原理</a> ·
+  <a href="#开发">开发</a> ·
   <a href="#卸载">卸载</a>
 </p>
 
-把 Mac 的肌肉记忆搬到 Omarchy 上的**一键开关面板**：`Cmd` 键直接输出标准 Linux
-`Ctrl` 语义（复制粘贴全选即用），在此之上桥接 16 组 Mac 快捷键（行首行尾、
-保存、查找、撤销……），外加自然滚动、剪贴板快捷键、npm 国内源、GitHub 代理。
+把 Linux 桌面调成 Mac 手感、并顺手管好开发环境与**局域网放行**的一键面板。
 所有开关**可检测、可切换、幂等**——不用再猜「刚才那条命令到底生效没」。
 
-面板是 Omarchy overlay，入口在 **菜单 → 设置**，不占顶栏。
+面板是 Omarchy overlay，入口在 **菜单 → 设置**，不占顶栏；内部按用途分三个 Tab。
 
 ## 快速安装
 
@@ -34,35 +33,71 @@ git clone https://github.com/CARVIN94/omarchy-horizon-setup.git \
   ~/.config/omarchy/plugins/horizon.setup
 ```
 
-然后**重启 Omarchy shell**（或注销重登）：
+然后重启 Omarchy shell：
 
 ```bash
-systemctl --user restart omarchy-launch-shell
+omarchy-restart-shell
 ```
 
-打开 **菜单 → 设置**，出现 **Horizon Setup** 条目；点开即是面板。
+打开 **菜单 → 设置 → Horizon Setup**；点开即是面板。
 
 命令行直查/切换（面板之外的等价操作）：
 
 ```bash
-~/.config/omarchy/plugins/horizon.setup/setup.sh status   # 五开关当前状态
-~/.config/omarchy/plugins/horizon.setup/setup.sh toggle keys   # 开/关 Mac 快捷键
+P=~/.config/omarchy/plugins/horizon.setup/setup.sh
+$P status                     # 全部开关状态（含 ufw 与规则条数）
+$P rules                      # 当前 ufw 规则（TAB 分隔）
+$P toggle keys                # 开/关 Mac 快捷键
+$P fw-add 3082 tcp 192.168.0.0/24 'DSH web'   # 新增放行（会弹一次授权）
+$P fw-del 3082 tcp 192.168.0.0/24 'DSH web'   # 精确删除（同样授权）
 ```
 
-> 本地开发：改 `Panel.qml` 后 quickshell 热重载即生效；若面板没刷新，
-> 重启 omarchy-launch-shell 最稳。
+## 面板
 
-## 它解决什么问题
+**菜单 → 设置 → Horizon Setup**，overlay 窗口（`Esc` 或点空白关闭）。
+三个 Tab 按「这块配置属于谁」分组：
 
-| 能力 | 说明 |
-| --- | --- |
-| Cmd = Ctrl | 物理左下角保持 Mac 顺序 `Ctrl \| Option \| Command`；`Command` 键按下时输出标准 Linux `Ctrl`——复制/粘贴/全选在浏览器、编辑器里开箱即用。 |
-| 快捷键桥接 | 16 组 `Cmd+…` 桥接到 Linux 目标键：行首行尾、文档首尾、删到行首、保存/查找/撤销等。Omarchy 平铺占用的组合先 `hl.unbind` 接管，关开关自动恢复。 |
-| 自然滚动 | 触控板 + 鼠标一起切（macOS 方向），udev 持久化鼠标设置。 |
-| 剪贴板快捷键 | `Super+Alt+C` 直接粘贴剪贴板历史首项（Omarchy 原生 `Super+V` 菜单的快捷方式）。 |
-| npm 国内源 | 切换 `~/.npmrc` registry 到 npmmirror。 |
-| GitHub 代理 | `git config url.insteadOf` 把 `github.com` 克隆透明改写为 `gh-proxy.org`，clone/push 不用改记忆。 |
-| 幂等检测 | 每个开关独立检测真实状态（XKB 选项、绑定块标记、npmrc、git config），不是「记着上次点了啥」。 |
+| Tab | 内容 | 说明 |
+| --- | --- | --- |
+| **Mac 习惯** | Mac 快捷键、自然滚动、剪贴板快捷键 | 与 macOS 肌肉记忆直接相关。 |
+| **开发环境** | npm 换源、GitHub 代理 | 与 Mac 习惯无关的工具链设置。 |
+| **局域网放行** | ufw 规则列表 + 增删 | 读写分离：读免权限，写走一次授权。 |
+
+头部显示 `已启用/总数` 胶囊徽章；底部在写配置时显示进行中。
+
+### 局域网放行（ufw）
+
+面板里直接列出防火墙规则，并可增删。设计要点：
+
+- **读取不需要 root**：`/etc/ufw/user.rules` 与 `user6.rules` 是 `644`，
+  直接解析 ufw 自己的 `### tuple ###` 行，呼出面板**不会弹授权框**。
+- **写入才提权**：只 `pkexec /usr/bin/ufw …`，且参数全部在无权限侧校验。
+  **绝不 pkexec 本插件脚本**——插件目录用户可写，提权它等于把「改写本文件」
+  变成 root 执行，这是 Omarchy 自己在 `omarchy-windows-vm` 里明令避免的做法。
+- **v4/v6 合并展示**：同一条逻辑规则的 v4/v6 落盘条目在列表里显示为一条，
+  带 `[v4+v6]` 标记。
+- **外部规则只读**：带接口名的规则（如 ufw-docker 装的 `in_docker0`）灰显，
+  不提供删除按钮。
+- **删除必须带备注**：见下节。
+
+#### 为什么删除强制要备注
+
+ufw 的删除匹配有两档行为（源码 + 真机 dry-run 双向确认）：
+
+| 命令形态 | 匹配强度 | 风险 |
+| --- | --- | --- |
+| `delete … comment '<备注>'` | 备注也须相等 | 只删目标那一条 |
+| `delete …`（不带备注） | 仅五元组 | **会连带删掉同端口的他人规则** |
+
+实测：对同一端口建两条备注不同的规则，不带备注删除会**两条全删**。
+因此本插件：
+
+- `fw-del` 拒绝备注为空的删除；
+- 面板对无备注的规则不给删除按钮，并说明原因；
+- 新增规则时备注为必填（1–60 字符，不可首尾空白）。
+
+> 删除用的 `action` 取自规则自身（`allow`/`limit`/…）。用 `allow` 去删一条
+> `limit` 规则会静默失败——这是 ufw 的行为，插件已按规则自身动作下发。
 
 ## 快捷键桥接
 
@@ -95,37 +130,53 @@ systemctl --user restart omarchy-launch-shell
 > 被接管的组合（如 `Super+F` 全宽、`Super+S` scratchpad）随本开关走：
 > 开 = 桥接，关 = Omarchy 默认绑定随 `hyprctl reload` 自动恢复。
 
-## 面板
-
-**菜单 → 设置 → Horizon Setup**，overlay 窗口（`Esc` 或点空白关闭）：
-
-- 头部：标题 + 副标，右侧胶囊徽章显示 `已启用/总数`
-- 五个开关：Mac 快捷键、自然滚动、剪贴板快捷键、npm 换源、GitHub 代理
-- 底部状态行：空闲时提示关闭方式，写配置时显示进行中
-- 开关点击走 `setup.sh toggle <key>`，完成后自动刷新检测状态
-
 ## 工作原理
 
-- **检测**：`setup.sh status` 输出 `keys= scroll= clip= npm= ghproxy=` 五态，各自读真实来源
-  （`hyprctl getoption input:kb_options`、`~/.config/hypr/bindings.lua` 标记块、`~/.npmrc`、`git config --global`）。
-- **切换**：每个开关写入带 `-- horizon.setup:xxx` 标记的幂等块，重复 toggle 只翻转块的存在性，不产生重复条目。
-- **快捷键**：Hyprland Lua API（`hl.unbind` + `o.bind` + `hl.dsp.send_key_state`）在
-  `~/.config/hypr/bindings.lua` 注册桥接；`send_key_state` 直接注入目标键的 down/up，
-  对应用等价于物理按键。
-- **面板**：Quickshell overlay（`Panel.qml`），通过 `omarchy-shell shell toggle horizon.setup`
-  开关；插件由 `manifest.json` 声明为 `overlay` kind。
+代码分层，每层只负责一类配置：
+
+| 文件 | 职责 |
+| --- | --- |
+| `setup.sh` | 命令入口与状态汇总，只做调度 |
+| `lib/macos.sh` | 快捷键、自然滚动、剪贴板（读 `hyprctl` / `bindings.lua`） |
+| `lib/devtools.sh` | npm registry、git `insteadOf` |
+| `lib/firewall.sh` | ufw 规则的解析、校验、增删 |
+| `Panel.qml` | overlay 容器、Tab 栏、状态徽章 |
+| `ToggleList.qml` | 一组开关的展示壳 |
+| `FirewallTab.qml` | 局域网放行 Tab（表单 + 规则列表） |
+
+- **检测即真相**：不维护任何状态文件，状态全部从系统/配置实读
+  （`hyprctl getoption`、标记块、`~/.npmrc`、`git config`、`/etc/ufw/user*.rules`）。
+- **幂等写入**：每个开关写带 `-- horizon.setup:xxx` 标记的块，重复 toggle
+  只翻转块的存在性，不产生重复条目。
+- **凭据安全**：提权只针对 root 所有的 `/usr/bin/ufw`，插件自身永不提权；
+  所有参数（端口/协议/来源/备注）在无权限侧按白名单校验后才下发。
+
+## 开发
+
+```bash
+bash tests/firewall_test.sh    # 防火墙层 82 项断言，用 fixture + 桩件，不碰真机
+```
+
+`tests/fixtures/` 是真实机器规则的快照；`tests/fake/` 是 `pkexec`/`ufw` 桩件，
+因此测试**不触发任何授权框、不修改真实防火墙**。
+
+改 `Panel.qml` 等 QML 后 quickshell 会自动重载本地插件；若没生效：
+
+```bash
+omarchy-restart-shell
+```
 
 ## 卸载
 
 ```bash
 # 1. 先关掉所有开关（恢复默认绑定/配置）
-~/.config/omarchy/plugins/horizon.setup/setup.sh toggle keys
-~/.config/omarchy/plugins/horizon.setup/setup.sh toggle scroll
-# …其余开关同理，或逐个 toggle 至 status 全 0
+P=~/.config/omarchy/plugins/horizon.setup/setup.sh
+for t in keys scroll clip npm ghproxy; do $P toggle $t; done
+# 局域网规则请先在面板里逐条删除（或 $P fw-del …）
 
 # 2. 移除插件并重启 shell
 rm -rf ~/.config/omarchy/plugins/horizon.setup
-systemctl --user restart omarchy-launch-shell
+omarchy-restart-shell
 ```
 
 ## License

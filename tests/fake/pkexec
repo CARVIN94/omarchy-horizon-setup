@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# 测试桩：模拟 pkexec，不涉及任何提权。
+#
+# lib/firewall.sh 的 fw_run_ufw 以 `pkexec <FW_UFW_BIN> <args...>` 调用。
+# 本桩去掉第一个参数（ufw 可执行路径），把其余原样转交给 ufw 桩件。
+# 用途：让 fw_add/fw_del 的参数向量在无授权下可被完整断言。
+shift                     # 丢弃 FW_UFW_BIN
+exec "$FW_FAKE_UFW" "$@"

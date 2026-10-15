@@ -1,0 +1,275 @@
+import QtQuick
+import Quickshell
+import Quickshell.Io
+import qs.Commons
+import qs.Ui
+
+// 局域网放行 Tab：列出 ufw 用户规则，并提供增删。
+//
+// 数据流与其它 Tab 一致——检测即真相，不持有状态副本：
+//   * setup.sh rules   → 每行一条规则（TAB 分隔）
+//   * setup.sh fw-add  → 新增（提权走 pkexec，会弹一次授权框）
+//   * setup.sh fw-del  → 删除（同样提权）
+// 任何写操作完成后重新拉取 rules，UI 永不乐观更新。
+Item {
+  id: root
+
+  // 忙碌状态由 Panel 统一持有（单一真相）：本组件只上报开始/结束，
+  // 绝不写 busy —— 若在此写 `busy = true`，会覆写 Panel 传入的绑定，
+  // 静默破坏面板级防连点与「正在写入配置…」指示。
+  signal busyStarted()
+  signal busyFinished()
+  property bool externalBusy: false
+  // 内部操作标志：只有本组件真正发起过写操作，才会配对发出
+  // busyFinished；普通 rules 刷新不得清掉别处的忙碌态。
+  property bool opActive: false
+  property var rows: []
+  property color foreground: Color.menu.text
+  property string fontFamily: Style.font.menuFamily
+
+  // 新增表单状态
+  property string draftPort: ""
+  property string draftProto: "tcp"
+  property string draftSrc: "192.168.0.0/24"
+  property string draftComment: ""
+  property string formError: ""
+
+  readonly property string setupSh: Qt.resolvedUrl("setup.sh").toString().replace("file://", "")
+
+  // 端口/来源的本地预校验：与 lib/firewall.sh 同规则，用于即时反馈；
+  // 真正的权威校验仍在脚本侧（UI 校验只是为了少弹一次授权框）。
+  readonly property var portOk: /^[0-9]{1,5}(:[0-9]{1,5})?$/.test(draftPort)
+  readonly property var srcOk: draftSrc === "any" || /^[0-9]{1,3}(\.[0-9]{1,3}){3}(\/[0-9]{1,2})?$/.test(draftSrc)
+  readonly property var commentOk: draftComment.length >= 1 && draftComment.length <= 60
+      && draftComment === draftComment.trim()
+  readonly property var canSubmit: portOk && srcOk && commentOk && !externalBusy
+
+  function beginOp() {
+    root.opActive = true
+    root.busyStarted()
+  }
+
+  function endOp() {
+    if (!root.opActive) return
+    root.opActive = false
+    root.busyFinished()
+  }
+
+  function refresh() {
+    rulesProc.running = false
+    rulesProc.running = true
+  }
+
+  function parseRows(text) {
+    var out = []
+    String(text).trim().split("\n").forEach(function(line) {
+      if (!line) return
+      var f = line.split("\t")
+      if (f.length < 7) return
+      out.push({
+        action: f[0], proto: f[1], dport: f[2], src: f[3],
+        comment: f[4], families: f[5], iface: f[6]
+      })
+    })
+    return out
+  }
+
+  // 接口规则由外部工具（如 ufw-docker）安装，本面板只展示不提供删除。
+  function submitAdd() {
+    if (!canSubmit) return
+    formError = ""
+    root.beginOp()
+    addProc.command = [setupSh, "fw-add", draftPort, draftProto, draftSrc, draftComment, "allow"]
+    addProc.running = false
+    addProc.running = true
+  }
+
+  function submitDel(row) {
+    if (root.externalBusy || row.iface !== "") return
+    if (row.comment === "") {
+      // 无备注意味着无法精确表达删除条件（会退化成五元组宽松匹配），
+      // 脚本侧同样拒绝；这里给出解释而不是静默失败。
+      formError = "该规则没有备注，无法安全删除（避免误删同端口的其他规则）"
+      return
+    }
+    formError = ""
+    delTarget = row
+    confirmDel.opened = true
+  }
+
+  property var delTarget: null
+
+  // 切到本 Tab 时把焦点落在端口输入框，键盘用户可直接输入。
+  onVisibleChanged: if (visible) Qt.callLater(function() { portField.forceActiveFocus() })
+
+  Process {
+    id: rulesProc
+    command: [root.setupSh, "rules"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.rows = root.parseRows(text)
+    }
+  }
+
+  Process {
+    id: addProc
+    stdout: StdioCollector { waitForEnd: true }
+    stderr: StdioCollector { id: addErr; waitForEnd: true }
+    onExited: function(code) {
+      root.endOp()
+      if (code === 0) {
+        root.draftPort = ""
+        root.draftComment = ""
+        root.refresh()
+      } else {
+        root.formError = "写入失败（可能需要授权）" + (addErr.text ? "：" + String(addErr.text).trim() : "")
+      }
+    }
+  }
+
+  Process {
+    id: delProc
+    stdout: StdioCollector { waitForEnd: true }
+    stderr: StdioCollector { id: delErr; waitForEnd: true }
+    onExited: function(code) {
+      root.endOp()
+      if (code !== 0) {
+        root.formError = "删除失败（可能需要授权）" + (delErr.text ? "：" + String(delErr.text).trim() : "")
+      }
+      root.refresh()
+    }
+  }
+
+  ConfirmDialog {
+    id: confirmDel
+    opened: false
+    message: root.delTarget
+        ? "删除规则：" + root.delTarget.dport + "/" + root.delTarget.proto
+          + "  来源 " + root.delTarget.src + "？"
+        : ""
+    confirmText: "删除"
+    cancelText: "取消"
+    onConfirmed: {
+      var r = root.delTarget
+      if (!r) return
+      root.beginOp()
+      delProc.command = [root.setupSh, "fw-del", r.dport, r.proto, r.src, r.comment, r.action]
+      delProc.running = false
+      delProc.running = true
+    }
+    onCanceled: {}
+  }
+
+  // 面板需要本 Tab 的高度；Item 自身不提供 implicitHeight，必须显式声明，
+  // 否则外层拿到的隐式高度为 0，卡片会塌成空白（曾实测整块空白）。
+  implicitHeight: col.implicitHeight
+  height: implicitHeight
+
+  Column {
+    id: col
+    width: root.width
+    spacing: Style.space(8)
+
+    // ---- 新增表单 ----
+    PanelSectionHeader {
+      width: parent.width
+      text: "新增放行规则"
+      foreground: root.foreground
+      fontFamily: root.fontFamily
+    }
+
+    // 表单分两行：单行放不下「端口+协议+来源+备注+按钮」，实测会挤出卡片
+    // 右边缘（添加按钮被裁切）。第一行选端口/协议/来源，第二行写备注。
+    Row {
+      id: formRow
+      width: parent.width
+      spacing: Style.space(8)
+
+      TextField {
+        id: portField
+        width: Style.space(110)
+        activeFocusOnTab: true
+        placeholderText: "端口/范围"
+        text: root.draftPort
+        foreground: root.foreground
+        onTextChanged: root.draftPort = text
+      }
+
+      ButtonGroup {
+        id: protoGroup
+        width: Style.space(118)
+        options: ["tcp", "udp"]
+        value: root.draftProto
+        foreground: root.foreground
+        fontFamily: root.fontFamily
+        onChanged: function(v) { root.draftProto = v }
+      }
+
+      TextField {
+        id: srcField
+        width: Math.max(Style.space(160),
+                        formRow.width - portField.width - protoGroup.width - formRow.spacing * 2)
+        activeFocusOnTab: true
+        placeholderText: "来源 CIDR（any 表示任意）"
+        text: root.draftSrc
+        foreground: root.foreground
+        onTextChanged: root.draftSrc = text
+      }
+    }
+
+    Row {
+      id: commentRow
+      width: parent.width
+      spacing: Style.space(8)
+
+      TextField {
+        id: commentField
+        // Button 未设显式 width，只有 implicitWidth；必须用它计算剩余空间，
+        // 否则相减结果为负。
+        width: Math.max(Style.space(140),
+                        commentRow.width - addBtn.implicitWidth - commentRow.spacing)
+        activeFocusOnTab: true
+        placeholderText: "备注（必填，用于精确删除该规则）"
+        text: root.draftComment
+        foreground: root.foreground
+        onTextChanged: root.draftComment = text
+        onAccepted: root.submitAdd()
+      }
+
+      Button {
+        id: addBtn
+        text: "添加"
+        // Button.focusable 默认 false，不设则键盘用户无法聚焦/回车触发。
+        focusable: true
+        enabled: root.canSubmit
+        selected: root.canSubmit
+        bordered: true
+        foreground: root.foreground
+        fontFamily: root.fontFamily
+        onClicked: root.submitAdd()
+      }
+    }
+
+    Text {
+      visible: root.formError !== ""
+      width: parent.width
+      textFormat: Text.PlainText
+      text: root.formError
+      color: Color.polkit.textError
+      font.family: root.fontFamily
+      font.pixelSize: Style.font.caption
+      wrapMode: Text.WordWrap
+    }
+
+    PanelSeparator { width: parent.width; foreground: root.foreground }
+
+    // ---- 规则列表 ----
+    RuleList {
+      width: parent.width
+      rows: root.rows
+      busy: root.externalBusy
+      foreground: root.foreground
+      onDeleteRequested: function(row) { root.submitDel(row) }
+    }
+  }
+}
