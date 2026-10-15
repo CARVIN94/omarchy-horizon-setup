@@ -44,8 +44,12 @@ eq "块标记成对出现" "$(count '^-- horizon.setup:textedit-key$')/$(count '
 grep -q 'o.bind("SUPER + Q", "Close window", hl.dsp.window.close())' "$MAC_BIND" \
   && ok "SUPER+Q = WM 关窗（window.close）" \
   || bad "SUPER+Q 未走 window.close"
-# 回归闸门：早期版本把 Omarchy 原生的 SUPER+W 关窗 unbind 成 Ctrl+W，反而弄坏原生
-eq "不接管 Omarchy 原生的 SUPER+W" "$(count 'SUPER + W')" "0"
+# 回归闸门（曾误判）：Cmd+W 在 macOS 是「关标签页/文档」，应发 Ctrl+W 给应用。
+# 一度被误改为「交还 Omarchy 原生 window.close()」，那会把关标签变成杀整个
+# 应用，属语义错误。此处锁定为 Ctrl+W。
+eq "Cmd+W 接管为发 Ctrl+W（关标签）" "$(count 'bridge_app("SUPER + W", "CTRL", "W")')" "1"
+# 且 W 绝不能绑成 WM 关窗动作
+eq "Cmd+W 不是 WM 关窗" "$(grep -c 'o.bind("SUPER + W"' "$MAC_BIND")" "0"
 eq "SUPER+Q 只注册一次" "$(count 'SUPER + Q')" "1"
 # Cmd+Q 是 WM 动作，不应出现在 bridge_app（那会变成发 Ctrl+Q）
 eq "SUPER+Q 不经 bridge_app 发送 Ctrl" "$(grep -c 'bridge_app("SUPER + Q"' "$MAC_BIND")" "0"
@@ -65,13 +69,13 @@ printf '\n=== 4. 升级：旧块必须被新内容替换 ===\n'
 # 若实现成「块存在就跳过」，老用户永远拿不到修复。
 write 'o.bind("SUPER + RETURN", "Terminal", "foot")' \
       '-- horizon.setup:textedit-key' \
-      '-- 旧版本：把 Super+W 与 Super+Q 都当 Ctrl 发送' \
-      'bridge_app("SUPER + W", "CTRL", "W")' \
+      '-- 旧版本：Super+Q 被错误地当作 Ctrl+Q 发送（应为 WM 关窗）' \
       'bridge_app("SUPER + Q", "CTRL", "Q")' \
       '-- horizon.setup:textedit-key-end'
 mac_write_textedit_bindings 1 >/dev/null 2>&1
-eq "旧内容已被替换" "$(count 'bridge_app("SUPER + W"')" "0"
 eq "旧块的 Ctrl+Q 已清除" "$(count 'bridge_app("SUPER + Q"')" "0"
+# W 的正确语义（发 Ctrl+W）在升级后仍应存在
+eq "升级后保留 Cmd+W 发 Ctrl+W" "$(count 'bridge_app("SUPER + W", "CTRL", "W")')" "1"
 eq "新内容已写入" "$(count 'window.close()')" "$(count 'window.close()')"
 grep -q 'hl.dsp.window.close()' "$MAC_BIND" && ok "升级后 Q 走关窗动作" || bad "升级后 Q 未走关窗"
 eq "升级后块仍唯一" "$(count '^-- horizon.setup:textedit-key$')" "1"
@@ -81,26 +85,34 @@ printf '\n=== 5. 生成的 Lua 可被解释器解析并注册正确绑定 ===\n'
 if command -v lua >/dev/null 2>&1; then
   cat > "$TMP/sim.lua" <<'SIM'
 local binds, unbinds = {}, {}
-o = { bind = function(keys, desc) binds[#binds+1] = keys .. "\t" .. desc end }
+o = { bind = function(keys, desc, fn) binds[#binds+1] = { k = keys, d = desc, f = fn } end }
 hl = {
   unbind = function(c) unbinds[#unbinds+1] = c end,
-  dispatch = function() end, timer = function() end,
-  dsp = { send_key_state = function() end, window = { close = function() end } },
+  dispatch = function(t) _G.sent = t end, timer = function() end,
+  dsp = { send_key_state = function(t) return t end, window = { close = function() end } },
   get_active_window = function() return nil end,
 }
 dofile(os.getenv("SIM_BIND"))
-local hasQ, hasW = false, false
+local hasQ, hasW, wSendsCtrlW = false, false, false
 for _, b in ipairs(binds) do
-  if b:find("SUPER %+ Q") and b:find("Close window") then hasQ = true end
-  if b:find("SUPER %+ W") then hasW = true end
+  if b.k:find("SUPER %+ Q") and b.d:find("Close window") then hasQ = true end
+  if b.k:find("SUPER %+ W") and b.d:find("macOS app action") then hasW = true end
 end
-for _, c in ipairs(unbinds) do if c == "SUPER + W" then hasW = true end end
+-- 触发 W，确认它发的是 Ctrl+W（关标签）而非 WM 关窗
+for _, b in ipairs(binds) do
+  if b.k == "SUPER + W" then
+    _G.sent = nil
+    b.f()
+    local s = _G.sent
+    if type(s) == "table" and s.mods == "CTRL" and s.key == "W" then wSendsCtrlW = true end
+  end
+end
 print(hasQ and "Q_OK" or "Q_MISSING")
-print(hasW and "W_TAKEN" or "W_FREE")
+print(wSendsCtrlW and "W_SENDS_CTRL_W" or "W_WRONG")
 SIM
   out=$(SIM_BIND="$MAC_BIND" lua "$TMP/sim.lua" 2>&1)
   grep -q Q_OK <<<"$out" && ok "Lua 解析通过且 Q 注册为关窗" || bad "Lua 模拟失败" "$out"
-  grep -q W_FREE <<<"$out" && ok "未占用 SUPER+W" || bad "占用了 SUPER+W" "$out"
+  grep -q W_SENDS_CTRL_W <<<"$out" && ok "Cmd+W 实际发送 Ctrl+W（关标签）" || bad "Cmd+W 语义错误" "$out"
 else
   ok "跳过 Lua 语义断言（无 lua 解释器）"
 fi

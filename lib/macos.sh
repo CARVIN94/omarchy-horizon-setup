@@ -154,6 +154,7 @@ mac_write_textedit_bindings() {
 --   Command+Shift+←/→  → Shift+Home/End  选到行首/行尾
 --   Command+↑/↓        → Ctrl+Home/End   文档首/尾
 --   Command+Backspace  → Ctrl+U          删到行首
+--   Command+W          → Ctrl+W          关标签页/文档
 --   Command+Q          → 关闭窗口（WM 动作，见下）
 --   Command+N/S/O/F/Z            → Ctrl+N/S/O/F/Z（新建/保存/打开/查找/撤销）
 --   Command+Shift+Z              → Ctrl+Shift+Z（重做）
@@ -177,17 +178,24 @@ bridge("SUPER + UP", "CTRL", "Home")
 bridge("SUPER + DOWN", "CTRL", "End")
 bridge("SUPER + BACKSPACE", "CTRL", "U")
 
--- Command+Q = 关闭窗口。这里必须用 WM 的 window.close()，而不是发 Ctrl+Q：
--- 后者是「把按键交给应用」，各应用解释不一（很多应用 Ctrl+Q 并不关窗），
--- 而关窗在平铺 WM 下本就是 WM 动作，与焦点应用无关（终端里同样应关窗）。
--- 注意 Super+W 是 Omarchy 原生的关窗绑定，本插件不碰它（早期版本曾把它
--- unbind 成 Ctrl+W，反而弄坏了原生关窗，已移除）。
+-- Command+W = 关闭标签页/文档（浏览器关标签、编辑器关文件）。
+-- macOS 的 Cmd+W 就是这个语义，对应 Linux 应用的 Ctrl+W，与窗口无关；
+-- 因此必须**发 Ctrl+W 给应用**，而不能绑成 WM 的关窗动作（后者会把
+-- 「关标签」变成「杀掉整个应用」）。它由下面的 bridge_app 注册。
+-- 这会接管 Omarchy 原生的 SUPER+W=关窗：平铺 WM 下关整窗请用 Command+Q。
+-- 注意：这正是本插件早期的既有行为（Cmd+W→Ctrl+W），后被误改为
+-- 「交还原生关窗」，属误判，已恢复。
+
+-- Command+Q = 退出应用/关闭窗口。macOS 里 Cmd+Q 是退出，这里用 WM 的
+-- window.close() 实现——它是应用级动作而非标签级，与焦点应用无关，
+-- 终端里同样成立（终端里 Ctrl+Q 是 XOFF 恢复，不能用来发按键）。
 o.bind("SUPER + Q", "Close window", hl.dsp.window.close())
 
 -- 应用通用操作（P1）：Command+字母 直通 Ctrl+字母，Linux/GTK 应用原生语义。
--- 终端里 Ctrl+S=XOFF 冻结，与保存语义冲突，故终端焦点时 S 不桥接
--- （保留终端原生行为）——与 Omarchy 剪贴板绑定同法。
--- Q/W 不在列：它们走上面的 window.close()，是 WM 动作，不需要终端分流。
+-- 终端分流：终端里 Ctrl+W=删词、Ctrl+S=XOFF 冻结，都与保存/关标签语义
+-- 冲突，故终端焦点时 W/S 不桥接（保留终端原生行为）——与 Omarchy
+-- 剪贴板绑定同法。
+-- Q 不在列：它走上面的 window.close()，是 WM 动作，不需要分流。
 local function active_is_terminal()
   local w = hl.get_active_window()
   if not w then return false end
@@ -199,10 +207,12 @@ end
 local function bridge_app(combo, mods, key)
   hl.unbind(combo)
   o.bind(combo, "macOS app action", function()
-    if active_is_terminal() and key == "S" then return end
+    -- 终端里 Ctrl+W=删词、Ctrl+S=XOFF 冻结，均与 Mac 语义冲突，故跳过。
+    if active_is_terminal() and (key == "W" or key == "S") then return end
     send_once(mods, key)
   end)
 end
+bridge_app("SUPER + W", "CTRL", "W")
 bridge_app("SUPER + N", "CTRL", "N")
 bridge_app("SUPER + S", "CTRL", "S")
 bridge_app("SUPER + O", "CTRL", "O")

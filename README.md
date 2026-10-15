@@ -6,7 +6,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-10b981?style=flat-square" alt="MIT license"></a>
   <a href="https://github.com/Hyprwm/Hyprland"><img src="https://img.shields.io/badge/WM-Hyprland-89b4fa?style=flat-square" alt="Hyprland"></a>
   <a href="https://omarchy.com"><img src="https://img.shields.io/badge/OS-Omarchy-f38ba8?style=flat-square" alt="Omarchy"></a>
-  <a href="#快捷键桥接"><img src="https://img.shields.io/badge/Cmd-15%20%E7%BB%84%E6%A1%A5%E6%8E%A5-10b981?style=flat-square" alt="Cmd bridges"></a>
+  <a href="#快捷键桥接"><img src="https://img.shields.io/badge/Cmd-16%20%E7%BB%84%E6%A1%A5%E6%8E%A5-10b981?style=flat-square" alt="Cmd bridges"></a>
 </p>
 
 <p align="center">
@@ -117,16 +117,24 @@ ufw 的删除匹配有两档行为（源码 + 真机 dry-run 双向确认）：
 
 | Mac | → Linux | 语义 |
 | --- | --- | --- |
-| `Cmd+Q` | **关闭窗口** | WM 动作（`window.close`），与焦点应用无关；终端里同样关窗 |
+| `Cmd+W` | `Ctrl+W` | **关闭标签页/文档**（浏览器关标签、编辑器关文件） |
+| `Cmd+Q` | **关闭窗口** | WM 动作（`window.close`），与焦点应用无关；终端里同样成立 |
 | `Cmd+N / S / O / F` | `Ctrl+N / S / O / F` | 新建 / 保存 / 打开 / 查找 |
 | `Cmd+Z` | `Ctrl+Z` | 撤销 |
 | `Cmd+Shift+Z` | `Ctrl+Shift+Z` | 重做 |
 
-> **终端分流**：终端里 `Ctrl+S` 是 XOFF 冻结，与保存语义冲突——终端焦点时
-> `S` 不桥接，保留终端原生行为。`Cmd+Q` 是 WM 关窗动作，不参与分流。
+> **`Cmd+W` 与 `Cmd+Q` 的分工**（对应 macOS 语义）：
+> `Cmd+W` 关**标签页/文档**，发 `Ctrl+W` 给应用；`Cmd+Q` 关**窗口/退出应用**，
+> 走 WM 的 `window.close()`。二者不可互换——把 `Cmd+W` 绑成 WM 关窗会变成
+> 「关标签却杀掉整个应用」。
 >
-> **`Super+W` 保持 Omarchy 原生**：它本来就是「关闭窗口」，本插件不再接管它
-> （早期版本把它 unbind 成发 `Ctrl+W`，反而弄坏了原生关窗）。
+> **终端分流**：终端里 `Ctrl+W` 是删词、`Ctrl+S` 是 XOFF 冻结，均与 Mac
+> 语义冲突——终端焦点时 `W`/`S` 不桥接，保留终端原生行为。
+> `Cmd+Q` 是 WM 动作，不参与分流。
+>
+> **接管了 Omarchy 原生的 `Super+W`（关窗）**：为符合 Mac 习惯，`Super+W`
+> 被改绑为关标签。平铺 WM 下关整窗请用 `Cmd+Q`。本开关关闭时该原生绑定
+> 随 `hyprctl reload` 自动恢复。
 >
 > **天花板**：`Option+←/→` 的按词移动无法在 Hyprland 层统一做（Chrome 的
 > `Alt+←` 是后退，桥接会打架），升级路径是 per-app 配置，当前不做。
