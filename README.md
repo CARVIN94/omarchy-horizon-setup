@@ -1,4 +1,4 @@
-<h1 align="center">horizon.setup</h1>
+<h1 align="center">Horizon Setup</h1>
 
 <p align="center">Omarchy 的输入习惯、工具链与防火墙配置面板</p>
 
