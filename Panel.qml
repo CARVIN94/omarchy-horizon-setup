@@ -113,6 +113,22 @@ Item {
   readonly property color scrim: Color.menu.scrim
   readonly property int cornerRadius: Style.cornerRadius
 
+  // ---- 删除确认（防火墙 Tab 触发）----
+  // ConfirmDialog 是 Item：要覆盖整个面板必须放在 PanelWindow 层级并
+  // anchors.fill + z，塞进卡片的 Column 会被当成布局项压成一条（实测烂）。
+  property bool deleteConfirmOpen: false
+  property var deleteTarget: null
+
+  function requestDelete(row) {
+    root.deleteTarget = row
+    root.deleteConfirmOpen = true
+  }
+
+  function cancelDelete() {
+    root.deleteConfirmOpen = false
+    root.deleteTarget = null
+  }
+
   PanelWindow {
     id: panel
     visible: root.opened
@@ -154,8 +170,19 @@ Item {
         anchors.topMargin: card.contentTopInset
         anchors.bottomMargin: card.contentBottomInset
         focus: true
+        // 确认框打开时把 keyCatcher 抬到卡片之上：z 提升让它的
+        // Keys.BeforeItem 在层级上盖住卡片内的按钮，按键才会先进这里。
+        // Menu.qml / Clipboard.qml 都设了同样的 z（20）；缺它时 Esc 会落到
+        // 卡片上、把整个面板关掉而不是取消确认框（实测踩过）。
+        z: root.deleteConfirmOpen ? 20 : 0
         Keys.priority: Keys.BeforeItem
         Keys.onPressed: function(event) {
+          // ConfirmDialog 是 Item，不自带按键处理，必须由宿主转发
+          // （Omarchy 的 Menu.qml / Clipboard.qml 同样是这么接的）。
+          if (root.deleteConfirmOpen) {
+            if (deleteConfirm.handleKey(event)) event.accepted = true
+            return
+          }
           if (event.key === Qt.Key_Escape) {
             root.close()
             event.accepted = true
@@ -279,6 +306,7 @@ Item {
               // 避免它反过来覆写 root.busy 的绑定（会静默破坏防连点）。
               externalBusy: root.busy
               foreground: root.foreground
+              onDeleteConfirmRequested: function(row) { root.requestDelete(row) }
               onBusyStarted: root.busy = true
               onBusyFinished: root.busy = false
               onVisibleChanged: if (visible) refresh()
@@ -306,6 +334,38 @@ Item {
           }
         }
       }
+    }
+
+    // 删除确认框：必须挂在 PanelWindow 层级（不是卡片内），用
+    // anchors.fill + z 覆盖整块面板。塞进卡片的 Column 会被当布局项压扁。
+    ConfirmDialog {
+      id: deleteConfirm
+      anchors.fill: parent
+      z: 10
+      opened: root.deleteConfirmOpen
+      message: root.deleteTarget
+          ? "删除防火墙规则 " + root.deleteTarget.dport + "/" + root.deleteTarget.proto
+            + "（来源 " + root.deleteTarget.src + "）？"
+          : ""
+      confirmText: "删除"
+      cancelText: "取消"
+      // 默认选中「取消」。ConfirmDialog 的默认是 1（=确认，这里即删除），
+      // 一次误按回车就会真删规则——对 22/tcp 这类等于直接切断 SSH。
+      // 且它的 selectedIndex 不会在重开时自动复位，故每次打开都显式归位。
+      selectedIndex: 0
+      onOpenedChanged: if (opened) selectedIndex = 0
+      background: root.background
+      foreground: root.foreground
+      scrim: root.scrim
+      fontFamily: Style.font.menuFamily
+      cornerRadius: root.cornerRadius
+      onConfirmed: {
+        var r = root.deleteTarget
+        root.deleteConfirmOpen = false
+        root.deleteTarget = null
+        if (r) lanTab.performDelete(r)
+      }
+      onCanceled: root.cancelDelete()
     }
   }
 

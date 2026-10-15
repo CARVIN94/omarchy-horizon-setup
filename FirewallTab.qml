@@ -97,11 +97,22 @@ Item {
       return
     }
     formError = ""
-    delTarget = row
-    confirmDel.opened = true
+    // 确认框不放在本组件内：ConfirmDialog 是 Item，要覆盖全屏必须挂在
+    // PanelWindow 层级（见 Panel.qml），因此这里只上报意图。
+    root.deleteConfirmRequested(row)
   }
 
-  property var delTarget: null
+  // 执行删除。由 Panel 在确认框点「删除」后调用——规则知识与执行都留在
+  // 本组件，Panel 只负责放置那个必须全屏的对话框。
+  function performDelete(row) {
+    if (!row) return
+    root.beginOp()
+    delProc.command = [root.setupSh, "fw-del", row.dport, row.proto, row.src, row.comment, row.action]
+    delProc.running = false
+    delProc.running = true
+  }
+
+  signal deleteConfirmRequested(var row)
 
   // 新增成功后的提示（与 formError 分开，成功不该显示成红色错误）
   property string formNotice: ""
@@ -152,25 +163,9 @@ Item {
     }
   }
 
-  ConfirmDialog {
-    id: confirmDel
-    opened: false
-    message: root.delTarget
-        ? "删除规则：" + root.delTarget.dport + "/" + root.delTarget.proto
-          + "  来源 " + root.delTarget.src + "？"
-        : ""
-    confirmText: "删除"
-    cancelText: "取消"
-    onConfirmed: {
-      var r = root.delTarget
-      if (!r) return
-      root.beginOp()
-      delProc.command = [root.setupSh, "fw-del", r.dport, r.proto, r.src, r.comment, r.action]
-      delProc.running = false
-      delProc.running = true
-    }
-    onCanceled: {}
-  }
+  // 确认框已移至 Panel.qml 的 PanelWindow 层级——ConfirmDialog 是 Item，
+  // 要全屏覆盖必须挂在面板根层级，塞进卡片 Column 会被压成一条。
+  // 本组件只上报 deleteConfirmRequested，由 Panel 回调 performDelete。
 
   // 面板需要本 Tab 的高度；Item 自身不提供 implicitHeight，必须显式声明，
   // 否则外层拿到的隐式高度为 0，卡片会塌成空白（曾实测整块空白）。
