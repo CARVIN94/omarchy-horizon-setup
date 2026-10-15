@@ -38,4 +38,7 @@
 ### tuple ### allow any any 0.0.0.0/0 any 172.17.0.0/16 in_docker0
 -A ufw-user-input -i docker0 -s 172.17.0.0/16 -j ACCEPT
 
+### tuple ### allow tcp 3333 0.0.0.0/0 any 10.20.30.0/24 in comment=74657374333333
+-A ufw-user-input -p tcp --dport 3333 -s 10.20.30.0/24 -j ACCEPT
+
 ### END RULES ###

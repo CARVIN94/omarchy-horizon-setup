@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import qs.Commons
 import qs.Ui
 
@@ -6,6 +7,12 @@ import qs.Ui
 //
 // 纯展示组件——不执行任何命令、不持有数据来源。删除由调用方（FirewallTab）
 // 在确认后执行，避免「列表项自己会写防火墙」这种隐含权限。
+//
+// 高度契约（与 Omarchy 的 panels 一致）：可视高度 = min(内容高度, 上限)。
+// 早期版本把上限写成 190px 常量，而 ufw 把新规则**追加在末尾**，于是超过
+// 约 4 条就被静默裁掉、用户以为「没添加成功」（真实踩过）。现在：
+//   * 上限足够装下常见规模，超出才滚动；
+//   * 滚动条 AsNeeded 常显，绝不静默裁切。
 Item {
   id: root
 
@@ -15,10 +22,20 @@ Item {
   property color foreground: Color.menu.text
   property string fontFamily: Style.font.menuFamily
 
-  // 列表区高度上限；超出内部滚动，避免与父级高度形成循环绑定。
-  property real listHeight: Style.space(190)
+  // 列表可视高度上限。默认值按「面板卡片能长到的空间」给足，
+  // 让常见规模（十几条）无需滚动即可看全。
+  property real maxListHeight: Style.space(560)
 
   signal deleteRequested(var row)
+
+  // 滚到列表末尾。新增的规则由 ufw 追加在末尾，调用方在写入成功后调用它，
+  // 让用户直接看到结果——否则「加完了却没看见」会被当成失败。
+  function scrollToEnd() {
+    flick.contentY = Math.max(0, flick.contentHeight - flick.height)
+  }
+
+  // 内容是否超出（供调用方/提示使用）
+  readonly property bool overflowing: ruleCol.implicitHeight > flick.height + 1
 
   implicitHeight: col.implicitHeight
 
@@ -35,17 +52,20 @@ Item {
       fontFamily: root.fontFamily
     }
 
+    // Omarchy 的既有形状：Flickable 高度由内容限量，卡片高度随隐式高度增长。
     Flickable {
+      id: flick
       width: parent.width
-      height: Math.min(root.listHeight,
-                       Math.max(Style.space(80), ruleCol.implicitHeight))
+      height: Math.min(ruleCol.implicitHeight, root.maxListHeight)
       contentHeight: ruleCol.implicitHeight
       clip: true
       boundsBehavior: Flickable.StopAtBounds
+      interactive: contentHeight > height
+      ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
       Column {
         id: ruleCol
-        width: parent.width
+        width: flick.width
         spacing: Style.space(4)
 
         Repeater {

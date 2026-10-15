@@ -56,7 +56,10 @@ eq "9000 注释保留"        "$(fw_rows | awk -F'\t' '$3=="9000" && $2=="tcp"{p
 eq "22 limit 也合并为一"  "$(fw_rows | awk -F'\t' '$3=="22"' | wc -l)" "1"
 eq "接口规则出现在合并列表" "$(fw_rows | awk -F'\t' '$7 ~ /docker0/' | wc -l)" "1"
 eq "接口规则带接口名"     "$(fw_rows | awk -F'\t' '$7 ~ /docker0/{print $7}')" "in_docker0"
-eq "接口规则 iface 列非空即可辨识" "$(fw_rows | awk -F'\t' '$3=="9000"{print $7}')" ""
+# 普通规则的 iface 列用哨兵 "-"（空字段不留裸空串，否则尾列会丢失）
+eq "普通规则 iface 列为哨兵" "$(fw_rows | awk -F'\t' '$3=="9000" && $2=="tcp"{print $7}')" "-"
+# 每条合并行都必须是 7 列（与 setup.sh rules 同一契约）
+eq "合并行恒为 7 列" "$(fw_rows | awk -F'\t' 'NF!=7{c++} END{print c+0}')" "0"
 
 printf '\n=== 4. 校验：端口 ===\n'
 for good in 80 3082 8000:9999 1 65535; do
@@ -173,6 +176,17 @@ eq "status 的 rules 与 setup.sh rules 行数一致" \
    "$(bash "$ROOT/setup.sh" rules | wc -l)"
 eq "rules 输出列数固定为 7" \
    "$(bash "$ROOT/setup.sh" rules | awk -F'\t' 'NR==1{print NF}')" "7"
+
+# 关键回归闸门：**每一行**都必须是 7 列。
+# 早期只断言了第 1 行，而 awk printf 在末字段为空时不输出尾部制表符，
+# 于是「无接口的普通规则」少一列、被面板整条丢弃——用户表现为
+# 「添加成功但列表里看不到」（3333 端口真实踩过）。
+badcols=$(bash "$ROOT/setup.sh" rules | awk -F'\t' 'NF!=7{c++} END{print c+0}')
+eq "rules 每一行都是 7 列" "$badcols" "0"
+
+# 空字段必须是哨兵 "-"，不能是裸空串（否则尾列仍会丢失）
+emptyf=$(bash "$ROOT/setup.sh" rules | awk -F'\t' 'NF==7 && ($5=="" || $7==""){c++} END{print c+0}')
+eq "空字段用哨兵而非空串" "$emptyf" "0"
 
 printf '\n---------------------------------------\n'
 printf 'PASS=%d FAIL=%d\n' "$PASS" "$FAIL"

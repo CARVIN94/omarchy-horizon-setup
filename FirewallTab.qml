@@ -4,7 +4,7 @@ import Quickshell.Io
 import qs.Commons
 import qs.Ui
 
-// 局域网放行 Tab：列出 ufw 用户规则，并提供增删。
+// 防火墙 Tab：列出 ufw 用户规则，并提供增删。
 //
 // 数据流与其它 Tab 一致——检测即真相，不持有状态副本：
 //   * setup.sh rules   → 每行一条规则（TAB 分隔）
@@ -65,10 +65,14 @@ Item {
     String(text).trim().split("\n").forEach(function(line) {
       if (!line) return
       var f = line.split("\t")
-      if (f.length < 7) return
+      // 契约：列数恒为 7（空字段在脚本侧写成哨兵 "-"）。列数不符说明
+      // 脚本与面板的协议不一致，此时宁可整行不显示也不猜列——早期按
+      // "< 7 丢弃" 的判断曾在尾部空列上误丢整条规则。
+      if (f.length !== 7) return
+      var unsentinel = function(v) { return v === "-" ? "" : v }
       out.push({
         action: f[0], proto: f[1], dport: f[2], src: f[3],
-        comment: f[4], families: f[5], iface: f[6]
+        comment: unsentinel(f[4]), families: f[5], iface: unsentinel(f[6])
       })
     })
     return out
@@ -99,6 +103,9 @@ Item {
 
   property var delTarget: null
 
+  // 新增成功后的提示（与 formError 分开，成功不该显示成红色错误）
+  property string formNotice: ""
+
   // 切到本 Tab 时把焦点落在端口输入框，键盘用户可直接输入。
   onVisibleChanged: if (visible) Qt.callLater(function() { portField.forceActiveFocus() })
 
@@ -118,10 +125,15 @@ Item {
     onExited: function(code) {
       root.endOp()
       if (code === 0) {
+        var what = root.draftPort + "/" + root.draftProto
         root.draftPort = ""
         root.draftComment = ""
+        root.formNotice = "已添加 " + what + "，已滚到列表末尾"
         root.refresh()
+        // 等 rules 回来后内容高度才更新，故延后一拍再滚。
+        Qt.callLater(function() { ruleList.scrollToEnd() })
       } else {
+        root.formNotice = ""
         root.formError = "写入失败（可能需要授权）" + (addErr.text ? "：" + String(addErr.text).trim() : "")
       }
     }
@@ -173,7 +185,7 @@ Item {
     // ---- 新增表单 ----
     PanelSectionHeader {
       width: parent.width
-      text: "新增放行规则"
+      text: "新增规则"
       foreground: root.foreground
       fontFamily: root.fontFamily
     }
@@ -210,7 +222,7 @@ Item {
         width: Math.max(Style.space(160),
                         formRow.width - portField.width - protoGroup.width - formRow.spacing * 2)
         activeFocusOnTab: true
-        placeholderText: "来源 CIDR（any 表示任意）"
+        placeholderText: "来源，如 192.168.0.0/24 或 any"
         text: root.draftSrc
         foreground: root.foreground
         onTextChanged: root.draftSrc = text
@@ -229,7 +241,7 @@ Item {
         width: Math.max(Style.space(140),
                         commentRow.width - addBtn.implicitWidth - commentRow.spacing)
         activeFocusOnTab: true
-        placeholderText: "备注（必填，用于精确删除该规则）"
+        placeholderText: "备注（必填，如 DSH web 3082）"
         text: root.draftComment
         foreground: root.foreground
         onTextChanged: root.draftComment = text
@@ -261,10 +273,23 @@ Item {
       wrapMode: Text.WordWrap
     }
 
+    // 成功提示：用常规前景色而非错误色，避免「加成功了却看着像报错」。
+    Text {
+      visible: root.formNotice !== "" && root.formError === ""
+      width: parent.width
+      textFormat: Text.PlainText
+      text: root.formNotice
+      color: Qt.darker(root.foreground, 1.3)
+      font.family: root.fontFamily
+      font.pixelSize: Style.font.caption
+      wrapMode: Text.WordWrap
+    }
+
     PanelSeparator { width: parent.width; foreground: root.foreground }
 
     // ---- 规则列表 ----
     RuleList {
+      id: ruleList
       width: parent.width
       rows: root.rows
       busy: root.externalBusy

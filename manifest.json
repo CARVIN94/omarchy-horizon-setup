@@ -4,7 +4,7 @@
   "name": "Horizon Setup",
   "version": "1.2.0",
   "author": "carvin",
-  "description": "Mac 习惯与开发环境配置面板：快捷键/滚动/剪贴板、npm/GitHub 代理、局域网 ufw 放行",
+  "description": "Omarchy 配置面板：快捷键/滚动/剪贴板、npm 换源/GitHub 代理、ufw 防火墙规则管理",
   "kinds": ["overlay"],
   "keepLoaded": true,
   "entryPoints": {

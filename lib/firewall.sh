@@ -79,9 +79,10 @@ fw_list() {
 # 孪生判定必须先把「任意来源」归一化：v4 落盘为 0.0.0.0/0、v6 为 ::/0，
 # 直接按原始字符串分组会把同一条逻辑规则拆成两条（曾因此漏合并 53317）。
 #
-# 输出（TAB 分隔）：action proto dport src comment families iface
+# 输出（TAB 分隔，**列数恒为 7**）：action proto dport src comment families iface
 #   families ∈ {4, 6, 46}；iface 非空表示接口规则（外部工具安装，只读，
 #   面板不提供删除）。普通规则的 in/out 是方向标记，归一到空字符串。
+#   空字段以哨兵 "-" 表示（见 END 块注释），消费端需把 "-" 还原为「无」。
 fw_list_merged() {
   fw_list | awk -F'\t' '
     function norm_src(s) {
@@ -110,10 +111,16 @@ fw_list_merged() {
       }
     }
     END {
+      # 空字段必须写成哨兵 "-"，不能用裸的空串：awk 的 printf 在最后一个
+      # 字段为空时不会输出尾部制表符，消费端 split 后段数会变少——曾在
+      # 「无接口的普通规则」上少一列，导致面板整条丢弃该规则（用户表现为
+      # 「添加成功但列表里看不到」）。列数恒定是本函数的契约。
       for (i=1;i<=n;i++) {
         k=order[i]
         printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
-          act[k], pro[k], dpo[k], srcs[k], cmt[k], fams[k], ifc[k]
+          act[k], pro[k], dpo[k], srcs[k], \
+          (cmt[k] == "" ? "-" : cmt[k]), fams[k], \
+          (ifc[k] == "" ? "-" : ifc[k])
       }
     }'
 }

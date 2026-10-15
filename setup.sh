@@ -8,7 +8,7 @@
 # 分层：
 #   lib/macos.sh    Mac 习惯：快捷键桥接、自然滚动、剪贴板
 #   lib/devtools.sh 开发环境：npm 换源、GitHub 代理
-#   lib/firewall.sh 局域网：ufw 规则的读取与增删（读免权限，写走 pkexec）
+#   lib/firewall.sh 防火墙：ufw 规则的读取与增删（读免权限，写走 pkexec）
 #
 # 用法:
 #   setup.sh status

@@ -11,7 +11,7 @@ import qs.Ui
 // 三个 Tab 按「这块配置属于谁」分组，而不是按实现方式：
 //   Mac 习惯   —— 与 macOS 肌肉记忆直接相关
 //   开发环境   —— npm / GitHub，与 Mac 习惯无关
-//   局域网放行 —— ufw 规则（读写分离：读免权限，写走 pkexec 授权）
+//   防火墙     —— ufw 规则（读写分离：读免权限，写走 pkexec 授权）
 //
 // 检测/写盘逻辑全部在 setup.sh 与 lib/*.sh，本文件只是展示壳，
 // 不持有任何状态副本。
@@ -27,23 +27,23 @@ Item {
   readonly property var tabs: [
     { value: "mac", label: "Mac 习惯" },
     { value: "dev", label: "开发环境" },
-    { value: "lan", label: "局域网放行" }
+    { value: "lan", label: "防火墙" }
   ]
 
   readonly property var macItems: [
     { key: "keys", label: "Mac 快捷键",
-      description: "Cmd→Ctrl；全选/行首尾/保存/查找/撤销等 16 组", checked: switches.keys },
+      description: "Command 键按 Ctrl 语义发键；另桥接全选/行首尾/保存/查找等 16 组", checked: switches.keys },
     { key: "scroll", label: "自然滚动",
-      description: "鼠标与触控板均为 Mac 方向", checked: switches.scroll },
+      description: "滚轮方向改为「内容跟手」；鼠标与触控板都改", checked: switches.scroll },
     { key: "clip", label: "剪贴板快捷键",
-      description: "Super+Alt+C 呼出剪贴板", checked: switches.clip }
+      description: "Super+Alt+C 呼出剪贴板历史", checked: switches.clip }
   ]
 
   readonly property var devItems: [
     { key: "npm", label: "npm 换源",
-      description: "registry → npmmirror（国内镜像）", checked: switches.npm },
+      description: "npm registry 指向 npmmirror，装包走国内镜像", checked: switches.npm },
     { key: "ghproxy", label: "GitHub 代理",
-      description: "clone/fetch 自动走 gh-proxy.org", checked: switches.ghproxy }
+      description: "clone/fetch 经 gh-proxy.org 加速；push 仍直连 GitHub", checked: switches.ghproxy }
   ]
 
   readonly property int enabledCount: (switches.keys ? 1 : 0) + (switches.scroll ? 1 : 0)
@@ -193,7 +193,7 @@ Item {
 
               Text {
                 textFormat: Text.PlainText
-                text: "Omarchy · Mac 习惯与开发环境定制"
+                text: "Omarchy · 输入习惯 · 工具链 · 防火墙"
                 color: Qt.darker(root.foreground, 1.5)
                 font.family: Style.font.menuFamily
                 font.pixelSize: Style.font.caption
@@ -252,7 +252,7 @@ Item {
               id: macList
               width: parent.width
               visible: root.activeTab === "mac"
-              title: "与 macOS 肌肉记忆相关"
+              title: "键位、滚动与剪贴板"
               items: root.macItems
               busy: root.busy
               foreground: root.foreground
@@ -263,7 +263,7 @@ Item {
               id: devList
               width: parent.width
               visible: root.activeTab === "dev"
-              title: "与 Mac 习惯无关的工具链设置"
+              title: "包管理与网络"
               items: root.devItems
               busy: root.busy
               foreground: root.foreground

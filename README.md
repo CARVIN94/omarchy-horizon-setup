@@ -1,6 +1,6 @@
 <h1 align="center">horizon.setup</h1>
 
-<p align="center">Omarchy 的 Mac 习惯与开发环境配置面板</p>
+<p align="center">Omarchy 的输入习惯、工具链与防火墙配置面板</p>
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-10b981?style=flat-square" alt="MIT license"></a>
@@ -13,13 +13,13 @@
   <a href="#快速安装">安装</a> ·
   <a href="#面板">面板</a> ·
   <a href="#快捷键桥接">快捷键桥接</a> ·
-  <a href="#局域网放行ufw">局域网放行</a> ·
+  <a href="#防火墙ufw">防火墙</a> ·
   <a href="#工作原理">原理</a> ·
   <a href="#开发">开发</a> ·
   <a href="#卸载">卸载</a>
 </p>
 
-把 Linux 桌面调成 Mac 手感、并顺手管好开发环境与**局域网放行**的一键面板。
+把输入习惯调成 Mac 手感，并顺手管好包管理、网络代理与 **ufw 防火墙** 的一键面板。
 所有开关**可检测、可切换、幂等**——不用再猜「刚才那条命令到底生效没」。
 
 面板是 Omarchy overlay，入口在 **菜单 → 设置**，不占顶栏；内部按用途分三个 Tab。
@@ -59,13 +59,13 @@ $P fw-del 3082 tcp 192.168.0.0/24 'DSH web'   # 精确删除（同样授权）
 
 | Tab | 内容 | 说明 |
 | --- | --- | --- |
-| **Mac 习惯** | Mac 快捷键、自然滚动、剪贴板快捷键 | 与 macOS 肌肉记忆直接相关。 |
-| **开发环境** | npm 换源、GitHub 代理 | 与 Mac 习惯无关的工具链设置。 |
-| **局域网放行** | ufw 规则列表 + 增删 | 读写分离：读免权限，写走一次授权。 |
+| **Mac 习惯** | Mac 快捷键、自然滚动、剪贴板快捷键 | 键位、滚动与剪贴板。 |
+| **开发环境** | npm 换源、GitHub 代理 | 包管理与网络。 |
+| **防火墙** | ufw 规则列表 + 增删 | 读写分离：读免权限，写走一次授权。 |
 
 头部显示 `已启用/总数` 胶囊徽章；底部在写配置时显示进行中。
 
-### 局域网放行（ufw）
+### 防火墙（ufw）
 
 面板里直接列出防火墙规则，并可增删。设计要点：
 
@@ -142,7 +142,8 @@ ufw 的删除匹配有两档行为（源码 + 真机 dry-run 双向确认）：
 | `lib/firewall.sh` | ufw 规则的解析、校验、增删 |
 | `Panel.qml` | overlay 容器、Tab 栏、状态徽章 |
 | `ToggleList.qml` | 一组开关的展示壳 |
-| `FirewallTab.qml` | 局域网放行 Tab（表单 + 规则列表） |
+| `FirewallTab.qml` | 防火墙 Tab（表单 + 规则列表） |
+| `RuleList.qml` | 规则列表展示（纯展示，不自带滚动） |
 
 - **检测即真相**：不维护任何状态文件，状态全部从系统/配置实读
   （`hyprctl getoption`、标记块、`~/.npmrc`、`git config`、`/etc/ufw/user*.rules`）。
@@ -172,7 +173,7 @@ omarchy-restart-shell
 # 1. 先关掉所有开关（恢复默认绑定/配置）
 P=~/.config/omarchy/plugins/horizon.setup/setup.sh
 for t in keys scroll clip npm ghproxy; do $P toggle $t; done
-# 局域网规则请先在面板里逐条删除（或 $P fw-del …）
+# 防火墙规则请先在面板里逐条删除（或 $P fw-del …）
 
 # 2. 移除插件并重启 shell
 rm -rf ~/.config/omarchy/plugins/horizon.setup
