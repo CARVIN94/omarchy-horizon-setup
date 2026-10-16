@@ -24,17 +24,24 @@ export GIT_CONFIG_GLOBAL="$TMP/gitconfig"
 export HST_FILE="$TMP/hosts"
 export HST_SYS_BIN="$TMP/sys-bin/refresh"
 export HST_SYS_UNIT_DIR="$TMP/sys-unit"
-export DEV_HOSTS_ATTEMPT_TIMEOUT=2
+export DEV_HOSTS_ATTEMPT_TIMEOUT=30
+export HST_TIMEOUT=3
 
-# 桩 pkexec：**永远挂起**（模拟 polkit 认证不通过、授权框无人应答）
+# 桩 pkexec：**记录是否被调用**，然后挂起（模拟权限框无人应答）。
+# 「记录被调用」是关键闸门 —— 曾把 hosts 写入写成 `bash -c 'hst_write 1'`，
+# 新 shell 看不到已 source 的函数，会静默 command not found、pkexec 永不
+# 被调用，而外壳 timeout 又把错误吞掉 ⇒ 一切看起来都像"权限框没弹出"。
 mkdir -p "$TMP/bin"
 cat > "$TMP/bin/pkexec" <<'STUB'
 #!/usr/bin/env bash
+echo called >> "$PKEXEC_LOG"
 sleep 600
 STUB
 chmod +x "$TMP/bin/pkexec"
 export PATH="$TMP/bin:$PATH"
 export HST_PKEXEC="$TMP/bin/pkexec"
+export PKEXEC_LOG="$TMP/pkexec.log"
+: > "$PKEXEC_LOG"
 
 source "$ROOT/lib/hosts.sh"
 source "$ROOT/lib/devtools.sh"
@@ -43,12 +50,21 @@ printf '\n=== 1. 开关不得被 root 授权阻塞（回归闸门）===\n'
 start=$(date +%s)
 dev_write_ghproxy 1 >/dev/null 2>&1
 elapsed=$(( $(date +%s) - start ))
-if [ "$elapsed" -le 5 ]; then
-  ok "开启耗时 ${elapsed}s（未被 pkexec 阻塞）"
+if [ "$elapsed" -le "$((HST_TIMEOUT + 5))" ]; then
+  ok "开启耗时 ${elapsed}s（未被卡死在权限框）"
 else
-  bad "开启耗时 ${elapsed}s —— 仍被 root 授权阻塞"
+  bad "开启耗时 ${elapsed}s —— 超出 HST_TIMEOUT+5"
 fi
 dev_ghproxy_on && ok "开关状态为开（git 配置已写）" || bad "开关状态应为开"
+
+# ★ 最关键闸门：pkexec 必须真的被调用。若为 0，说明 hosts 写入根本没执行
+#   （典型成因：bash -c 开新 shell 丢掉函数定义，命令静默 not found）。
+pkcalls=$(grep -c '^called$' "$PKEXEC_LOG" 2>/dev/null || echo 0)
+if [ "${pkcalls:-0}" -ge 1 ]; then
+  ok "pkexec 真被调用 ${pkcalls} 次（hosts 写入非空转）"
+else
+  bad "pkexec 从未被调用 —— hosts 写入空转（函数没被找到）"
+fi
 
 printf '\n=== 2. git 部分：写入与清除 ===\n'
 eq "insteadOf 已写入" \

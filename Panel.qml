@@ -22,6 +22,9 @@ Item {
   property var switches: ({ keys: false, scroll: false, clip: false,
                          npm: false, ghproxy: false, ufw: false, rules: 0 })
   property bool busy: false
+  // 写配置失败时的提示（只来自 stderr）。成功则为空。
+  // 下方状态栏优先展示它 —— 否则失败时面板没有任何反馈。
+  property string notice: ""
   property string activeTab: "mac"
 
   readonly property var tabs: [
@@ -69,9 +72,16 @@ Item {
   function applyToggle(target) {
     if (root.busy) return
     root.busy = true
+    root.notice = ""          // 开新一轮，先清上一次的失败提示
     toggleProc.command = [root.setupSh, "toggle", target]
     toggleProc.running = false
     toggleProc.running = true
+  }
+
+  // stderr 内容。成功时 stderr 为空、不触发本函数，故 notice 保持 ""。
+  function setNotice(text) {
+    var s = String(text).replace(/\s+$/, "")
+    if (s.length > 0) root.notice = s
   }
 
   function applyStatus(text) {
@@ -102,6 +112,12 @@ Item {
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: root.applyStatus(text)
+    }
+    // stderr 必须接：写配置的失败原因（如需 root 授权、超时）只在 stderr。
+    // 之前只接 stdout，失败时面板一声不吭，用户只能猜「权限框没弹出」。
+    stderr: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.setNotice(text)
     }
     onRunningChanged: if (!running && root.busy) root.busy = false
   }
@@ -319,9 +335,23 @@ Item {
           }
 
           // ---- 底部状态栏 ----
+          // 优先级：失败提示 > 正在写入 > 常态提示。
+          // 提示独占整行并允许换行（它可能含 setup.sh 的完整 stderr）。
+          Text {
+            width: parent.width
+            visible: root.notice.length > 0
+            textFormat: Text.PlainText
+            text: root.notice
+            color: root.foreground
+            wrapMode: Text.WordWrap
+            font.family: Style.font.menuFamily
+            font.pixelSize: Style.font.caption
+          }
+
           Row {
             width: parent.width
             spacing: Style.space(8)
+            visible: root.notice.length === 0
 
             Text {
               textFormat: Text.PlainText

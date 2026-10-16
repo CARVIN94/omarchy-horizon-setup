@@ -60,15 +60,18 @@ dev_write_ghproxy() {
     git config --global "$DEV_GHPROXY_KEY" "https://github.com/"
     # 有界尝试：装 root 刷新器 + 每日 timer + 写 hosts。超时/失败都不影响开关。
     # 若 root 侧组件已装好（用户跑过手动安装块），只做刷新，不重装。
+    # 必须在**当前 shell** 调用：bash -c 起新 shell，看不到已 source 的
+    # 函数，会静默 command not found（真 bug，由 tests/devtools_test 闸门锁住）。
+    # 超时由 hst_write 内部卡在 pkexec 上，故这里不再套 timeout。
     if [[ -x "$HST_SYS_BIN" ]] && hst_sys_timer_on; then
-      timeout "$DEV_HOSTS_ATTEMPT_TIMEOUT" bash -c 'hst_refresh' 2>/dev/null || true
-    elif ! timeout "$DEV_HOSTS_ATTEMPT_TIMEOUT" bash -c 'hst_write 1' 2>/dev/null; then
-      hst_err "git 镜像已开启；hosts 改写未完成（需 root 授权）。可执行: setup.sh hosts-install-block | bash"
+      hst_refresh || true
+    elif ! hst_write 1; then
+      hst_err "git 镜像已开启；hosts 改写未完成（需 root 授权或超时）。可执行: setup.sh hosts-install-block | bash"
     fi
   else
     git config --global --unset "$DEV_GHPROXY_KEY" 2>/dev/null || true
-    if ! timeout "$DEV_HOSTS_ATTEMPT_TIMEOUT" bash -c 'hst_write 0' 2>/dev/null; then
-      hst_err "git 镜像已关闭；hosts 块未移除（需 root 授权）。"
+    if ! hst_write 0; then
+      hst_err "git 镜像已关闭；hosts 块未移除（需 root 授权或超时）。"
     fi
   fi
 }

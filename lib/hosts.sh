@@ -26,6 +26,8 @@ HST_SYS_BIN="${HST_SYS_BIN:-/usr/local/bin/horizon-setup-hosts-refresh}"
 HST_SYS_UNIT_DIR="${HST_SYS_UNIT_DIR:-/etc/systemd/system}"
 HST_TIMER_TIME="${HST_TIMER_TIME:-*-*-* 04:00:00}"
 HST_PKEXEC="${HST_PKEXEC:-/usr/bin/pkexec}"
+# 提权步骤的超时上限（秒）。留足时间给权限框，同时避免面板永久挂住。
+HST_TIMEOUT="${HST_TIMEOUT:-20}"
 
 hst_err() { printf 'horizon.setup: %s\n' "$*" >&2; }
 
@@ -235,7 +237,9 @@ EOF
   chmod 700 "$runner"
 
   command -v "$HST_PKEXEC" >/dev/null 2>&1 || { hst_err "pkexec 不可用"; rm -rf "$dir"; return 127; }
-  "$HST_PKEXEC" /usr/bin/bash "$runner" "$1"
+  # 超时必须卡在**真正的提权这一步**：卡别的地方（如新开子 shell）会挡住
+  # 权限框，用户等不到授权就超时。实测本机 pkexec 免密时约 2s 返回。
+  timeout "$HST_TIMEOUT" "$HST_PKEXEC" /usr/bin/bash "$runner" "$1"
   local rc=$?
   rm -rf "$dir"
   return $rc
