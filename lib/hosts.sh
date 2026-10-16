@@ -39,13 +39,29 @@ hst_on() {
 }
 
 # $1 = 1 开启 / 0 关闭。一次授权完成：装 root 刷新器 + 装每日 timer + 立即写 hosts
-# （或反向卸载）。真正的 root 动作在 hst_write_sys_timer 里。
-hst_write() { hst_write_sys_timer "$1"; }
+# （或反向卸载）。运行时一律经 systemctl，由 polkit 规则免密放行。
+# $1 = 1 开启 / 0 关闭。
+# 已安装 ⇒ systemctl start @on|@off（polkit 规则免密，且不执行任何用户可写
+# 脚本——真正干活的是 root:root 的刷新器）。未安装 ⇒ 明确提示先做一次性
+# 安装，不回落到 pkexec（本机 polkit 的 PAM 栈缺失，密码认证恒失败）。
+hst_write() {
+  local inst
+  if [[ "$1" == 1 ]]; then inst=on; else inst=off; fi
+  if hst_installed; then
+    systemctl start "${HST_SYS_UNIT}@${inst}.service"
+  else
+    hst_err "尚未安装 hosts 加速。一次性安装: setup.sh hosts-install-block | bash"
+    return 1
+  fi
+}
 
 # 供每日定时/手动调用：只在「已开启」时刷新（关闭态不动 hosts）。
 hst_refresh() {
   hst_on || return 0
-  [[ -x "$HST_SYS_BIN" ]] && "$HST_SYS_BIN" refresh
+  # 已安装时交给 root 刷新器；此处必须以 install 判定，因为它就是那条
+  # 免密 systemctl 路径的前置条件。
+  hst_installed || { hst_err "尚未安装 hosts 加速"; return 1; }
+  systemctl start "${HST_SYS_UNIT}@refresh.service"
 }
 
 # 状态：块存在即开启。
@@ -138,109 +154,119 @@ ROOTEOF
 # 生成一次性安装块（stdout）。内容即命令：用户 `bash` 它执行，sudo 缓存
 # 5 分钟故只输一次密码。**红线**：块内不得引用插件目录（用户可写）。
 hst_emit_install_block() {
-  cat <<'HDR'
+  # 全部用**未引号 heredoc** 以便展开 $HST_SYS_*（目标路径）。内容里的
+  # `%i`、polkit 的 `==` 等都不含 $ 或反引号，安全。
+  cat <<HDR
 # ===== horizon.setup — GitHub hosts 安装（一次粘贴，一次密码）=====
-# 装 root 刷新器 + 每日 04:00 系统级 timer + 立即写一次 hosts。
-# 装完后每日自动刷新，零密码。sudo 缓存 5 分钟，故只需输一次。
+# 装四件（全部 root:root）：
+#   1. $HST_SYS_BIN                      root 刷新器
+#   2. ${HST_SYS_UNIT_DIR}/${HST_SYS_UNIT}@.service   模板服务(on/off/refresh)
+#   3. ${HST_SYS_UNIT_DIR}/${HST_SYS_UNIT}.timer      每日 04:00
+#   4. /etc/polkit-1/rules.d/99-${HST_SYS_UNIT}.rules  免密放行本单元
+#
+# 装完后**运行时不再需要任何提权**：面板开关改用
+#   systemctl start ${HST_SYS_UNIT}@on|off.service
+# 走 polkit 规则免密，且不执行任何用户可写脚本（真正干活的是 root 刷新器）。
+#
+# sudo 缓存 5 分钟，故全程只输一次密码。
 sudo -v
-sudo /usr/bin/install -m 0755 -o root -g root /dev/stdin /usr/local/bin/horizon-setup-hosts-refresh <<'REFRESH_EOF'
+sudo /usr/bin/install -m 0755 -o root -g root /dev/stdin $HST_SYS_BIN <<'REFRESH_EOF'
 HDR
   hst_refresh_script
-  cat <<'MID'
+  cat <<HDR2
 REFRESH_EOF
-sudo /usr/bin/tee /etc/systemd/system/horizon-setup-hosts.service >/dev/null <<'SVC_EOF'
-[Unit]
-Description=horizon.setup - refresh GitHub hosts
-After=network-online.target
-ConditionPathExists=/usr/local/bin/horizon-setup-hosts-refresh
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/horizon-setup-hosts-refresh refresh
-SVC_EOF
-sudo /usr/bin/tee /etc/systemd/system/horizon-setup-hosts.timer >/dev/null <<'TMR_EOF'
-[Unit]
-Description=horizon.setup - daily GitHub hosts refresh
-
-[Timer]
-OnCalendar=*-*-* 04:00:00
-Persistent=true
-Unit=horizon-setup-hosts.service
-
-[Install]
-WantedBy=timers.target
-TMR_EOF
+sudo /usr/bin/tee ${HST_SYS_UNIT_DIR}/${HST_SYS_UNIT}@.service >/dev/null <<'SERVICE_EOF'
+HDR2
+  hst_service_template
+  cat <<HDR3
+SERVICE_EOF
+sudo /usr/bin/tee ${HST_SYS_UNIT_DIR}/${HST_SYS_UNIT}.timer >/dev/null <<'TIMER_EOF'
+HDR3
+  hst_timer_unit
+  cat <<HDR4
+TIMER_EOF
+sudo /usr/bin/tee /etc/polkit-1/rules.d/99-${HST_SYS_UNIT}.rules >/dev/null <<'POLICY_EOF'
+HDR4
+  hst_polkit_rule
+  cat <<HDR5
+POLICY_EOF
 sudo /usr/bin/systemctl daemon-reload
-sudo /usr/bin/systemctl enable --now horizon-setup-hosts.timer
-sudo /usr/bin/systemctl start horizon-setup-hosts.service
+sudo /usr/bin/systemctl enable --now ${HST_SYS_UNIT}.timer
+sudo /usr/bin/systemctl start ${HST_SYS_UNIT}@on.service
 echo "===== 安装完成 ====="
-systemctl is-enabled horizon-setup-hosts.timer
-grep -c 'horizon.setup:github-hosts' /etc/hosts
-MID
+echo -n "timer: "; systemctl is-enabled ${HST_SYS_UNIT}.timer
+echo -n "polkit 规则: "; ls -l /etc/polkit-1/rules.d/99-${HST_SYS_UNIT}.rules >/dev/null 2>&1 && echo 在位 || echo 缺失
+echo -n "hosts 块条数: "; grep -c 'horizon.setup:github-hosts' /etc/hosts
+echo
+echo "此后免密自检（应立即成功、无密码框）："
+systemctl start ${HST_SYS_UNIT}@refresh.service && echo "  ★ systemctl start 免密成功"
+HDR5
 }
 
-# $1 = 1 安装 / 0 卸载
-hst_write_sys_timer() {
-  local dir script
-  dir=$(mktemp -d) || return 1
-  chmod 700 "$dir"
-  script="$dir/refresh.sh"
-  hst_refresh_script > "$script" || { rm -rf "$dir"; return 1; }
 
-  local unit="$dir/${HST_SYS_UNIT}.service"
-  cat > "$unit" <<EOF
+# ---- 模板 service / timer / polkit 规则（一次性安装的内容）---------------
+#
+# 为什么是 template（@）：安装一次后，运行时不再需要任何提权——开关只调
+#   systemctl start horizon-setup-hosts@on.service / @off.service
+# polkit 规则放行**仅本插件的单元**，故这条 systemctl 不弹密码、也不会把
+# 「执行任意脚本」交给 root（真正的脚本是 root:root 的刷新器）。
+#
+# 确证的两个事实（白盒）：
+#   * action id = org.freedesktop.systemd1.manage-units（默认 auth_admin）
+#   * detail 键为 "unit" 与 "verb"（libsystemd-core-261 里 verb 作为独立
+#     字符串仅出现 1 次，unit 出现 9 次）
+
+# 模板服务：%i 取 on|off|refresh
+hst_service_template() {
+  cat <<EOF
 [Unit]
-Description=horizon.setup - refresh GitHub hosts
-After=network-online.target
+Description=horizon.setup - update GitHub hosts (%i)
 ConditionPathExists=$HST_SYS_BIN
 
 [Service]
 Type=oneshot
-ExecStart=$HST_SYS_BIN refresh
+ExecStart=$HST_SYS_BIN %i
 EOF
-  local timer="$dir/${HST_SYS_UNIT}.timer"
-  cat > "$timer" <<EOF
+}
+
+hst_timer_unit() {
+  cat <<EOF
 [Unit]
 Description=horizon.setup - daily GitHub hosts refresh
 
 [Timer]
 OnCalendar=${HST_TIMER_TIME}
 Persistent=true
-Unit=${HST_SYS_UNIT}.service
+Unit=${HST_SYS_UNIT}@refresh.service
 
 [Install]
 WantedBy=timers.target
 EOF
+}
 
-  # 把「安装/卸载 + 立即刷新」压进同一次授权
-  local runner="$dir/run.sh"
-  cat > "$runner" <<EOF
-#!/usr/bin/env bash
-set -euo pipefail
-if [[ "$1" == "1" ]]; then
-  /usr/bin/install -m 0755 -o root -g root "$script" "$HST_SYS_BIN"
-  /usr/bin/install -m 0644 -o root -g root "$unit" "${HST_SYS_UNIT_DIR}/${HST_SYS_UNIT}.service"
-  /usr/bin/install -m 0644 -o root -g root "$timer" "${HST_SYS_UNIT_DIR}/${HST_SYS_UNIT}.timer"
-  /usr/bin/systemctl daemon-reload
-  /usr/bin/systemctl enable --now "${HST_SYS_UNIT}.timer"
-  /usr/bin/systemctl start "${HST_SYS_UNIT}.service"   # 立即刷新一次（写入 hosts）
-else
-  /usr/bin/systemctl disable --now "${HST_SYS_UNIT}.timer" 2>/dev/null || true
-  # 先删 hosts 块再卸载刷新器——顺序反了就删不掉了
-  [[ -x "$HST_SYS_BIN" ]] && "$HST_SYS_BIN" off || true
-  /usr/bin/rm -f "$HST_SYS_BIN" \
-    "${HST_SYS_UNIT_DIR}/${HST_SYS_UNIT}.service" \
-    "${HST_SYS_UNIT_DIR}/${HST_SYS_UNIT}.timer"
-  /usr/bin/systemctl daemon-reload
-fi
-EOF
-  chmod 700 "$runner"
+# polkit 规则：只放行本插件的单元与三个动词，且只对 manage-units。
+# 越权面 = 「谁都能让这一个单元跑一次刷新」，而该单元只写经白名单校验的
+# GitHub hosts 映射，故风险有限且授权面远小于 empower 组那种全放行。
+hst_polkit_rule() {
+  # 单引号 heredoc 不做变量展开，故规则内单元名靠后续替换写死；这里用
+  # 未引号 heredoc，让 ${HST_SYS_UNIT} 展开（JS 内无 $ 与反引号，安全）。
+  cat <<POLKEOF
+// horizon.setup：允许免密管理本插件的 hosts 刷新单元（仅 on/off/refresh）。
+// 装为 root:root；授权面仅限本单元，不涉及其它任何 systemd 单元。
+polkit.addRule(function(action, subject) {
+    if (action.id != "org.freedesktop.systemd1.manage-units")
+        return polkit.Result.NOT_HANDLED;
+    var unit = action.lookup("unit");
+    var verb = action.lookup("verb");
+    if (unit && unit.indexOf("${HST_SYS_UNIT}@") == 0 &&
+        (verb == "start" || verb == "stop" || verb == "restart"))
+        return polkit.Result.YES;
+    return polkit.Result.NOT_HANDLED;
+});
+POLKEOF
+}
 
-  command -v "$HST_PKEXEC" >/dev/null 2>&1 || { hst_err "pkexec 不可用"; rm -rf "$dir"; return 127; }
-  # 超时必须卡在**真正的提权这一步**：卡别的地方（如新开子 shell）会挡住
-  # 权限框，用户等不到授权就超时。实测本机 pkexec 免密时约 2s 返回。
-  timeout "$HST_TIMEOUT" "$HST_PKEXEC" /usr/bin/bash "$runner" "$1"
-  local rc=$?
-  rm -rf "$dir"
-  return $rc
+# 是否已完成一次性安装。
+hst_installed() {
+  [[ -x "$HST_SYS_BIN" && -f "$HST_SYS_UNIT_DIR/${HST_SYS_UNIT}@.service" ]]
 }

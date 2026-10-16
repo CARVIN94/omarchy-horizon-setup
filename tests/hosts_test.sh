@@ -98,68 +98,60 @@ rc=$(run_root on)
 eq "合法 IPv6 放行" "$rc" "0"
 eq "IPv6 条目写入" "$(count_lines 'v6.example.com')" "1"
 
-printf '\n=== C. lib 侧：生成的 runner 是一次授权的原子脚本 ===\n'
-# root 脚本用绝对路径（/usr/bin/install 等）是**正确的防御**：root 侧不应
-# 依赖 PATH。故这里对生成的 runner 做文本契约断言，而不是削弱它以便桩测。
-runner="$TMP/runner.sh"
-cat > "$runner" <<EOF
-$(cat <<'X'
-X
-)
-EOF
-# 直接调用 lib 的生成逻辑，落到临时 unit 目录，桩 pkexec 只收下 runner 内容
+printf '\n=== C. 运行时路径：只走 systemctl，不再提权 ===\n'
+# 安装好后，开关只调 systemctl start <unit>@on|off.service —— polkit 规则
+# 放行本单元，故免密；且不执行任何用户可写脚本（真正干活的是 root 刷新器）。
 mkdir -p "$TMP/bin"
-cat > "$TMP/bin/pkexec" <<'STUB'
-#!/usr/bin/env bash
-shift
-cp "$1" "$TMP/runner.sh"
-echo "pkexec-called $1" >> "$HST_ACTIONS"
-exit 0
-STUB
-cat > "$TMP/bin/install" <<'STUB'
-#!/usr/bin/env bash
-echo "install $*" >> "$HST_ACTIONS"; exit 0
-STUB
 cat > "$TMP/bin/systemctl" <<'STUB'
 #!/usr/bin/env bash
-echo "systemctl $*" >> "$HST_ACTIONS"; exit 0
+echo "$*" >> "$HST_ACTIONS"
+exit 0
 STUB
-chmod +x "$TMP/bin"/*
-export HST_PKEXEC="$TMP/bin/pkexec"
-export HST_SYS_BIN="$TMP/sys-bin/refresh"
-export HST_SYS_UNIT_DIR="$TMP/sys-unit"
-export TMP
+chmod +x "$TMP/bin/systemctl"
+export PATH="$TMP/bin:$PATH"
 export HST_ACTIONS="$TMP/actions.log"
+export HST_SYS_UNIT_DIR="$TMP/sys-unit"
+mkdir -p "$HST_SYS_UNIT_DIR"
+
+# --- C1. 未安装 ⇒ 明确报错（不回落 pkexec） ---
+printf '127.0.0.1 localhost\n' > "$HST_FILE"
+rm -rf "$TMP/sys-bin"; export HST_SYS_BIN="$TMP/sys-bin/refresh"
 : > "$HST_ACTIONS"
+hst_installed && bad "未安装时 hst_installed 应为假" || ok "未安装时 hst_installed 为假"
+rc=0; err=$(hst_write 1 2>&1) || rc=$?
+[ "$rc" != "0" ] && ok "未安装时 hst_write 返回非 0" || bad "未安装时竟成功"
+echo "$err" | grep -q 'hosts-install-block' && ok "错误提示给出安装路径" || bad "错误提示不含安装路径" "$err"
+eq "未安装时不调用 systemctl" "$(wc -l < "$HST_ACTIONS")" "0"
+echo "$err" | grep -qi 'pkexec' && bad "回落到 pkexec（不该）" || ok "未回落 pkexec"
 
-# 让生成器把 unit 文件写进临时目录，并把 runner 落到 $TMP/runner.sh
-rc=0
-hst_write_sys_timer 1 >/dev/null 2>&1 || rc=$?
-eq "lib 生成并交出 runner（pkexec 被调用）" "$(grep -c 'pkexec-called' "$HST_ACTIONS")" "1"
-[ -s "$TMP/runner.sh" ] && ok "runner 已生成" || bad "runner 未生成"
-
-# runner 文本契约：root 侧只碰 root 所有的二进制，绝不碰插件脚本
-for needle in "/usr/bin/install -m 0755" "/usr/bin/install -m 0644" \
-              "/usr/bin/systemctl enable --now" "/usr/bin/systemctl start" \
-              "/usr/bin/systemctl disable --now"; do
-  grep -qF "$needle" "$TMP/runner.sh" && ok "runner 含 [$needle]" || bad "runner 缺 [$needle]"
-done
-# 红线：runner 不得引用插件目录（用户可写），否则等于把 root 交给它
-grep -q '\.config/omarchy' "$TMP/runner.sh" && bad "runner 引用了插件目录（红线）" || ok "runner 未引用插件目录"
-
-# 关闭顺序：删 hosts 块必须在卸载刷新器之前
-off_line=$(grep -n 'HST_SYS_BIN" off\|refresh.sh off\|" off' "$TMP/runner.sh" | head -1 | cut -d: -f1)
-rm_line=$(grep -n '/usr/bin/rm -f' "$TMP/runner.sh" | head -1 | cut -d: -f1)
-if [ -n "$off_line" ] && [ -n "$rm_line" ] && [ "$off_line" -lt "$rm_line" ]; then
-  ok "顺序正确：删块(行$off_line) 在 卸载刷新器(行$rm_line) 之前"
-else
-  bad "顺序错误（off=$off_line rm=$rm_line）"
-fi
-
-# 卸载链路
+# --- C2. 已安装 ⇒ 走 systemctl start <unit>@on/off ---
+mkdir -p "$TMP/sys-bin"; printf '#!/bin/sh\n' > "$HST_SYS_BIN"; chmod +x "$HST_SYS_BIN"
+cat > "$HST_SYS_UNIT_DIR/${HST_SYS_UNIT}@.service" <<EOF
+[Service]
+ExecStart=$HST_SYS_BIN %i
+EOF
+hst_installed && ok "已安装时 hst_installed 为真" || bad "已安装时应为真"
 : > "$HST_ACTIONS"
-hst_write_sys_timer 0 >/dev/null 2>&1 || true
-grep -q 'disable --now' "$TMP/runner.sh" && ok "卸载 runner 停 timer" || bad "卸载未停 timer"
+rc=0; hst_write 1 >/dev/null 2>&1 || rc=$?
+eq "开启返回 0" "$rc" "0"
+eq "开启调用 systemctl start @on" "$(cat "$HST_ACTIONS")" "start ${HST_SYS_UNIT}@on.service"
+: > "$HST_ACTIONS"
+rc=0; hst_write 0 >/dev/null 2>&1 || rc=$?
+eq "关闭返回 0" "$rc" "0"
+eq "关闭调用 systemctl start @off" "$(cat "$HST_ACTIONS")" "start ${HST_SYS_UNIT}@off.service"
+# refresh 只在「块已存在（=已开启）」时动作，故先造出块
+printf '127.0.0.1 localhost\n%s\n1.2.3.4 github.com\n%s\n' "$HST_START" "$HST_END" > "$HST_FILE"
+: > "$HST_ACTIONS"
+rc=0; hst_refresh >/dev/null 2>&1 || rc=$?
+eq "刷新返回 0" "$rc" "0"
+eq "刷新调用 systemctl start @refresh" "$(cat "$HST_ACTIONS")" "start ${HST_SYS_UNIT}@refresh.service"
+
+# --- C3. 关闭态 refresh 不应动手（块不存在时）---
+printf '127.0.0.1 localhost\n' > "$HST_FILE"
+: > "$HST_ACTIONS"
+rc=0; hst_refresh >/dev/null 2>&1 || rc=$?
+eq "关闭态 refresh 返回 0" "$rc" "0"
+eq "关闭态不调用 systemctl" "$(wc -l < "$HST_ACTIONS")" "0"
 
 printf '\n=== D. 检测函数 ===\n'
 new_hosts "127.0.0.1 localhost"
@@ -188,7 +180,7 @@ fi
 for needle in 'install -m 0755 -o root -g root' \
               'systemctl daemon-reload' \
               'systemctl enable --now horizon-setup-hosts.timer' \
-              'systemctl start horizon-setup-hosts.service'; do
+              'systemctl start horizon-setup-hosts@on.service'; do
   grep -qF "$needle" "$block" && ok "安装块含 [$needle]" || bad "安装块缺 [$needle]"
 done
 # 只输一次密码
