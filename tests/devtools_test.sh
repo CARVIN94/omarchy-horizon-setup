@@ -43,18 +43,31 @@ cat > "$TMP/bin/pkexec" <<'STUB'
 echo called >> "$PKEXEC_LOG"
 sleep 600
 STUB
+# 桩 systemctl：忠实模拟 root 侧 —— 收到 start <unit>@<inst>.service 就真跑
+# 生成出来的刷新器（用 fixture 的 /etc/hosts 与 hosts 内容），这样断言「块是否
+# 真的恢复」才是验真，而不是验一个只会 append 日志的空桩。
 cat > "$TMP/bin/systemctl" <<'STUB'
 #!/usr/bin/env bash
 echo "$*" >> "$SYSTEMCTL_LOG"
+if [ "${1:-}" = "start" ] && [[ "${2:-}" == *@*.service ]]; then
+  inst="${2##*@}"; inst="${inst%.service}"
+  HORIZON_HOSTS_FILE="$HST_FILE" HORIZON_HOSTS_URL="file://$HST_FETCH" \
+    /usr/bin/bash "$HST_REFRESH_SCRIPT" "$inst" >/dev/null 2>&1
+fi
 exit "${SYSTEMCTL_RC:-0}"
 STUB
-chmod +x "$TMP/bin"/*
+chmod +x "$TMP/bin/systemctl"
 export PATH="$TMP/bin:$PATH"
 export HST_PKEXEC="$TMP/bin/pkexec"
 export HST_TIMEOUT=3
+export HST_FETCH="$TMP/hosts-src.txt"
+export HST_REFRESH_SCRIPT="$TMP/refresh.sh"
 
 source "$ROOT/lib/hosts.sh"
 source "$ROOT/lib/devtools.sh"
+# 生成刷新器（与生产同一来源）
+hst_refresh_script > "$HST_REFRESH_SCRIPT"
+printf '20.205.243.166 github.com\n20.205.243.168 api.github.com\n' > "$HST_FETCH"
 
 printf '\n=== 1. 开关即时响应（回归闸门：不被提权阻塞）===\n'
 t0=$(date +%s)
@@ -99,6 +112,42 @@ dev_write_ghproxy 1 >/dev/null 2>&1
 printf '\n=== 5. 开关状态只看 git（不因 hosts 缺失而假关）===\n'
 if dev_ghproxy_on; then ok "开关状态为开" || true; else bad "开关误判为关"; fi
 hst_on && ok "hosts 块存在" || bad "hosts 块应存在"
+
+
+printf '\n=== 6. 回归闸门：关了必须能开回来（off → on 恢复 hosts 块）===\n'
+# 真 bug：ON 分支曾用 hst_refresh 抄近路，而 hst_refresh 首行
+# `hst_on || return 0` 会让它在「块已被 OFF 删掉」时直接空转 ⇒ 关了就开不回。
+mkdir -p "$TMP/sys-bin"; printf '#!/bin/sh\n' > "$HST_SYS_BIN"; chmod +x "$HST_SYS_BIN"
+printf '[Service]\nExecStart=%s %%i\n' "$HST_SYS_BIN" > "$HST_SYS_UNIT_DIR/${HST_SYS_UNIT}@.service"
+
+# 刷新器必须非空（曾在 source 之前生成 ⇒ 空文件 ⇒ 桩空转，测试假绿）
+[ -s "$HST_REFRESH_SCRIPT" ] && ok "刷新器已生成（非空）" || bad "刷新器为空文件"
+# 从「确定无块」起，避免沿用上一段留下的状态造成假绿
+printf '127.0.0.1 localhost\n' > "$HST_FILE"
+if hst_on; then bad "前置条件错：块本不该存在"; else ok "起点无块"; fi
+
+# 初次 ON：块必须真的出现
+dev_write_ghproxy 1 >/dev/null 2>&1
+if hst_on; then ok "初次 ON 后块已写入"; else bad "初次 ON 后块不存在"; fi
+
+# OFF：块必须被删掉
+: > "$SYSTEMCTL_LOG"
+dev_write_ghproxy 0 >/dev/null 2>&1
+if hst_on; then bad "OFF 后块仍存在（没删掉）"; else ok "OFF 后块已移除"; fi
+eq "OFF 调的是 @off" "$(grep -c "@off.service" "$SYSTEMCTL_LOG" 2>/dev/null || echo 0)" "1"
+
+# ON：块必须回来（这就是被 bug 卡死的那一步）
+: > "$SYSTEMCTL_LOG"
+dev_write_ghproxy 1 >/dev/null 2>&1
+if hst_on; then
+  ok "OFF 后再 ON，块已恢复"
+else
+  bad "OFF 后再 ON，块没有恢复 —— 开关开不回来"
+fi
+eq "ON 调的是 @on（不是 @refresh）" "$(grep -c "@on.service" "$SYSTEMCTL_LOG")" "1"
+eq "ON 没有误用 @refresh" "$(grep -c "@refresh.service" "$SYSTEMCTL_LOG")" "0"
+# 开关状态本身也必须是开
+if dev_ghproxy_on; then ok "开关状态为开"; else bad "开关状态应为开"; fi
 
 printf '\n---------------------------------------\n'
 printf 'PASS=%d FAIL=%d\n' "$PASS" "$FAIL"

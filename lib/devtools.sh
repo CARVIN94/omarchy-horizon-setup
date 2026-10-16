@@ -58,14 +58,13 @@ DEV_HOSTS_ATTEMPT_TIMEOUT="${DEV_HOSTS_ATTEMPT_TIMEOUT:-8}"
 dev_write_ghproxy() {
   if [[ "$1" == 1 ]]; then
     git config --global "$DEV_GHPROXY_KEY" "https://github.com/"
-    # 有界尝试：装 root 刷新器 + 每日 timer + 写 hosts。超时/失败都不影响开关。
-    # 若 root 侧组件已装好（用户跑过手动安装块），只做刷新，不重装。
-    # 必须在**当前 shell** 调用：bash -c 起新 shell，看不到已 source 的
-    # 函数，会静默 command not found（真 bug，由 tests/devtools_test 闸门锁住）。
-    # 超时由 hst_write 内部卡在 pkexec 上，故这里不再套 timeout。
-    if [[ -x "$HST_SYS_BIN" ]] && hst_sys_timer_on; then
-      hst_refresh || true
-    elif ! hst_write 1; then
+    # 一律走 hst_write 1（强制 @on 写入）。**不能用 hst_refresh 抄近路**：
+    # hst_refresh 首行是 `hst_on || return 0`（只在「已开启」时刷新，给每日
+    # 定时用）。而开关刚被关掉后块已不存在 ⇒ 它会直接 return 0 什么都不做，
+    # 结果是「关了就再也开不回来」（真 bug，由 off-then-on 闸门锁住）。
+    # 必须在**当前 shell** 调用：bash -c 起新 shell，看不到已 source 的函数，
+    # 会静默 command not found（真 bug，由另一闸门锁住）。
+    if ! hst_write 1; then
       hst_err "git 镜像已开启；hosts 改写未完成（需 root 授权或超时）。可执行: setup.sh hosts-install-block | bash"
     fi
   else
