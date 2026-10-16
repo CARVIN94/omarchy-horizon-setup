@@ -7,13 +7,16 @@
 #
 # 分层：
 #   lib/macos.sh    Mac 习惯：快捷键桥接、自然滚动、剪贴板
-#   lib/devtools.sh 开发环境：npm 换源、GitHub 代理
+#   lib/hosts.sh    GitHub hosts 改写 + 每日定时（读免权限，写走 pkexec）
+#   lib/devtools.sh 开发环境：npm 换源、GitHub 代理（与 hosts 耦合）
 #   lib/firewall.sh 防火墙：ufw 规则的读取与增删（读免权限，写走 pkexec）
 #
 # 用法:
 #   setup.sh status
 #   setup.sh toggle keys|scroll|clip|npm|ghproxy
 #   setup.sh rules
+#   setup.sh update-hosts              # 手动/定时刷新 hosts
+#   setup.sh hosts-install-block       # 输出一次性安装块（配合 sudo 执行）
 #   setup.sh fw-add <port> <proto> <src> <comment> [action]
 #   setup.sh fw-del <port> <proto> <src> <comment> [action]
 set -euo pipefail
@@ -21,6 +24,8 @@ set -euo pipefail
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 # shellcheck source=lib/macos.sh
 source "$HERE/lib/macos.sh"
+# shellcheck source=lib/hosts.sh
+source "$HERE/lib/hosts.sh"
 # shellcheck source=lib/devtools.sh
 source "$HERE/lib/devtools.sh"
 # shellcheck source=lib/firewall.sh
@@ -32,10 +37,13 @@ b() { if "$1"; then echo 1; else echo 0; fi; }
 
 status() {
   # 前五个字段的历史契约保持不变（面板与既有脚本依赖此顺序）。
-  printf 'keys=%s scroll=%s clip=%s npm=%s ghproxy=%s ufw=%s rules=%s\n' \
+  # 前五个字段的历史契约保持不变（面板与既有脚本依赖此顺序）。
+  # 末尾追加 ghhosts/ghtimer：hosts 改写与每日定时的独立状态。
+  printf 'keys=%s scroll=%s clip=%s npm=%s ghproxy=%s ufw=%s rules=%s ghhosts=%s ghtimer=%s\n' \
     "$(b mac_keys_on)" "$(b mac_scroll_on)" "$(b mac_clip_on)" \
     "$(b dev_npm_on)" "$(b dev_ghproxy_on)" \
-    "$(b fw_enabled)" "$(fw_list_merged | wc -l)"
+    "$(b fw_enabled)" "$(fw_list_merged | wc -l)" \
+    "$(b hst_on)" "$(b hst_sys_timer_on)"
 }
 
 # 规则列表：面板消费，每行一条（TAB 分隔）。
@@ -85,6 +93,7 @@ usage:
   setup.sh status
   setup.sh toggle keys|scroll|clip|npm|ghproxy
   setup.sh rules
+  setup.sh update-hosts
   setup.sh fw-add <port> <proto> <src> <comment> [allow|deny|reject|limit]
   setup.sh fw-del <port> <proto> <src> <comment> [allow|deny|reject|limit]
 USAGE
@@ -98,8 +107,20 @@ main() {
     rules)
       rules
       ;;
+    update-hosts)
+      # 供 systemd 每日定时与手动调用；关闭状态下不做任何事。
+      hst_refresh
+      status
+      ;;
+    hosts-install-block)
+      # 输出可粘贴的一次性安装块：装 root 刷新器 + 每日 timer + 立即写 hosts。
+      # 内容即命令，用户 `bash <file>` 执行；不引用插件目录（红线）。
+      hst_emit_install_block
+      ;;
     toggle)
-      do_toggle "${2:-}"
+      # 写入可能失败（如 hosts 提权被拒），但状态必须照实汇报，
+      # 故不让 set -e 在此中断。
+      do_toggle "${2:-}" || true
       status
       ;;
     fw-add)

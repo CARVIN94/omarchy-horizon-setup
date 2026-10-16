@@ -17,10 +17,17 @@ dev_npm_on() {
   [[ -f "$DEV_NPMRC" ]] && grep -q "^registry=${DEV_NPM_MIRROR}\$" "$DEV_NPMRC"
 }
 
-# GitHub 代理：git config --global insteadOf 把 github.com 改写到镜像。
+# GitHub 加速。开关状态只看 git 配置——它是**免密且必成**的，面板点击必须
+# 即时响应。hosts 改写需要 root，而 root 授权（pkexec/polkit）在本机并
+# 不总是可用，若把它算进开关状态，授权一失败开关就「点不动」（真 bug）。
+# hosts 部分的状态独立展示（ghhosts/ghtimer），开启时做**有界尝试**、失败
+# 不阻塞开关。
 dev_ghproxy_on() {
   [[ "$(git config --global --get "$DEV_GHPROXY_KEY" 2>/dev/null)" == "https://github.com/" ]]
 }
+
+# 每日定时状态（面板独立展示）。
+dev_ghproxy_timer_on() { hst_sys_timer_on; }
 
 # ---- 写入 -----------------------------------------------------------------
 
@@ -40,10 +47,28 @@ dev_write_npm_registry() {
   fi
 }
 
+# 开/关 GitHub 代理：git fetch 镜像即时必成；hosts 改写是**有界尝试**，
+# 成功与否都不影响开关（详见 dev_ghproxy_on 的注释）。
+# 开/关 GitHub 加速。
+#   git 部分：免密、即时、必成 —— 开关的成败只由它决定。
+#   hosts 部分：需要 root，做成**有界尝试**（默认 8s），失败只降级不阻塞。
+# 这样面板点击永远有响应，hosts 是否就绪看 ghhosts/ghtimer 两个状态位。
+DEV_HOSTS_ATTEMPT_TIMEOUT="${DEV_HOSTS_ATTEMPT_TIMEOUT:-8}"
+
 dev_write_ghproxy() {
   if [[ "$1" == 1 ]]; then
     git config --global "$DEV_GHPROXY_KEY" "https://github.com/"
+    # 有界尝试：装 root 刷新器 + 每日 timer + 写 hosts。超时/失败都不影响开关。
+    # 若 root 侧组件已装好（用户跑过手动安装块），只做刷新，不重装。
+    if [[ -x "$HST_SYS_BIN" ]] && hst_sys_timer_on; then
+      timeout "$DEV_HOSTS_ATTEMPT_TIMEOUT" bash -c 'hst_refresh' 2>/dev/null || true
+    elif ! timeout "$DEV_HOSTS_ATTEMPT_TIMEOUT" bash -c 'hst_write 1' 2>/dev/null; then
+      hst_err "git 镜像已开启；hosts 改写未完成（需 root 授权）。可执行: setup.sh hosts-install-block | bash"
+    fi
   else
     git config --global --unset "$DEV_GHPROXY_KEY" 2>/dev/null || true
+    if ! timeout "$DEV_HOSTS_ATTEMPT_TIMEOUT" bash -c 'hst_write 0' 2>/dev/null; then
+      hst_err "git 镜像已关闭；hosts 块未移除（需 root 授权）。"
+    fi
   fi
 }

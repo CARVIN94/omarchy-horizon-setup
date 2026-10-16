@@ -60,10 +60,58 @@ $P fw-del 3082 tcp 192.168.0.0/24 'DSH web'   # 精确删除（同样授权）
 | Tab | 内容 | 说明 |
 | --- | --- | --- |
 | **Mac 习惯** | Mac 快捷键、自然滚动、剪贴板快捷键 | 键位、滚动与剪贴板。 |
-| **开发环境** | npm 换源、GitHub 代理 | 包管理与网络。 |
+| **开发环境** | npm 换源、GitHub 加速 | 包管理与网络。 |
 | **防火墙** | ufw 规则列表 + 增删 | 读写分离：读免权限，写走一次授权。 |
 
 头部显示 `已启用/总数` 胶囊徽章；底部在写配置时显示进行中。
+
+### GitHub 代理（git fetch 镜像）
+
+面板开关只做一件事：`git config url.insteadOf` 把 `github.com` 改写到 `gh-proxy.org`。
+免密、即时、必成 —— **开关的成败只由它决定**。push 仍直连 GitHub（镜像是只读的）。
+
+### GitHub hosts 加速（一次性安装，非开关）
+
+把 `github.com` 等域名指向当日可用 IP，源 `hosts.gitcdn.top/hosts.txt`，每天 04:00 自动刷新。
+
+**为什么做成一次性安装而不是开关**：写 `/etc/hosts` 必须 root，而 root 授权
+（pkexec/polkit）并不总是可靠 —— 实测本机 polkit 对 `org.freedesktop.policykit.exec`
+反复 `FAILED to authenticate`。若把它塞进面板开关，授权一失败开关就「点不动」
+（这是真 bug，已修）。故：开关只管 git；hosts 走一次性的 root 安装，装完后
+每日刷新**零密码、零干预**。
+
+安装（粘贴到终端，sudo 缓存 5 分钟故只输一次密码）：
+
+```bash
+bash /tmp/horizon-hosts-install.sh     # 先 cat 看一眼内容再执行
+```
+
+装了什么：
+
+| 路径 | 内容 |
+| --- | --- |
+| `/usr/local/bin/horizon-setup-hosts-refresh` | root 所有的刷新器（root:root 0755） |
+| `/etc/systemd/system/horizon-setup-hosts.service` | oneshot 服务 |
+| `/etc/systemd/system/horizon-setup-hosts.timer` | 每日 04:00，`Persistent=true` |
+
+> **为什么需要每日刷新**：国内访问 `github.com` 的 HTTPS 是**按 SNI 的概率性阻断**
+> （DNS 干净、TCP 常通、TLS 阶段丢包）。实测同一 IP 成功率在 0/5～2/5 之间浮动，
+> 换 IP 只能「挑当时相对好的那个」，无法根治；每日刷新的作用是始终用上较新快照。
+>
+> **安全模型（红线）**：root 侧只执行 **root 所有的二进制**（`install` / `tee` /
+> `systemctl`），**绝不执行用户可写的插件脚本** —— 插件目录用户可写，提权它等于
+> 把「改写本文件」变成 root 执行。刷新器装为 root:root，与插件目录无引用关系
+> （测试里有专门断言「runner 未引用插件目录」）。
+>
+> **输入校验**：抓到的 hosts 内容逐行白名单校验（`IP 主机名`，字段数恰好为 2，
+> IP 在合法范围、主机名只含 `[A-Za-z0-9._-]`），任一非法行**整体拒绝**写入。
+>
+> **接管遗留块**：`/etc/hosts` 里若已有外部工具（maxiaof/github-hosts 等）写的块，
+> 写入时会一并清掉 —— 否则同一域名两条映射，而 hosts 取首个匹配，会让本插件
+> 的条目被旧块遮蔽。
+
+面板底部的 `ghhosts` / `ghtimer` 两个状态位分别表示「hosts 块已写入」和
+「每日定时已启用」，装完安装块后两者都会变 1。
 
 ### 防火墙（ufw）
 

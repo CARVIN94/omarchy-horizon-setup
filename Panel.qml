@@ -43,7 +43,7 @@ Item {
     { key: "npm", label: "npm 换源",
       description: "npm registry 指向 npmmirror，装包走国内镜像", checked: switches.npm },
     { key: "ghproxy", label: "GitHub 代理",
-      description: "clone/fetch 经 gh-proxy.org 加速；push 仍直连 GitHub", checked: switches.ghproxy }
+      description: "git fetch 走 gh-proxy.org 镜像；push 仍直连 GitHub。（hosts 加速需另行一次性安装）", checked: switches.ghproxy }
   ]
 
   readonly property int enabledCount: (switches.keys ? 1 : 0) + (switches.scroll ? 1 : 0)

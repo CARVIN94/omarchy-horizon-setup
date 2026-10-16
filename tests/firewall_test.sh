@@ -169,10 +169,12 @@ printf '\n=== 11. 状态契约：setup.sh status 与 rules 必须自洽 ===\n'
 # 断言真实入口（setup.sh），而不是库里的私有辅助函数——后者一旦改名，
 # 测试仍会通过而面板会坏。
 out=$(bash "$ROOT/setup.sh" status)
-[[ "$out" =~ ^keys=[01]\ scroll=[01]\ clip=[01]\ npm=[01]\ ghproxy=[01]\ ufw=[01]\ rules=[0-9]+$ ]] \
-  && ok "status 格式完整: $out" || bad "status 格式" "$out"
+# 前缀是历史契约；末尾允许附加新字段（ghhosts/ghtimer 等）
+[[ "$out" =~ ^keys=[01]\ scroll=[01]\ clip=[01]\ npm=[01]\ ghproxy=[01]\ ufw=[01]\ rules=[0-9]+ ]] \
+  && ok "status 前缀契约完整" || bad "status 格式" "$out"
+# rules 计数只取数字部分（后面可能跟着其它键）
 eq "status 的 rules 与 setup.sh rules 行数一致" \
-   "$(sed 's/.*rules=//' <<<"$out")" \
+   "$(sed -E 's/.*rules=([0-9]+).*/\1/' <<<"$out")" \
    "$(bash "$ROOT/setup.sh" rules | wc -l)"
 eq "rules 输出列数固定为 7" \
    "$(bash "$ROOT/setup.sh" rules | awk -F'\t' 'NR==1{print NF}')" "7"
