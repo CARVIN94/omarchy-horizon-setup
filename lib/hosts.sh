@@ -111,16 +111,58 @@ valid_line() {
   return 1
 }
 
+# 从 stdin 读 hosts，去掉「本插件的块」与「外部工具的遗留块」，并把尾部
+# 空行收掉，输出到 stdout。
+#
+# 三个真实故障点（都由 tests/hosts_test.sh 用**真实样本**锁住）：
+#  1. 遗留块的起始行**带后缀**，如 `# github-hosts:start  (maxiaof/..., 2026-10-15)`，
+#     故必须**前缀匹配**，全等比较 `$0==l1s` 永远匹配不上 → 遗留块永久残留。
+#  2. 旧写法 `$0==l1e{skip=0;next}` 在 **skip 已经是 0** 时也照样 `next`（不打印），
+#     于是每次刷新都把外部的 end 标记**吞掉**，而 start 又因 1) 不置位，
+#     两者叠加就得到「start+数据永远留着、end 已消失」的畸形状态。
+#  3. 渲染时每次 `printf '\n...'` 追加一个空行，从不收尾 ⇒ 空行逐次堆积。
+# 故改为：整文件先读入内存（hosts 几百行），按「区间」判定丢弃，最后只收
+# 一次尾部空行。
 strip_block() {
   awk -v s="$START" -v e="$END" \
       -v l1s='# github-hosts:start' -v l1e='# github-hosts:end' \
       -v l2s='# Github Hosts Start' -v l2e='# Github Hosts End' \
       -v l3s='# fetch-github-hosts begin' -v l3e='# fetch-github-hosts end' '
-    $0==s{skip=1;next} $0==e{skip=0;next}
-    $0==l1s{skip=1;next} $0==l1e{skip=0;next}
-    $0==l2s{skip=1;next} $0==l2e{skip=0;next}
-    $0==l3s{skip=1;next} $0==l3e{skip=0;next}
-    !skip'
+    { line[NR] = $0 }
+
+    function is_lstart(t) {
+      return index(t, l1s) == 1 || index(t, l2s) == 1 || index(t, l3s) == 1
+    }
+    function is_lend(t) {
+      return index(t, l1e) == 1 || index(t, l2e) == 1 || index(t, l3e) == 1
+    }
+
+    END {
+      i = 1
+      while (i <= NR) {
+        # 本插件的块（自己的起止都是**精确**文本，无后缀）
+        if (line[i] == s) {
+          j = i + 1
+          while (j <= NR && line[j] != e) j++
+          i = (j <= NR ? j + 1 : NR + 1)   # 缺 end 时丢到 EOF
+          continue
+        }
+        # 外部遗留块：起始**前缀**匹配（容忍后缀）；到它的 end、或撞上
+        # 本插件的起始时为止。撞上本插件起始不丢，交由上一段处理。
+        if (is_lstart(line[i])) {
+          j = i + 1
+          while (j <= NR && !is_lend(line[j]) && line[j] != s) j++
+          i = j
+          continue
+        }
+        keep[++n] = line[i]
+        i++
+      }
+      # 只收**尾部**空行（中间空行保留，它们是用户文件的可读性分隔）
+      while (n > 0 && keep[n] ~ /^[[:space:]]*$/) n--
+      for (k = 1; k <= n; k++) print keep[k]
+    }
+  '
 }
 
 case "${1:-refresh}" in

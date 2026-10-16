@@ -52,14 +52,17 @@ eq "重复 on 后 end 唯一" "$(count_lines '^# horizon.setup:github-hosts-end$
 eq "github.com 条目唯一" "$(count_lines ' github.com$')" "1"
 
 new_hosts "127.0.0.1 localhost" \
-          "# github-hosts:start" "140.82.112.4 github.com" "# github-hosts:end" \
+          "# github-hosts:start  (maxiaof/github-hosts, 2026-10-15)" \
+          "140.82.112.4 github.com" "185.199.110.133 objects.githubusercontent.com" \
+          "# github-hosts:end" \
           "# Github Hosts Start" "140.82.114.25 github.com" "# Github Hosts End" \
           "# fetch-github-hosts begin" "185.199.108.133 github.com" "# fetch-github-hosts end"
 rc=$(run_root on)
 eq "迁移后 on 返回 0" "$rc" "0"
-eq "maxiaof 遗留块已清" "$(count_lines '^# github-hosts:start$')" "0"
-eq "GitHub Hosts 遗留块已清" "$(count_lines '^# Github Hosts Start$')" "0"
-eq "GitCDN 遗留块已清" "$(count_lines '^# fetch-github-hosts begin$')" "0"
+# 断言**不带 ^...$ 锚定**：真实样本的 start 行带后缀，锚定会漏掉残留
+eq "maxiaof 遗留块已清（含带后缀的行）" "$(count_lines 'github-hosts:start')" "0"
+eq "GitHub Hosts 遗留块已清" "$(count_lines 'Github Hosts Start')" "0"
+eq "GitCDN 遗留块已清" "$(count_lines 'fetch-github-hosts begin')" "0"
 eq "github.com 只一条映射" "$(count_lines ' github.com$')" "1"
 eq "本插件标记存在" "$(count_lines '^# horizon.setup:github-hosts$')" "1"
 
@@ -193,6 +196,38 @@ if diff -q "$TMP/expected-refresh.sh" "$TMP/actual-refresh.sh" >/dev/null 2>&1; 
 else
   bad "块内刷新器与 lib 生成物不一致（出现第二份）"
 fi
+
+
+printf '\n=== 12. 退化态：遗留 start 无 end（真机就是这个状态）===\n'
+# 真机实况：maxiaof 的 end 曾被旧实现的 `$0==l1e{skip=0;next}` 在 skip=0 时
+# 照样 `next` 吞掉，而 start 又因带后缀匹配不上 ⇒ 只剩「start + 数据」。
+# 要求：从该 start 起全部丢弃，且不留任何带后缀的残留。
+new_hosts "# Static table" "127.0.0.1 localhost" "::1 localhost" \
+          "# github-hosts:start  (maxiaof/github-hosts, 2026-10-15)" \
+          "140.82.112.4 github.com" "185.199.110.133 objects.githubusercontent.com"
+rc=$(run_root on)
+eq "退化态 on 返回 0" "$rc" "0"
+eq "带后缀的 start 已清除" "$(count_lines 'github-hosts:start')" "0"
+eq "遗留数据已清除" "$(count_lines 'objects.githubusercontent.com')" "0"
+eq "本插件块已写入" "$(count_lines '^# horizon.setup:github-hosts$')" "1"
+eq "原始行保留" "$(count_lines '^::1 localhost$')" "1"
+
+printf '\n=== 13. 空行不堆积（每次刷新最多一个分隔空行）===\n'
+# 每次渲染都 printf "\n..." 追加一个空行；不收尾就逐次堆积（真机曾到 9 个）。
+new_hosts "127.0.0.1 localhost"
+new_fetch "20.205.243.166 github.com"
+for i in 1 2 3 4 5; do run_root on >/dev/null; done
+blank=$(grep -c '^$' "$TMP/hosts" 2>/dev/null || echo 0)
+if [ "$blank" -le 1 ]; then
+  ok "连跑 5 次空行仍为 ${blank}（≤1，未堆积）"
+else
+  bad "空行堆积到 ${blank}（应 ≤1）"
+fi
+eq "块仍唯一" "$(count_lines '^# horizon.setup:github-hosts$')" "1"
+before=$(sha256sum "$TMP/hosts" | cut -d' ' -f1)
+run_root on >/dev/null
+after=$(sha256sum "$TMP/hosts" | cut -d' ' -f1)
+[ "$before" = "$after" ] && ok "再刷新逐字节稳定" || bad "刷新后内容仍变化"
 
 printf '\n---------------------------------------\n'
 printf 'PASS=%d FAIL=%d\n' "$PASS" "$FAIL"
