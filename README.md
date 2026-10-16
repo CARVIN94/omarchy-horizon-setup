@@ -14,6 +14,7 @@
   <a href="#面板">面板</a> ·
   <a href="#快捷键桥接">快捷键桥接</a> ·
   <a href="#防火墙ufw">防火墙</a> ·
+  <a href="#配套推荐">配套推荐</a> ·
   <a href="#工作原理">原理</a> ·
   <a href="#开发">开发</a> ·
   <a href="#卸载">卸载</a>
@@ -191,6 +192,57 @@ ufw 的删除匹配有两档行为（源码 + 真机 dry-run 双向确认）：
 >
 > 被接管的组合（如 `Super+F` 全宽、`Super+S` scratchpad）随本开关走：
 > 开 = 桥接，关 = Omarchy 默认绑定随 `hyprctl reload` 自动恢复。
+
+## 配套推荐
+
+本插件只负责「输入习惯 / 工具链 / 防火墙」。下面两个项目补齐**中文体验**，
+都是实测在用的：
+
+| 项目 | 说明 | Star |
+| --- | --- | --- |
+| [iDvel/rime-ice](https://github.com/iDvel/rime-ice) | **雾凇拼音** — 长期维护的简体词库，中文输入的首选方案。装完即可打字，`F4` 切换方案与开关功能 | 19.7k |
+| [QueedWen/omarchy-zh-cn](https://github.com/QueedWen/omarchy-zh-cn) | **Omarchy 简体中文界面** — 菜单、通知、天气、快捷键面板中文化，与本插件的中文面板互补 | 31 |
+
+### 雾凇拼音（rime-ice）
+
+先装输入法引擎，再装词库：
+
+```bash
+# 1) 引擎（Arch/Omarchy）
+sudo pacman -S fcitx5-rime        # 连带 librime + librime-data
+
+# 2a) 方式 A：图形安装（最简单）
+#     下载 full.zip → 清空 rime 用户目录 → 解压进去 → 重新部署
+#     大陆镜像（GitHub 直连慢时）：
+#     https://mirror.nju.edu.cn/github-release/iDvel/rime-ice/LatestRelease/full.zip
+
+# 2b) 方式 B：命令行（plum，自动打补丁，可选双拼/语法模型）
+cd ~ && git clone https://github.com/rime/plum.git plum && cd ~/plum
+rime_dir="$HOME/.local/share/fcitx5/rime" bash rime-install iDvel/rime-ice
+
+# 3) 重新部署（改完配置必跑）
+cd "$HOME/.local/share/fcitx5/rime" && rime_deployer --build .
+```
+
+> ⚠️ **`rime_dir` 必须显式指定**：fcitx5 的 rime 用户目录在
+> `~/.local/share/fcitx5/rime`，而 rime-ice 官方示例写的是
+> `~/.config/fcitx5/rime`（iBus / Weasel 那套路径）—— 在 **fcitx5 + Arch**
+> 上照抄会装进一个不存在的目录，然后「装了但打不出字」。
+
+### Omarchy 简体中文界面（omarchy-zh-cn）
+
+```bash
+git clone https://github.com/QueedWen/omarchy-zh-cn.git
+cd omarchy-zh-cn
+./install.sh --dry-run      # 先预览，看它会改哪些文件
+./install.sh                # 正式安装
+omarchy-zh-sync             # 之后与 Omarchy 更新同步
+./uninstall.sh              # 卸载
+```
+
+它从**本机已安装的 Omarchy 源文件**生成**用户级插件克隆**，不改动
+`/usr/share/omarchy`，也不在仓库里重新分发 Omarchy 的源码 —— 卸载干净、
+上游升级不冲突。
 
 ## 工作原理
 
