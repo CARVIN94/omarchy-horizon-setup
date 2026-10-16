@@ -156,6 +156,7 @@ mac_write_textedit_bindings() {
 --   Command+Backspace  → Ctrl+U          删到行首
 --   Command+W          → Ctrl+W          关标签页/文档
 --   Command+Q          → 关闭窗口（WM 动作，见下）
+--   Command+R                    → Ctrl+R          重新加载/刷新
 --   Command+N/S/O/F/Z            → Ctrl+N/S/O/F/Z（新建/保存/打开/查找/撤销）
 --   Command+Shift+Z              → Ctrl+Shift+Z（重做）
 -- 依赖 hl.unbind 接管 Omarchy 占用的组合（全屏、scratchpad、pop window 等）；
@@ -208,11 +209,18 @@ local function bridge_app(combo, mods, key)
   hl.unbind(combo)
   o.bind(combo, "macOS app action", function()
     -- 终端里 Ctrl+W=删词、Ctrl+S=XOFF 冻结，均与 Mac 语义冲突，故跳过。
-    if active_is_terminal() and (key == "W" or key == "S") then return end
+    -- W/S/R 三个在终端里与 Linux 语义冲突，故焦点是终端时不桥接：
+    --  W=删词、S=XOFF 冻结、R=反查历史（reverse-i-search，macOS 同样
+    --  是 Ctrl+R，保留它对 Mac 习惯也成立）。
+    if active_is_terminal() and (key == "W" or key == "S" or key == "R") then return end
     send_once(mods, key)
   end)
 end
 bridge_app("SUPER + W", "CTRL", "W")
+-- Command+R = 重新加载（macOS 的刷新语义）。Omarchy 未占用 SUPER+R
+-- （只有 SUPER+RETURN / SUPER+RIGHT，属不同组合），CTRL+R 在 hyprland 层
+-- 也未被占用，故是纯新增，不覆盖任何原生功能。
+bridge_app("SUPER + R", "CTRL", "R")
 bridge_app("SUPER + N", "CTRL", "N")
 bridge_app("SUPER + S", "CTRL", "S")
 bridge_app("SUPER + O", "CTRL", "O")

@@ -94,9 +94,11 @@ hl = {
 }
 dofile(os.getenv("SIM_BIND"))
 local hasQ, hasW, wSendsCtrlW = false, false, false
+local hasR, rSendsCtrlR = false, false
 for _, b in ipairs(binds) do
   if b.k:find("SUPER %+ Q") and b.d:find("Close window") then hasQ = true end
   if b.k:find("SUPER %+ W") and b.d:find("macOS app action") then hasW = true end
+  if b.k == "SUPER + R" and b.d:find("macOS app action") then hasR = true end
 end
 -- 触发 W，确认它发的是 Ctrl+W（关标签）而非 WM 关窗
 for _, b in ipairs(binds) do
@@ -107,12 +109,28 @@ for _, b in ipairs(binds) do
     if type(s) == "table" and s.mods == "CTRL" and s.key == "W" then wSendsCtrlW = true end
   end
 end
+-- 触发 R，确认它发的是 Ctrl+R（刷新），而非交给 WM 或别的键
+for _, b in ipairs(binds) do
+  if b.k == "SUPER + R" then
+    _G.sent = nil
+    b.f()
+    local v = _G.sent
+    if type(v) == "table" and v.mods == "CTRL" and v.key == "R" then rSendsCtrlR = true end
+  end
+end
 print(hasQ and "Q_OK" or "Q_MISSING")
 print(wSendsCtrlW and "W_SENDS_CTRL_W" or "W_WRONG")
+print(hasR and "R_OK" or "R_MISSING")
+print(rSendsCtrlR and "R_SENDS_CTRL_R" or "R_WRONG")
+print("BINDING_TOTAL=" .. #binds)
 SIM
   out=$(SIM_BIND="$MAC_BIND" lua "$TMP/sim.lua" 2>&1)
   grep -q Q_OK <<<"$out" && ok "Lua 解析通过且 Q 注册为关窗" || bad "Lua 模拟失败" "$out"
   grep -q W_SENDS_CTRL_W <<<"$out" && ok "Cmd+W 实际发送 Ctrl+W（关标签）" || bad "Cmd+W 语义错误" "$out"
+  grep -q R_OK <<<"$out" && ok "SUPER+R 已注册为应用动作" || bad "SUPER+R 未注册" "$out"
+  grep -q R_SENDS_CTRL_R <<<"$out" && ok "Cmd+R 实际发送 Ctrl+R（刷新）" || bad "Cmd+R 语义错误" "$out"
+  total=$(grep -oE 'BINDING_TOTAL=[0-9]+' <<<"$out" | cut -d= -f2)
+  eq "本插件注册绑定总数（面板标称 17 组）" "${total:-0}" "17"
 else
   ok "跳过 Lua 语义断言（无 lua 解释器）"
 fi
@@ -126,6 +144,38 @@ eq "kb_options 只写一次" "$(grep -c 'kb_options' "$MAC_INPUT")" "1"
 mac_write_input_block 0 1 >/dev/null 2>&1
 eq "关 keys 后仍保留 natural_scroll" "$(grep -c 'natural_scroll' "$MAC_INPUT")" "2"
 eq "关闭后 kb_options 已移除" "$(grep -c 'kb_options' "$MAC_INPUT")" "0"
+
+
+printf '\n=== 7. Cmd+R：终端分流（焦点是终端时不该发 Ctrl+R）===\n'
+# 终端里 Ctrl+R 是 bash 反查历史（reverse-i-search），macOS 同样是 Ctrl+R，
+# 所以焦点在终端时**不桥接**、保留终端原生行为 —— 与 W/S 同一理由。
+if command -v lua >/dev/null 2>&1; then
+  cat > "$TMP/sim_term.lua" <<'SIM'
+local binds = {}
+o = { bind = function(keys, desc, fn) binds[#binds+1] = { k = keys, f = fn } end }
+hl = {
+  unbind = function() end,
+  dispatch = function(t) _G.sent = t end, timer = function() end,
+  dsp = { send_key_state = function(t) return t end, window = { close = function() end } },
+  -- 焦点窗口带 terminal 标签 ⇒ active_is_terminal() 应为 true
+  get_active_window = function() return { tags = { "terminal" } } end,
+}
+dofile(os.getenv("SIM_BIND"))
+for _, b in ipairs(binds) do
+  if b.k == "SUPER + R" then
+    _G.sent = nil
+    b.f()
+    if _G.sent ~= nil then print("R_SENT_IN_TERMINAL") else print("R_SKIPPED_IN_TERMINAL") end
+  end
+end
+SIM
+  o2=$(SIM_BIND="$MAC_BIND" lua "$TMP/sim_term.lua" 2>&1)
+  grep -q R_SKIPPED_IN_TERMINAL <<<"$o2" \
+    && ok "终端焦点下 Cmd+R 不发键（保留 Ctrl+R 反查）" \
+    || bad "终端焦点下仍发了键" "$o2"
+else
+  ok "跳过终端分流断言（无 lua 解释器）"
+fi
 
 printf '\n---------------------------------------\n'
 printf 'PASS=%d FAIL=%d\n' "$PASS" "$FAIL"
