@@ -211,13 +211,13 @@ ufw 的删除匹配有两档行为（源码 + 真机 dry-run 双向确认）：
   上游改动了文案字面量则转「已失配」，此时按钮禁用、先更新映射表。
 - **免授权**：写的是插件目录（用户自己的文件），不碰系统配置。
 
-命令行等价操作：
+命令行等价操作（映射表 id 见 `$P zhcn` 首列）：
 
 ```bash
 P=~/.config/omarchy/plugins/horizon.setup/setup.sh
-$P zhcn                    # 各映射表状态（TAB 分隔）
-$P zhcn-apply keystroke-ui # 应用汉化
-$P zhcn-revert keystroke-ui # 还原英文
+$P zhcn                                  # 各映射表状态（TAB 分隔）
+$P zhcn-apply stappmus.activity-monitor  # 应用汉化
+$P zhcn-revert stappmus.activity-monitor # 还原英文
 ```
 
 ## 配套推荐
