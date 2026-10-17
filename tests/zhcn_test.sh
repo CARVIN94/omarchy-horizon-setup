@@ -25,6 +25,8 @@ trap 'rm -rf "$TMP"' EXIT
 export ZH_ROOT="$TMP/zh"
 export ZH_APPLY="$ZH_ROOT/apply-zh.py"
 export ZH_MAPS="$ZH_ROOT/maps"
+# 隔离真实 shell.json：用例自己按需覆盖到 fixture。
+export ZH_SHELL_JSON="$TMP/shell-absent.json"
 mkdir -p "$ZH_MAPS" "$TMP/plugin-a"
 cp "$HOME/.local/share/omarchy-zh-cn/apply-zh.py" "$ZH_APPLY"
 
@@ -104,6 +106,75 @@ if zhcn_apply no.such.id >/dev/null 2>&1; then
 else
   ok "未知 id 非 0 退出"
 fi
+
+# ---- ⑥ 分组聚合：多表一组聚成一行 ------------------------------------------
+mkdir -p "$TMP/plugin-b"
+cat > "$TMP/plugin-b/A.qml" <<'EOF'
+Item { text: "Alpha" }
+EOF
+cat > "$TMP/plugin-b/B.qml" <<'EOF'
+Item { text: "Beta" }
+EOF
+cat > "$ZH_MAPS/test.grp-x.json" <<EOF
+{ "id": "test.grp-x", "group": "grp", "root": "$TMP/plugin-b",
+  "replacements": [ { "file": "A.qml", "find": "text: \\"Alpha\\"", "replace": "text: \\"阿尔法\\"", "count": 1 } ] }
+EOF
+cat > "$ZH_MAPS/test.grp-y.json" <<EOF
+{ "id": "test.grp-y", "group": "grp", "root": "$TMP/plugin-b",
+  "replacements": [
+    { "file": "B.qml", "find": "text: \\"Beta\\"", "replace": "text: \\"贝塔\\"", "count": 1 },
+    { "file": "A.qml", "find": "text: \\"Alpha\\"", "replace": "text: \\"阿尔法\\"", "count": 1 }
+  ] }
+EOF
+# keystroke-* 前缀强制归 keystroke 组（即使 group 字段缺席/异写）
+cat > "$ZH_MAPS/keystroke-zz.json" <<EOF
+{ "id": "keystroke-zz", "root": "$TMP/plugin-b",
+  "replacements": [ { "file": "A.qml", "find": "text: \\"Alpha\\"", "replace": "text: \\"阿尔法\\"", "count": 1 } ] }
+EOF
+
+grprow() { zhcn_rows | awk -F'\t' -v id="$1" '$1 == id'; }
+eq "同组多表聚成一行" "$(zhcn_rows | grep -c '^grp	')" "1"
+eq "组合计 = 各表之和" "$(grprow grp | cut -f7)" "3"
+eq "组全 clean 时聚合态=clean" "$(grprow grp | cut -f3)" "clean"
+eq "keystroke-* 前缀强制归 keystroke 组" "$(zhcn_rows | grep -c '^keystroke-zz	')" "0"
+eq "keystroke 组吸收前缀表计数" "$(grprow keystroke | cut -f7)" "1"
+
+zhcn_apply grp >/dev/null
+eq "组 apply 后聚合态=applied" "$(grprow grp | cut -f3)" "applied"
+eq "组 apply 计数正确" "$(grprow grp | cut -f4)" "3"
+zhcn_revert grp >/dev/null
+eq "组 revert 后回 clean" "$(grprow grp | cut -f3)" "clean"
+
+# ---- ⑦ omarchy-shell 组：bar 挂件切换（fixture shell.json）------------------
+export ZH_SHELL_JSON="$TMP/shell.json"
+cat > "$ZH_SHELL_JSON" <<'EOF'
+{
+  "bar": {
+    "layout": {
+      "left": [ { "id": "omarchy.workspaces" } ],
+      "center": [
+        { "id": "omarchy.clock", "format": "HH:mm" },
+        { "id": "omarchy.keyboard-layout" }
+      ],
+      "right": [ { "id": "omarchy.audio" }, { "id": "carvin.weather" } ]
+    }
+  },
+  "disabledPlugins": [ "omarchy.menu" ],
+  "cloneSourceRestores": [ "evindor.keystroke" ]
+}
+EOF
+# 可汉化集里只有 clock/audio/weather 三个出现在 fixture；weather 已是中文。
+eq "系统汉化混合态=mismatch" "$(zhcn_rows | awk -F'\t' '$1=="omarchy-shell"' | cut -f3)" "mismatch"
+zhcn_apply omarchy-shell >/dev/null
+eq "apply 后=applied" "$(zhcn_rows | awk -F'\t' '$1=="omarchy-shell"' | cut -f3)" "applied"
+eq "非挂件字段不动(disabledPlugins)" "$(jq -r '.disabledPlugins[0]' "$ZH_SHELL_JSON")" "omarchy.menu"
+eq "非挂件字段不动(cloneSourceRestores)" "$(jq -r '.cloneSourceRestores[0]' "$ZH_SHELL_JSON")" "evindor.keystroke"
+eq "挂件配置字段不动(clock.format)" "$(jq -r '.bar.layout.center[0].format' "$ZH_SHELL_JSON")" "HH:mm"
+eq "无中文版挂件保留原 id(workspaces)" "$(jq -r '.bar.layout.left[0].id' "$ZH_SHELL_JSON")" "omarchy.workspaces"
+eq "无中文版挂件保留原 id(keyboard-layout)" "$(jq -r '.bar.layout.center[1].id' "$ZH_SHELL_JSON")" "omarchy.keyboard-layout"
+zhcn_revert omarchy-shell >/dev/null
+eq "revert 后回 clean" "$(zhcn_rows | awk -F'\t' '$1=="omarchy-shell"' | cut -f3)" "clean"
+eq "revert 恢复原 id(audio)" "$(jq -r '.bar.layout.right[0].id' "$ZH_SHELL_JSON")" "omarchy.audio"
 
 echo
 echo "zhcn_test: $PASS ok, $FAIL failed"
