@@ -8,10 +8,11 @@ import qs.Ui
 // Horizon Setup 配置面板：全屏 overlay 居中小卡（与剪贴板同形态），
 // 不占顶栏。呼出：omarchy-shell shell toggle horizon.setup（菜单/快捷键）。
 //
-// 三个 Tab 按「这块配置属于谁」分组，而不是按实现方式：
+// 四个 Tab 按「这块配置属于谁」分组，而不是按实现方式：
 //   Mac 习惯   —— 与 macOS 肌肉记忆直接相关
 //   开发环境   —— npm / GitHub，与 Mac 习惯无关
 //   防火墙     —— ufw 规则（读写分离：读免权限，写走 pkexec 授权）
+//   插件汉化   —— 第三方插件显示文案的汉化重放（写插件目录，免权限）
 //
 // 检测/写盘逻辑全部在 setup.sh 与 lib/*.sh，本文件只是展示壳，
 // 不持有任何状态副本。
@@ -30,7 +31,8 @@ Item {
   readonly property var tabs: [
     { value: "mac", label: "Mac 习惯" },
     { value: "dev", label: "开发环境" },
-    { value: "lan", label: "防火墙" }
+    { value: "lan", label: "防火墙" },
+    { value: "zh", label: "插件汉化" }
   ]
 
   readonly property var macItems: [
@@ -236,7 +238,7 @@ Item {
 
               Text {
                 textFormat: Text.PlainText
-                text: "Omarchy · 输入习惯 · 工具链 · 防火墙"
+                text: "Omarchy · 输入习惯 · 工具链 · 防火墙 · 汉化"
                 color: Qt.darker(root.foreground, 1.5)
                 font.family: Style.font.menuFamily
                 font.pixelSize: Style.font.caption
@@ -289,7 +291,9 @@ Item {
             width: parent.width
             implicitHeight: root.activeTab === "lan"
                 ? lanTab.implicitHeight
-                : Math.max(macList.implicitHeight, devList.implicitHeight)
+                : (root.activeTab === "zh"
+                    ? zhTab.implicitHeight
+                    : Math.max(macList.implicitHeight, devList.implicitHeight))
 
             ToggleList {
               id: macList
@@ -326,6 +330,18 @@ Item {
               onBusyStarted: root.busy = true
               onBusyFinished: root.busy = false
               onVisibleChanged: if (visible) refresh()
+            }
+
+            ZhcnTab {
+              id: zhTab
+              width: parent.width
+              height: implicitHeight
+              visible: root.activeTab === "zh"
+              // 同 FirewallTab：busy 单一真相在 Panel，本 Tab 只上报起止。
+              externalBusy: root.busy
+              foreground: root.foreground
+              onBusyStarted: root.busy = true
+              onBusyFinished: root.busy = false
             }
           }
 

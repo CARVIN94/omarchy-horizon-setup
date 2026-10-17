@@ -10,6 +10,7 @@
 #   lib/hosts.sh    GitHub hosts 改写 + 每日定时（读免权限，写走 pkexec）
 #   lib/devtools.sh 开发环境：npm 换源、GitHub 代理（与 hosts 耦合）
 #   lib/firewall.sh 防火墙：ufw 规则的读取与增删（读免权限，写走 pkexec）
+#   lib/zhcn.sh     插件汉化：第三方插件显示文案的状态检测与重放
 #
 # 用法:
 #   setup.sh status
@@ -17,6 +18,9 @@
 #   setup.sh rules
 #   setup.sh update-hosts              # 手动/定时刷新 hosts
 #   setup.sh hosts-install-block       # 输出一次性安装块（配合 sudo 执行）
+#   setup.sh zhcn                      # 汉化映射表状态（TAB 分隔行）
+#   setup.sh zhcn-apply <id>           # 应用汉化
+#   setup.sh zhcn-revert <id>          # 还原英文
 #   setup.sh fw-add <port> <proto> <src> <comment> [action]
 #   setup.sh fw-del <port> <proto> <src> <comment> [action]
 set -euo pipefail
@@ -30,6 +34,8 @@ source "$HERE/lib/hosts.sh"
 source "$HERE/lib/devtools.sh"
 # shellcheck source=lib/firewall.sh
 source "$HERE/lib/firewall.sh"
+# shellcheck source=lib/zhcn.sh
+source "$HERE/lib/zhcn.sh"
 
 mac_ensure_hypr_env
 
@@ -96,6 +102,9 @@ usage:
   setup.sh update-hosts
   setup.sh fw-add <port> <proto> <src> <comment> [allow|deny|reject|limit]
   setup.sh fw-del <port> <proto> <src> <comment> [allow|deny|reject|limit]
+  setup.sh zhcn
+  setup.sh zhcn-apply <id>
+  setup.sh zhcn-revert <id>
 USAGE
 }
 
@@ -132,6 +141,20 @@ main() {
       [ $# -ge 5 ] || { usage; exit 2; }
       fw_del "$2" "$3" "$4" "$5" "${6:-allow}"
       status
+      ;;
+    zhcn)
+      # 汉化映射表状态：每行一张表（TAB 分隔），与 rules 同为只读清单。
+      zhcn_rows
+      ;;
+    zhcn-apply)
+      [ -n "${2:-}" ] || { usage; exit 2; }
+      zhcn_apply "$2"
+      zhcn_rows
+      ;;
+    zhcn-revert)
+      [ -n "${2:-}" ] || { usage; exit 2; }
+      zhcn_revert "$2"
+      zhcn_rows
       ;;
     *)
       usage

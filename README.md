@@ -1,6 +1,6 @@
 <h1 align="center">Horizon Setup</h1>
 
-<p align="center">Omarchy 的输入习惯、工具链与防火墙配置面板</p>
+<p align="center">Omarchy 的输入习惯、工具链、防火墙与插件汉化配置面板</p>
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-10b981?style=flat-square" alt="MIT license"></a>
@@ -13,6 +13,7 @@
   <a href="#快速安装">安装</a> ·
   <a href="#面板">面板</a> ·
   <a href="#快捷键桥接">快捷键桥接</a> ·
+  <a href="#插件汉化">插件汉化</a> ·
   <a href="#防火墙ufw">防火墙</a> ·
   <a href="#配套推荐">配套推荐</a> ·
   <a href="#工作原理">原理</a> ·
@@ -20,10 +21,11 @@
   <a href="#卸载">卸载</a>
 </p>
 
-把输入习惯调成 Mac 手感，并顺手管好包管理、网络代理与 **ufw 防火墙** 的一键面板。
+把输入习惯调成 Mac 手感，并顺手管好包管理、网络代理、**ufw 防火墙**与
+**第三方插件汉化**的一键面板。
 所有开关**可检测、可切换、幂等**——不用再猜「刚才那条命令到底生效没」。
 
-面板是 Omarchy overlay，入口在 **菜单 → 设置**，不占顶栏；内部按用途分三个 Tab。
+面板是 Omarchy overlay，入口在 **菜单 → 设置**，不占顶栏；内部按用途分四个 Tab。
 
 ## 快速安装
 
@@ -56,13 +58,14 @@ $P fw-del 3082 tcp 192.168.0.0/24 'DSH web'   # 精确删除（同样授权）
 ## 面板
 
 **菜单 → 设置 → Horizon Setup**，overlay 窗口（`Esc` 或点空白关闭）。
-三个 Tab 按「这块配置属于谁」分组：
+四个 Tab 按「这块配置属于谁」分组：
 
 | Tab | 内容 | 说明 |
 | --- | --- | --- |
 | **Mac 习惯** | Mac 快捷键、自然滚动、剪贴板快捷键 | 键位、滚动与剪贴板。 |
 | **开发环境** | npm 换源、GitHub 加速 | 包管理与网络。 |
 | **防火墙** | ufw 规则列表 + 增删 | 读写分离：读免权限，写走一次授权。 |
+| **插件汉化** | 第三方插件中文文案的汉化/还原 | 只改界面文案，写插件目录，免授权。 |
 
 头部显示 `已启用/总数` 胶囊徽章；底部在写配置时显示进行中。
 
@@ -193,10 +196,34 @@ ufw 的删除匹配有两档行为（源码 + 真机 dry-run 双向确认）：
 > 被接管的组合（如 `Super+F` 全宽、`Super+S` scratchpad）随本开关走：
 > 开 = 桥接，关 = Omarchy 默认绑定随 `hyprctl reload` 自动恢复。
 
+## 插件汉化
+
+给第三方 Omarchy 插件（如 `evindor.keystroke`、`stappmus.activity-monitor`）
+的**显示文案**一键汉化。只改界面文案：命令触发词、示例命令、存档枚举值、
+关键词与标识符一律保持原样，功能零变化。
+
+- **映射表驱动**：文案以「精确片段 + 期望次数」存放在
+  `~/.local/share/omarchy-zh-cn/maps/*.json`，应用器
+  `~/.local/share/omarchy-zh-cn/apply-zh.py` 幂等执行；
+  任何一条失配则**整体拒绝**，绝不半应用。
+- **检测即真相**：状态每次实读映射表与插件源码——`未汉化 / 已汉化 / 已失配`。
+  上游 `git pull` 把英文带回来即转「未汉化」，重新点汉化即可；
+  上游改动了文案字面量则转「已失配」，此时按钮禁用、先更新映射表。
+- **免授权**：写的是插件目录（用户自己的文件），不碰系统配置。
+
+命令行等价操作：
+
+```bash
+P=~/.config/omarchy/plugins/horizon.setup/setup.sh
+$P zhcn                    # 各映射表状态（TAB 分隔）
+$P zhcn-apply keystroke-ui # 应用汉化
+$P zhcn-revert keystroke-ui # 还原英文
+```
+
 ## 配套推荐
 
-本插件只负责「输入习惯 / 工具链 / 防火墙」。下面两个项目补齐**中文体验**，
-都是实测在用的：
+本插件只负责「输入习惯 / 工具链 / 防火墙 / 插件汉化」。下面两个项目补齐
+**中文体验**，都是实测在用的：
 
 | 项目 | 说明 | Star |
 | --- | --- | --- |
@@ -254,9 +281,11 @@ omarchy-zh-sync             # 之后与 Omarchy 更新同步
 | `lib/macos.sh` | 快捷键、自然滚动、剪贴板（读 `hyprctl` / `bindings.lua`） |
 | `lib/devtools.sh` | npm registry、git `insteadOf` |
 | `lib/firewall.sh` | ufw 规则的解析、校验、增删 |
+| `lib/zhcn.sh` | 插件汉化映射表的状态检测与重放（调 `apply-zh.py`） |
 | `Panel.qml` | overlay 容器、Tab 栏、状态徽章 |
 | `ToggleList.qml` | 一组开关的展示壳 |
 | `FirewallTab.qml` | 防火墙 Tab（表单 + 规则列表） |
+| `ZhcnTab.qml` | 插件汉化 Tab（映射表列表 + 应用/还原） |
 | `RuleList.qml` | 规则列表展示（纯展示，不自带滚动） |
 
 - **检测即真相**：不维护任何状态文件，状态全部从系统/配置实读
