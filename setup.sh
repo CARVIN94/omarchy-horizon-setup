@@ -65,6 +65,7 @@ do_toggle() { # $1=target
       mac_write_input_block "$k" "$s"
       mac_write_selectall_binding "$k"
       mac_write_textedit_bindings "$k"
+      mac_write_media_bindings "$k"
       ;;
     scroll)
       local k s

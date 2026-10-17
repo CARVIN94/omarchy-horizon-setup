@@ -16,11 +16,16 @@ eq()  { if [ "$2" = "$3" ]; then ok "$1"; else bad "$1" "expected=[$3] actual=[$
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-# 桩：hyprctl 只需 version 成功，reload 无副作用
+# 桩：hyprctl 只需 version/getoption 可用，reload 无副作用。
+# getoption 恒回 altwin:swap_alt_win：让 mac_keys_on 的 kb_options 一关恒真，
+# 就绪判定只剩「三个标记块是否齐备」可观察（mac_bool_on 仍因非 bool 而为假）。
 mkdir -p "$TMP/bin"
 cat > "$TMP/bin/hyprctl" <<'STUB'
 #!/bin/sh
-[ "${1:-}" = version ] && { echo "Hyprland, stub"; exit 0; }
+case "${1:-}" in
+  version)   echo "Hyprland, stub"; exit 0 ;;
+  getoption) echo "str: altwin:swap_alt_win"; exit 0 ;;
+esac
 exit 0
 STUB
 chmod +x "$TMP/bin/hyprctl"
@@ -176,6 +181,89 @@ SIM
 else
   ok "跳过终端分流断言（无 lua 解释器）"
 fi
+
+printf '\n=== 8. 音量三键 Super+F10/F11/F12（Mac 顶排语义）===\n'
+# 关键契约：F10=静音、F11=减、F12=增，且动作走 Omarchy 自带音量命令
+# （与 XF86 媒体键同源，带 OSD），锁屏可用、减/增可长按连调。
+mac_write_media_bindings 1 >/dev/null 2>&1
+eq "媒体块成对出现" "$(count '^-- horizon.setup:media-key$')/$(count '^-- horizon.setup:media-key-end$')" "1/1"
+eq "F10 = 静音（mute-toggle）" "$(count 'o.bind("SUPER + F10", "Mute", "omarchy-audio-output-volume mute-toggle"')" "1"
+eq "F11 = 音量减（lower）" "$(count 'o.bind("SUPER + F11", "Volume down", "omarchy-audio-output-volume lower"')" "1"
+eq "F12 = 音量增（raise）" "$(count 'o.bind("SUPER + F12", "Volume up", "omarchy-audio-output-volume raise"')" "1"
+# 方向不能反（F11/F12 若互换会「按加变减」）：lower 必须只在 F11 行、raise 只在 F12 行
+eq "lower 只出现在 F11 行" "$(grep -c 'F11", "Volume down", "omarchy-audio-output-volume lower' "$MAC_BIND")" "1"
+eq "raise 只出现在 F12 行" "$(grep -c 'F12", "Volume up", "omarchy-audio-output-volume raise' "$MAC_BIND")" "1"
+eq "三键均锁定锁屏可用" "$(grep -c 'locked = true' "$MAC_BIND")" "3"
+eq "减/增支持长按连调" "$(grep -c 'repeating = true' "$MAC_BIND")" "2"
+
+printf '\n=== 8b. 音量块幂等 / 关闭 / 升级 ===\n'
+for _ in 1 2 3; do mac_write_media_bindings 1 >/dev/null 2>&1; done
+eq "重复开启后块仍唯一" "$(count '^-- horizon.setup:media-key$')" "1"
+eq "F10 仍只一条" "$(count 'SUPER + F10')" "1"
+# 升级路径：块由上次开启写下，内容可能过时——必须整块重写而非跳过
+write 'o.bind("SUPER + RETURN", "Terminal", "foot")' \
+      '-- horizon.setup:media-key' \
+      '-- 旧版本：F11/F12 方向写反' \
+      'o.bind("SUPER + F11", "Volume up", "omarchy-audio-output-volume raise", { locked = true })' \
+      'o.bind("SUPER + F12", "Volume down", "omarchy-audio-output-volume lower", { locked = true })' \
+      '-- horizon.setup:media-key-end'
+mac_write_media_bindings 1 >/dev/null 2>&1
+eq "升级后旧的反向绑定已清除" "$(grep -c 'F11", "Volume up"' "$MAC_BIND")" "0"
+eq "升级后 F11 为减" "$(count 'o.bind("SUPER + F11", "Volume down", "omarchy-audio-output-volume lower"')" "1"
+eq "升级后块仍唯一" "$(count '^-- horizon.setup:media-key$')" "1"
+mac_write_media_bindings 0 >/dev/null 2>&1
+eq "关闭后媒体块消失" "$(count 'horizon.setup:media-key')" "0"
+eq "关闭后既有绑定保留" "$(count 'SUPER + RETURN')" "1"
+
+if command -v lua >/dev/null 2>&1; then
+  mac_write_media_bindings 1 >/dev/null 2>&1
+  cat > "$TMP/sim_media.lua" <<'SIM'
+local binds = {}
+o = { bind = function(keys, desc, cmd, opts) binds[#binds+1] = { k = keys, d = desc, c = cmd, o = opts } end }
+hl = { unbind = function() end, dispatch = function() end, timer = function() end,
+       dsp = { send_key_state = function(t) return t end, window = { close = function() end } },
+       get_active_window = function() return nil end }
+dofile(os.getenv("SIM_BIND"))
+local seen, media = {}, 0
+for _, b in ipairs(binds) do
+  if b.k:match("^SUPER %+ F1[012]$") then media = media + 1 end
+  if b.k == "SUPER + F10" then
+    seen.mute = (b.d == "Mute" and b.c == "omarchy-audio-output-volume mute-toggle" and b.o and b.o.locked == true)
+  elseif b.k == "SUPER + F11" then
+    seen.down = (b.c == "omarchy-audio-output-volume lower" and b.o and b.o.repeating == true and b.o.locked == true)
+  elseif b.k == "SUPER + F12" then
+    seen.up = (b.c == "omarchy-audio-output-volume raise" and b.o and b.o.repeating == true and b.o.locked == true)
+  end
+end
+print(seen.mute and "MUTE_OK" or "MUTE_BAD")
+print(seen.down and "DOWN_OK" or "DOWN_BAD")
+print(seen.up and "UP_OK" or "UP_BAD")
+-- 只数 F10..F12：同文件里还有插件外的既有绑定（如 SUPER+RETURN），不该被媒体块吞掉
+print("MEDIA_BINDS=" .. media)
+print("OTHER_BINDS=" .. (#binds - media))
+SIM
+  o3=$(SIM_BIND="$MAC_BIND" lua "$TMP/sim_media.lua" 2>&1)
+  grep -q MUTE_OK <<<"$o3" && ok "Lua：F10 注册为静音（locked）" || bad "Lua：F10 静音注册错误" "$o3"
+  grep -q DOWN_OK <<<"$o3" && ok "Lua：F11 注册为减音（locked+repeating）" || bad "Lua：F11 注册错误" "$o3"
+  grep -q UP_OK <<<"$o3" && ok "Lua：F12 注册为增音（locked+repeating）" || bad "Lua：F12 注册错误" "$o3"
+  eq "恰好注册 F10/F11/F12 三条" "$(grep -oE 'MEDIA_BINDS=[0-9]+' <<<"$o3" | cut -d= -f2)" "3"
+  eq "同文件既有绑定仍在（未被吞）" "$(grep -oE 'OTHER_BINDS=[0-9]+' <<<"$o3" | cut -d= -f2)" "1"
+else
+  ok "跳过 Lua 语义断言（无 lua 解释器）"
+fi
+
+printf '\n=== 9. keys 就绪判定要求「kb_options + 全选 + 文本编辑 + 音量」齐备 ===\n'
+kstat() { if mac_keys_on; then echo 1; else echo 0; fi; }
+write 'o.bind("SUPER + RETURN", "Terminal", "foot")'
+eq "仅默认绑定 → 未就绪" "$(kstat)" "0"
+mac_write_selectall_binding 1 >/dev/null 2>&1
+eq "有全选仍缺文本编辑/音量 → 未就绪" "$(kstat)" "0"
+mac_write_textedit_bindings 1 >/dev/null 2>&1
+eq "缺音量块 → 未就绪（老用户需按一次开关重建）" "$(kstat)" "0"
+mac_write_media_bindings 1 >/dev/null 2>&1
+eq "四件套齐备 → 就绪" "$(kstat)" "1"
+mac_write_media_bindings 0 >/dev/null 2>&1
+eq "拆掉音量块 → 未就绪" "$(kstat)" "0"
 
 printf '\n---------------------------------------\n'
 printf 'PASS=%d FAIL=%d\n' "$PASS" "$FAIL"

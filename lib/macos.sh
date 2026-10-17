@@ -33,6 +33,8 @@ ASTART='-- horizon.setup:selectall-key'
 AEND='-- horizon.setup:selectall-key-end'
 TSTART='-- horizon.setup:textedit-key'
 TEND='-- horizon.setup:textedit-key-end'
+VSTART='-- horizon.setup:media-key'
+VEND='-- horizon.setup:media-key-end'
 
 # ---- 检测（直接读系统，不缓存）----------------------------------------
 
@@ -41,13 +43,16 @@ mac_bool_on() { hyprctl getoption "$1" 2>/dev/null | grep -q '^bool: true'; }
 mac_selectall_on() { grep -q "^${ASTART}\$" "$MAC_BIND"; }
 mac_textedit_on()  { grep -q "^${TSTART}\$" "$MAC_BIND"; }
 mac_clip_on()      { grep -q "^${CSTART}\$" "$MAC_BIND"; }
+mac_media_on()     { grep -q "^${VSTART}\$" "$MAC_BIND"; }
 
 # Mac 快捷键：物理 Ctrl|Win|Alt 变 Ctrl|Option|Command（只需 Win↔Alt 交换），
-# 且全选、文本编辑 P0 桥接都存在——同属 keys 开关，缺一不算就绪。
+# 且全选、文本编辑 P0 桥接、音量三键都存在——同属 keys 开关，缺一不算就绪。
+# 必须含 media：老用户 keys=开 但块是旧内容时，就绪判定转假 ⇒ 面板显示「关」，
+# 按一次开关即整套重建（含新媒体块），自愈而非静默缺功能。
 mac_keys_on() {
   local v
   v=$(hyprctl getoption input:kb_options 2>/dev/null | sed -n 's/^str: //p')
-  [[ "$v" == *"$MAC_KEYS_OPT"* ]] && mac_selectall_on && mac_textedit_on
+  [[ "$v" == *"$MAC_KEYS_OPT"* ]] && mac_selectall_on && mac_textedit_on && mac_media_on
 }
 
 # 自然滚动：顶层管鼠标滚轮 + touchpad 管触控板，两者都要 true。
@@ -228,6 +233,31 @@ bridge_app("SUPER + F", "CTRL", "F")
 bridge_app("SUPER + Z", "CTRL", "Z")
 bridge_app("SUPER + SHIFT + Z", "CTRL+SHIFT", "Z")
 -- horizon.setup:textedit-key-end
+LUAEOF
+    } >> "$MAC_BIND"
+  fi
+  mac_reload
+}
+
+# 音量三键（macOS 顶排 F10/F11/F12 的语义：静音/减/增）。Super 是 Mac 的
+# Command，故绑 Super+F10..F12；动作直接复用 Omarchy 自带音量命令（与
+# XF86 媒体键同源，带 OSD 反馈），locked=锁屏可用、repeating=长按连续调。
+# 与 textedit 同法：先删旧块再按需重写（升级路径），不依赖「块存在就跳过」。
+# 这三个组合在 Omarchy 默认与本机其它配置里均无既有绑定（已 grep 核对），属纯新增。
+mac_write_media_bindings() {
+  sed -i.bak "/^${VSTART}\$/,/^${VEND}\$/d" "$MAC_BIND" 2>/dev/null && rm -f "$MAC_BIND.bak"
+  if [[ "$1" == 1 ]]; then
+    {
+      cat <<'LUAEOF'
+
+-- horizon.setup:media-key
+-- macOS 音量三键的 Linux 对应（Mac 键盘顶排语义）：
+--   Super+F10 → 静音开关   Super+F11 → 音量减   Super+F12 → 音量增
+-- 复用 Omarchy 音量命令（同 XF86Audio* 键），锁屏可用、支持长按连调。
+o.bind("SUPER + F10", "Mute", "omarchy-audio-output-volume mute-toggle", { locked = true })
+o.bind("SUPER + F11", "Volume down", "omarchy-audio-output-volume lower", { locked = true, repeating = true })
+o.bind("SUPER + F12", "Volume up", "omarchy-audio-output-volume raise", { locked = true, repeating = true })
+-- horizon.setup:media-key-end
 LUAEOF
     } >> "$MAC_BIND"
   fi
