@@ -55,6 +55,10 @@ Item {
     root.busyFinished()
   }
 
+  // 启动即显示本 Tab（或面板重开后 activeTab 未翻转）时 onVisibleChanged
+  // 不触发，规则列表会永远为空——与 ZhcnTab 同款隐患，onCompleted 兜底。
+  Component.onCompleted: refresh()
+
   function refresh() {
     rulesProc.running = false
     rulesProc.running = true

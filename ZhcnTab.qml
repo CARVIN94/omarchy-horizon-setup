@@ -75,6 +75,9 @@ Item {
     opProc.running = true
   }
 
+  // 启动即显示本 Tab（或插件热重载后 visible 未翻转）时 onVisibleChanged
+  // 不触发，rows 会永远为空——实测面板空列表。onCompleted 兜底补一发。
+  Component.onCompleted: refresh()
   onVisibleChanged: if (visible) refresh()
 
   Process {
