@@ -74,6 +74,10 @@ $P fw-del 3082 tcp 192.168.0.0/24 'DSH web'   # 精确删除（同样授权）
 面板开关只做一件事：`git config url.insteadOf` 把 `github.com` 改写到 `gh-proxy.org`。
 免密、即时、必成 —— **开关的成败只由它决定**。push 仍直连 GitHub（镜像是只读的）。
 
+注意它只改写 `git` 自己的流量。`raw.githubusercontent.com` 上的文件
+（脚本 `curl`、包管理器、编辑器插件）**不经这条规则**，整段 IP 挂掉时需手写镜像
+URL —— 详见下面「已知天花板」。
+
 ### GitHub hosts 加速（一次性安装，非开关）
 
 把 `github.com` 等域名指向**当天探活通过的多个 IP**，每天 04:00 自动刷新。
@@ -114,6 +118,22 @@ bash /tmp/horizon-hosts-install.sh     # 先 cat 看一眼内容再执行
 > 见 403/404 也算「TCP+TLS 已成立」），把**所有存活的 IP 写成多行**。
 > 全并行约 4 秒。某域名一个都没探活成功时保留上游原行（宁可赌一次，也不留空）。
 > 逃生阀：`HORIZON_HOSTS_PROBE=0` 关闭探活，退回纯上游快照。
+>
+> **这套方案打不过的那半边（已知天花板）**：`raw.githubusercontent.com` 和
+> `objects.githubusercontent.com` 共用 `185.199.108-111.133` 这一段，实测
+> **四个 IP 会同时全灭**（10:26 与 10:36 各测一轮，均 `000 000 000 000`），
+> 而隔壁 `github.com` 的 `20.205.243.166` 同期从死转活（3 发全 200）。
+> 失效模式不同：前者是整段被端掉，后者是单 IP 死但池子里有活的。
+> ⇒ 探活能让 `github.com` / `api` / `codeload` / `gist` 稳定，但 **`raw` / `objects`
+> 整段失效时 hosts 写几条都没用**（写进去的还是同一段的死 IP）。
+> 这半边只能靠镜像绕过，`git` 侧已由上面的 `insteadOf` 兜住；要直接抓
+> `raw` 内容的场景（脚本 `curl`、包管理器、编辑器插件）请自行改走镜像：
+>
+> ```bash
+> # gh-proxy.org 实测最稳（同一 raw 文件 3/3 全 200，直连 0/3）
+> curl -fsSL https://gh-proxy.org/https://raw.githubusercontent.com/<owner>/<repo>/<ref>/<path>
+> ```
+
 >
 > **安全模型（红线）**：root 侧只执行 **root 所有的二进制**（`install` / `tee` /
 > `systemctl`），**绝不执行用户可写的插件脚本** —— 插件目录用户可写，提权它等于
