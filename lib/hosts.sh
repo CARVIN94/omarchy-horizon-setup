@@ -26,8 +26,6 @@ HST_SYS_UNIT="${HST_SYS_UNIT:-horizon-setup-hosts}"
 HST_SYS_BIN="${HST_SYS_BIN:-/usr/local/bin/horizon-setup-hosts-refresh}"
 HST_SYS_UNIT_DIR="${HST_SYS_UNIT_DIR:-/etc/systemd/system}"
 HST_TIMER_TIME="${HST_TIMER_TIME:-*-*-* 04:00:00}"
-# 提权步骤的超时上限（秒）。留足时间给权限框，同时避免面板永久挂住。
-HST_TIMEOUT="${HST_TIMEOUT:-20}"
 
 hst_err() { printf 'horizon.setup: %s\n' "$*" >&2; }
 

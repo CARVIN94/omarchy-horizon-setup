@@ -58,7 +58,6 @@ exit "${SYSTEMCTL_RC:-0}"
 STUB
 chmod +x "$TMP/bin/systemctl"
 export PATH="$TMP/bin:$PATH"
-export HST_TIMEOUT=3
 export HST_FETCH="$TMP/hosts-src.txt"
 export HST_REFRESH_SCRIPT="$TMP/refresh.sh"
 
