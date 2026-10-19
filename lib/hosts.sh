@@ -323,7 +323,7 @@ echo "===== 安装完成 ====="
 echo -n "timer: "; systemctl is-enabled ${HST_SYS_UNIT}.timer
 echo -n "polkit 规则: "; ls -l /etc/polkit-1/rules.d/99-${HST_SYS_UNIT}.rules >/dev/null 2>&1 && echo 在位 || echo 缺失
 echo -n "hosts 块条数: "; grep -c 'horizon.setup:github-hosts' /etc/hosts
-echo -n "github.com 映射条数（探活已生效则为多条）: "; grep -c ' github.com' /etc/hosts
+echo -n "github.com 映射条数（探活已生效则为多条）: "; grep -cE '^[0-9.]+[[:space:]]+github\.com$' /etc/hosts
 echo
 echo "此后免密自检（应立即成功、无密码框）："
 systemctl start ${HST_SYS_UNIT}@refresh.service && echo "  ★ systemctl start 免密成功"

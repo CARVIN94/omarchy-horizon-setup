@@ -199,6 +199,14 @@ else
   bad "块内刷新器与 lib 生成物不一致（出现第二份）"
 fi
 
+# 自检行报的必须是「github.com 的映射条数」，不能顺带算进 github.community、
+# github-com.s3.amazonaws.com 之类的旁支域名（`.` 在 BRE 里是通配符，会误匹配）。
+printf '20.205.243.166 github.com\n52.217.91.112 github-com.s3.amazonaws.com\n140.82.112.17 github.community\n' > "$TMP/selfcheck"
+n=$(grep -cE '^[0-9.]+[[:space:]]+github\.com$' "$TMP/selfcheck")
+eq "自检行只数 github.com 本域（不误匹配 github.community 等）" "$n" "1"
+grep -qF '^[0-9.]+[[:space:]]+github\.com$' "$block" \
+  && ok "安装块自检行用锚定正则" || bad "安装块自检行仍是宽匹配（会误数旁支域名）"
+
 
 printf '\n=== 12. 退化态：遗留 start 无 end（真机就是这个状态）===\n'
 # 真机实况：maxiaof 的 end 曾被旧实现的 `$0==l1e{skip=0;next}` 在 skip=0 时
