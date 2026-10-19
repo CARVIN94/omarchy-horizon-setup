@@ -20,7 +20,7 @@ dev_npm_on() {
 # GitHub 加速。开关状态只看 git 配置——它是**免密且必成**的，面板点击必须
 # 即时响应。hosts 改写需要 root，而 root 授权（pkexec/polkit）在本机并
 # 不总是可用，若把它算进开关状态，授权一失败开关就「点不动」（真 bug）。
-# hosts 部分的状态独立展示（ghhosts/ghtimer），开启时做**有界尝试**、失败
+# hosts 部分的状态独立展示（ghhosts/ghtimer），开启时的写入失败
 # 不阻塞开关。
 dev_ghproxy_on() {
   [[ "$(git config --global --get "$DEV_GHPROXY_KEY" 2>/dev/null)" == "https://github.com/" ]]
@@ -47,13 +47,11 @@ dev_write_npm_registry() {
   fi
 }
 
-# 开/关 GitHub 代理：git fetch 镜像即时必成；hosts 改写是**有界尝试**，
-# 成功与否都不影响开关（详见 dev_ghproxy_on 的注释）。
 # 开/关 GitHub 加速。
 #   git 部分：免密、即时、必成 —— 开关的成败只由它决定。
-#   hosts 部分：需要 root，做成**有界尝试**（默认 8s），失败只降级不阻塞。
-# 这样面板点击永远有响应，hosts 是否就绪看 ghhosts/ghtimer 两个状态位。
-DEV_HOSTS_ATTEMPT_TIMEOUT="${DEV_HOSTS_ATTEMPT_TIMEOUT:-8}"
+#   hosts 部分：需要 root。已装系统级 timer 时这里只是一次
+#     `systemctl start @on|@off`，实测约 5s（刷新器要抓上游 + 并行探活）。
+#     失败只降级不阻塞，hosts 是否就绪看 ghhosts/ghtimer 两个状态位。
 
 dev_write_ghproxy() {
   if [[ "$1" == 1 ]]; then
