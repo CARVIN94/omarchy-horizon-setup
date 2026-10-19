@@ -118,6 +118,11 @@ valid_line() {
 #   3. 探活后立刻复用「刚探活成功的那个 IP」成功率只有 3/10（TLS 阶段概率性
 #      阻断），故**必须把存活 IP 全部写入**，不能只写最快的那一个。
 # 故：对核心域名并行探活，把存活 IP 全量写进 hosts；探测全灭时保留上游原行兜底。
+# 注意并非所有域名都救得回来（实测三类，详见 README 的「已知天花板」）：
+#   A 单 IP 死、池中有活 → 探活有效（github.com / api / codeload）
+#   B 整段同时死         → 无效（raw / objects 共用 185.199.108-111.133）
+#   C 按域名 SNI 阻断    → 无效（gist 换 7 个 IP 全 reset）
+# B/C 两类探活全灭、走上游兜底，属预期行为，不是 bug。
 POOL_DOMAINS='github.com api.github.com codeload.github.com raw.githubusercontent.com objects.githubusercontent.com gist.github.com'
 
 pool_ips() {
