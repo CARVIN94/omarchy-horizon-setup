@@ -7,7 +7,7 @@
 #
 # 分层：
 #   lib/macos.sh    Mac 习惯：快捷键桥接、自然滚动、剪贴板
-#   lib/hosts.sh    GitHub hosts 改写 + 每日定时（读免权限，写走 pkexec）
+#   lib/hosts.sh    GitHub hosts 改写 + 每日定时（读免权限，装一次 sudo，运行走 systemctl）
 #   lib/devtools.sh 开发环境：npm 换源、GitHub 代理（与 hosts 耦合）
 #   lib/firewall.sh 防火墙：ufw 规则的读取与增删（读免权限，写走 pkexec）
 #   lib/zhcn.sh     插件汉化：第三方插件显示文案的状态检测与重放

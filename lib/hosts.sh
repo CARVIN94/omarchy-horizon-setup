@@ -2,16 +2,17 @@
 # horizon.setup — GitHub hosts 管理（把 github.com 等域名指到可用 IP）。
 #
 # 背景：国内访问 github.com 的 HTTPS 是按 SNI 的概率性阻断（DNS 干净、TCP
-# 常通、TLS 阶段丢包），换 DNS/改 hosts 的 IP 都只能「挑当时相对好的那个」，
-# 无法根治。本模块的作用是每天自动刷新一次 IP，让系统始终用上较新的快照。
+# 常通、TLS 阶段丢包），且各 IP 状态小时级翻转。单条映射实测 0/10，写多条
+# 存活 IP 则 9/10 —— 所以本模块每天探活一次，把所有还活着的 IP 都写进去。
 #
 # 被 setup.sh source，因此这里只定义函数，不执行动作。
 #
 # ---- 安全模型（重要）------------------------------------------------------
-# 写 /etc/hosts 需要 root，但**绝不 pkexec 本插件的脚本**：插件目录用户可写，
+# 写 /etc/hosts 需要 root，但**绝不提权本插件的脚本**：插件目录用户可写，
 # 提权它等于把「改写本文件」变成 root 执行（Omarchy 自己在 omarchy-windows-vm
-# 里明令避免这点）。本模块只 pkexec root 所有的 /usr/bin/cp，传入的数据是
-# 主机名映射表（数据，不是代码），不产生任意代码执行。
+# 里明令避免这点）。做法是：安装阶段用 sudo 执行 root 所有的 /usr/bin/install
+# 与 /usr/bin/tee，把刷新器装成 root:root；此后运行时只用 systemctl 触发该
+# root 刷新器，由 polkit 规则免密放行。全程不执行任何用户可写内容。
 #
 # 取来的 hosts 内容先在无权限侧逐行白名单校验，畸形内容一律拒绝写入。
 
@@ -25,7 +26,6 @@ HST_SYS_UNIT="${HST_SYS_UNIT:-horizon-setup-hosts}"
 HST_SYS_BIN="${HST_SYS_BIN:-/usr/local/bin/horizon-setup-hosts-refresh}"
 HST_SYS_UNIT_DIR="${HST_SYS_UNIT_DIR:-/etc/systemd/system}"
 HST_TIMER_TIME="${HST_TIMER_TIME:-*-*-* 04:00:00}"
-HST_PKEXEC="${HST_PKEXEC:-/usr/bin/pkexec}"
 # 提权步骤的超时上限（秒）。留足时间给权限框，同时避免面板永久挂住。
 HST_TIMEOUT="${HST_TIMEOUT:-20}"
 
@@ -38,8 +38,6 @@ hst_on() {
   [[ -r "$HST_FILE" ]] && grep -qxF "$HST_START" "$HST_FILE"
 }
 
-# $1 = 1 开启 / 0 关闭。一次授权完成：装 root 刷新器 + 装每日 timer + 立即写 hosts
-# （或反向卸载）。运行时一律经 systemctl，由 polkit 规则免密放行。
 # $1 = 1 开启 / 0 关闭。
 # 已安装 ⇒ systemctl start @on|@off（polkit 规则免密，且不执行任何用户可写
 # 脚本——真正干活的是 root:root 的刷新器）。未安装 ⇒ 明确提示先做一次性
@@ -69,12 +67,12 @@ hst_status() {
   if hst_on; then printf 'hosts=1\n'; else printf 'hosts=0\n'; fi
 }
 
-# ---- 安装/卸载系统级定时（一次 root）--------------------------------------
+# ---- 安装系统级定时（一次 sudo）-------------------------------------------
 #
-# 全部 root 侧动作打包进**同一个 pkexec**：polkit 对同一操作内的连续调用有
-# 授权缓存，用户只输一次密码就同时完成「装刷新器 + 装 timer + 立即刷新」。
-# 绝不 pkexec 本插件脚本：这里 pkexec 的是 /usr/bin/bash，参数是嵌在
-# 命令行里的常量脚本路径（root 所有的目标路径），不含任何用户可写内容。
+# 安装块由用户手动粘贴执行（`setup.sh hosts-install-block | bash`），内部
+# 开头 `sudo -v` 缓存一次凭据，于是后续 install/tee/systemctl 都免密。
+# 不走 pkexec：本机 polkit 的 PAM 栈缺失，密码认证恒失败（实测）。
+# 安装块只执行 root 所有的二进制，绝不含用户可写内容。
 
 hst_sys_timer_on() {
   systemctl is-enabled "${HST_SYS_UNIT}.timer" >/dev/null 2>&1
@@ -109,6 +107,87 @@ valid_line() {
   fi
   [[ "$ip" =~ ^[0-9A-Fa-f:]+$ && "$ip" == *:* ]] && return 0
   return 1
+}
+
+# ---- 候选 IP 池 + 探活 ----------------------------------------------------
+#
+# 为什么必须有这一步（都是本机实测，不是推测）：
+#   1. 上游快照与**所有**公共 DNS 对 github.com 都只给 20.205.243.166 一条 A
+#      记录，而该地址会整段死亡。单 IP 钉死 ⇒ 实测 0/10 可用。
+#   2. 同一份 hosts 里给 github.com 写 6 个候选 ⇒ 实测 9/10 可用（glibc 返回
+#      全部地址，客户端逐个 connect，死的被跳过）。差别不在 hosts 写法，只在
+#      「有几条候选」。
+#   3. 探活后立刻复用「刚探活成功的那个 IP」成功率只有 3/10（TLS 阶段概率性
+#      阻断），故**必须把存活 IP 全部写入**，不能只写最快的那一个。
+# 故：对核心域名并行探活，把存活 IP 全量写进 hosts；探测全灭时保留上游原行兜底。
+POOL_DOMAINS='github.com api.github.com codeload.github.com raw.githubusercontent.com objects.githubusercontent.com gist.github.com'
+
+pool_ips() {
+  case "$1" in
+    github.com)   echo "140.82.113.3 140.82.113.4 140.82.112.3 140.82.114.3 140.82.114.4 20.205.243.169 20.205.243.166" ;;
+    api.github.com) echo "20.205.243.168 140.82.113.6 20.205.243.166" ;;
+    codeload.github.com) echo "20.205.243.165 140.82.113.9" ;;
+    raw.githubusercontent.com|objects.githubusercontent.com)
+                  echo "185.199.108.133 185.199.109.133 185.199.110.133 185.199.111.133" ;;
+    gist.github.com) echo "20.205.243.166 140.82.112.3 140.82.113.3" ;;
+    *)            echo "" ;;
+  esac
+}
+
+# 单个 (域名, IP) 探活：--resolve 绕过本机 hosts/解析，直连该 IP 并说该 SNI。
+# 判据含 4xx：403/404 说明 TCP 与 TLS 都已成立，链路是活的；只有连不上/握手
+# 失败（curl 返回 000）才算死。
+probe_one() {
+  local code
+  code=$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 2 --max-time 4 \
+              --resolve "$1:443:$2" "https://$1/" 2>/dev/null) || return 0
+  case "$code" in 200|301|302|403|404) printf '%s %s\n' "$2" "$1" ;; esac
+}
+
+# 全池并行探活，输出 `<ip> <domain>` 行。没有存活项时输出为空。
+probe_pool() {
+  local d ip dir f
+  dir=$(mktemp -d)
+  for d in $POOL_DOMAINS; do
+    for ip in $(pool_ips "$d"); do
+      ( probe_one "$d" "$ip" > "$dir/$d@$ip" ) &
+    done
+  done
+  wait || true
+  for f in "$dir"/*; do
+    [ -s "$f" ] && cat "$f"
+  done
+  rm -rf "$dir"
+  return 0
+}
+
+# stdin = 上游校验过的映射；stdout = 核心域名换成多行存活 IP 的映射。
+# 某域名一个存活 IP 都没有时保留上游那一行（宁可赌一次，也不留空）。
+#
+# 末尾必须 return 0：最后一个 read 到 EOF 会返回 1，而调用方是
+# `raw=$(... | apply_probe)`，在上层 set -e 下会把整个刷新器带走。
+apply_probe() {
+  local probed line ip host a
+  local -A alive=()
+  probed=$(probe_pool)
+  while read -r a host; do
+    [ -n "${host:-}" ] && alive["$host"]+="$a"$'\n'
+  done <<< "$probed"
+
+  while IFS= read -r line; do
+    if [ -z "${line//[[:space:]]/}" ] || [[ "$line" =~ ^[[:space:]]*# ]]; then
+      printf '%s\n' "$line"; continue
+    fi
+    read -r ip host _ <<< "$line"
+    if [ -n "${alive[$host]:-}" ]; then
+      while read -r a; do
+        [ -n "$a" ] && printf '%s %s\n' "$a" "$host"
+      done <<< "${alive[$host]}"
+    else
+      printf '%s\n' "$line"
+    fi
+  done
+  return 0
 }
 
 # 从 stdin 读 hosts，去掉「本插件的块」与「外部工具的遗留块」，并把尾部
@@ -178,6 +257,11 @@ case "${1:-refresh}" in
       [[ "$line" =~ ^[[:space:]]*# ]] && continue
       valid_line "$line" || { echo "horizon.setup: 非法行 $line" >&2; exit 1; }
     done <<< "$raw"
+    # 探活：把核心域名换成「当时真正连得上」的多个 IP。用环境变量可关，
+    # 测试靠它断网（否则每个 fixture 用例都会去 curl 真实网络）。
+    if [ "${HORIZON_HOSTS_PROBE:-1}" = 1 ]; then
+      raw=$(printf '%s\n' "$raw" | apply_probe)
+    fi
     tmp=$(mktemp); chmod 600 "$tmp"
     { strip_block < "$FILE"; printf '\n%s\n%s\n%s\n' "$START" "$raw" "$END"; } > "$tmp"
     mv "$tmp" "$FILE"; chmod 644 "$FILE"
@@ -239,6 +323,7 @@ echo "===== 安装完成 ====="
 echo -n "timer: "; systemctl is-enabled ${HST_SYS_UNIT}.timer
 echo -n "polkit 规则: "; ls -l /etc/polkit-1/rules.d/99-${HST_SYS_UNIT}.rules >/dev/null 2>&1 && echo 在位 || echo 缺失
 echo -n "hosts 块条数: "; grep -c 'horizon.setup:github-hosts' /etc/hosts
+echo -n "github.com 映射条数（探活已生效则为多条）: "; grep -c ' github.com' /etc/hosts
 echo
 echo "此后免密自检（应立即成功、无密码框）："
 systemctl start ${HST_SYS_UNIT}@refresh.service && echo "  ★ systemctl start 免密成功"

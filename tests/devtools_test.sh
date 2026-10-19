@@ -51,14 +51,13 @@ cat > "$TMP/bin/systemctl" <<'STUB'
 echo "$*" >> "$SYSTEMCTL_LOG"
 if [ "${1:-}" = "start" ] && [[ "${2:-}" == *@*.service ]]; then
   inst="${2##*@}"; inst="${inst%.service}"
-  HORIZON_HOSTS_FILE="$HST_FILE" HORIZON_HOSTS_URL="file://$HST_FETCH" \
+  HORIZON_HOSTS_PROBE=0 HORIZON_HOSTS_FILE="$HST_FILE" HORIZON_HOSTS_URL="file://$HST_FETCH" \
     /usr/bin/bash "$HST_REFRESH_SCRIPT" "$inst" >/dev/null 2>&1
 fi
 exit "${SYSTEMCTL_RC:-0}"
 STUB
 chmod +x "$TMP/bin/systemctl"
 export PATH="$TMP/bin:$PATH"
-export HST_PKEXEC="$TMP/bin/pkexec"
 export HST_TIMEOUT=3
 export HST_FETCH="$TMP/hosts-src.txt"
 export HST_REFRESH_SCRIPT="$TMP/refresh.sh"

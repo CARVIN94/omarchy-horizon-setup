@@ -2,12 +2,13 @@
 # horizon.setup — hosts 管理层测试。
 #
 # 被测对象是**当前契约**：lib/hosts.sh 只负责「生成 root 刷新器 + 生成 unit 文件
-# + 把它们交给一次 pkexec」，真正的 hosts 写入逻辑在 root 脚本里（装成
-# root:root）。因此这里测两层：
+# + 生成一次性安装块」，真正的 hosts 写入逻辑在 root 脚本里（装成 root:root）。
+# 因此这里测两层：
 #   A. root 刷新器脚本（fixture 化 /etc/hosts，直接跑，零权限）
-#   B. lib 侧的生成与调用（pkexec/install/systemctl 用桩替换，只碰临时目录）
+#   B. lib 侧的生成与调用（systemctl 用桩替换，只碰临时目录）
 #
-# 不联网（file:// fixture）、不提权（桩 pkexec）、不碰真实 /etc/hosts。
+# 不联网（file:// fixture + 桩 curl，且 HORIZON_HOSTS_PROBE=0 断探活）、
+# 不提权（从不真跑安装块）、不碰真实 /etc/hosts。
 #
 # 运行：bash tests/hosts_test.sh
 set -uo pipefail
@@ -30,7 +31,8 @@ hst_refresh_script > "$TMP/refresh.sh"
 bash -n "$TMP/refresh.sh" && ok "root 刷新器语法可解析" || bad "root 刷新器语法错误"
 ROOT_SCRIPT="$TMP/refresh.sh"
 
-run_root() { HORIZON_HOSTS_FILE="$TMP/hosts" /usr/bin/bash "$ROOT_SCRIPT" "$1" >"$TMP/out" 2>&1; echo $?; }
+# 断网：探活默认开启，但测试必须零联网 ⇒ 一律显式关掉。探活本身另有专测（见 F 段）。
+run_root() { HORIZON_HOSTS_PROBE=0 HORIZON_HOSTS_FILE="$TMP/hosts" /usr/bin/bash "$ROOT_SCRIPT" "$1" >"$TMP/out" 2>&1; echo $?; }
 new_hosts()  { printf '%s\n' "$@" > "$TMP/hosts"; }
 new_fetch()  { printf '%s\n' "$@" > "$TMP/fetch.txt"; }
 count_lines() { grep -c "$1" "$TMP/hosts" 2>/dev/null || true; }
@@ -228,6 +230,91 @@ before=$(sha256sum "$TMP/hosts" | cut -d' ' -f1)
 run_root on >/dev/null
 after=$(sha256sum "$TMP/hosts" | cut -d' ' -f1)
 [ "$before" = "$after" ] && ok "再刷新逐字节稳定" || bad "刷新后内容仍变化"
+
+printf '\n=== 14. 探活：核心域名必须写多个 IP（单 IP 实测 0/10、多 IP 9/10）===\n'
+# 真机实测：上游快照与所有公共 DNS 对 github.com 都只给 20.205.243.166 一条 A，
+# 该地址整段死亡时单 IP hosts 可用率 0/10；同一 hosts 写 6 个候选则 9/10。
+# 故刷新器必须探活并把**存活 IP 全量写入**，只写最优那个不行（探活后立刻复用
+# 同一 IP 成功率仅 3/10）。
+#
+# 探活靠 curl --resolve；这里用桩 curl 同时接管「抓上游」（转给真 curl）与
+# 「探活」（按 $PROBE_ALIVE 决定死活），全程零联网。
+real_curl=$(command -v curl)
+mkdir -p "$TMP/pbin"
+cat > "$TMP/pbin/curl" <<STUBCURL
+#!/usr/bin/env bash
+# 探活调用含 --resolve <host>:443:<ip>；命中 \$PROBE_ALIVE 里的 IP 即算活。
+# 其余调用（抓 file:// 上游）原样转给真 curl。
+for b in "\$@"; do
+  case "\$b" in
+    *:443:*)
+      ip=\${b##*:}
+      grep -qxF "\$ip" "\${PROBE_ALIVE:-/dev/null}" 2>/dev/null && { echo 200; exit 0; }
+      echo 000; exit 0
+      ;;
+  esac
+done
+exec "$real_curl" "\$@"
+STUBCURL
+chmod +x "$TMP/pbin/curl"
+
+# --- 14a. 核心域名有候选池（池子空 ⇒ 探活等于没做）---
+# 只取 case 之前的函数定义：刷新器末尾的 case 会 exit，直接 source 会带走进程。
+awk '/^case /{exit} {print}' "$TMP/refresh.sh" > "$TMP/refresh-fns.sh"
+pool_out=$(/usr/bin/bash -c '
+  source "$1"
+  for d in github.com api.github.com codeload.github.com raw.githubusercontent.com objects.githubusercontent.com gist.github.com; do
+    printf "%s %s\n" "$d" "$(pool_ips "$d" | wc -w)"
+  done' _ "$TMP/refresh-fns.sh" 2>/dev/null)
+gh_n=$(printf '%s\n' "$pool_out" | awk '$1=="github.com"{print $2}')
+if [ "${gh_n:-0}" -ge 2 ]; then ok "github.com 候选池含 ${gh_n} 个 IP（≥2）"; else bad "github.com 候选池仅 ${gh_n:-0} 个（应 ≥2）"; fi
+for d in raw.githubusercontent.com objects.githubusercontent.com api.github.com codeload.github.com; do
+  n=$(printf '%s\n' "$pool_out" | awk -v D="$d" '$1==D{print $2}')
+  if [ "${n:-0}" -ge 2 ]; then ok "${d} 候选池含 ${n} 个 IP（≥2）"; else bad "${d} 候选池仅 ${n:-0} 个（应 ≥2）"; fi
+done
+
+# --- 14b. 存活 IP 全部写入（不是只写一个）---
+new_hosts "127.0.0.1 localhost"
+new_fetch "20.205.243.166 github.com" "185.199.109.133 raw.githubusercontent.com"
+printf '140.82.113.3\n140.82.113.4\n20.205.243.169\n' > "$TMP/alive"
+PROBE_ALIVE="$TMP/alive" HORIZON_HOSTS_PROBE=1 PATH="$TMP/pbin:$PATH" \
+  HORIZON_HOSTS_FILE="$TMP/hosts" HORIZON_HOSTS_URL="file://$TMP/fetch.txt" \
+  /usr/bin/bash "$ROOT_SCRIPT" on >"$TMP/out" 2>&1
+eq "探活开启时 on 返回 0" "$?" "0"
+eq "github.com 写入 3 条存活 IP" "$(count_lines ' github.com$')" "3"
+for ip in 140.82.113.3 140.82.113.4 20.205.243.169; do
+  eq "存活 IP $ip 已写入" "$(count_lines "^$ip github\.com$")" "1"
+done
+eq "死 IP 20.205.243.166 未被写入 github.com" "$(count_lines '^20\.205\.243\.166 github\.com$')" "0"
+eq "raw 无存活项 ⇒ 保留上游原行（兜底不空）" "$(count_lines '^185\.199\.109\.133 raw\.githubusercontent\.com$')" "1"
+
+# --- 14c. 探活全灭 ⇒ 保留上游原行（宁可赌一次也不留空）---
+new_hosts "127.0.0.1 localhost"
+new_fetch "20.205.243.166 github.com"
+: > "$TMP/alive"
+PROBE_ALIVE="$TMP/alive" HORIZON_HOSTS_PROBE=1 PATH="$TMP/pbin:$PATH" \
+  HORIZON_HOSTS_FILE="$TMP/hosts" HORIZON_HOSTS_URL="file://$TMP/fetch.txt" \
+  /usr/bin/bash "$ROOT_SCRIPT" on >"$TMP/out" 2>&1
+eq "全灭时 on 仍返回 0" "$?" "0"
+eq "全灭时保留上游 github.com 行" "$(count_lines '^20\.205\.243\.166 github\.com$')" "1"
+
+# --- 14d. 关闭探活 ⇒ 原样写入上游（测试默认路径，也是逃生阀）---
+new_hosts "127.0.0.1 localhost"
+new_fetch "20.205.243.166 github.com"
+rc=$(run_root on)
+eq "探活关闭时 on 返回 0" "$rc" "0"
+eq "探活关闭时按上游原样写 1 条" "$(count_lines ' github.com$')" "1"
+
+# --- 14e. 探活结果仍需过写的都是合法行（复用 B 段同一闸门，不因探活而放宽）---
+new_hosts "127.0.0.1 localhost"
+new_fetch "1.2.3.4 ok.com" "EVIL; rm -rf /tmp/should-not-exist"
+printf '5.6.7.8\n' > "$TMP/alive"
+PROBE_ALIVE="$TMP/alive" HORIZON_HOSTS_PROBE=1 PATH="$TMP/pbin:$PATH" \
+  HORIZON_HOSTS_FILE="$TMP/hosts" HORIZON_HOSTS_URL="file://$TMP/fetch.txt" \
+  /usr/bin/bash "$ROOT_SCRIPT" on >"$TMP/out" 2>&1
+rc=$?
+[ "$rc" != "0" ] && ok "探活开启时脏输入仍被拒绝" || bad "探活开启时脏输入竟通过"
+eq "探活开启时 hosts 未被污染" "$(count_lines 'EVIL')" "0"
 
 printf '\n---------------------------------------\n'
 printf 'PASS=%d FAIL=%d\n' "$PASS" "$FAIL"

@@ -76,7 +76,7 @@ $P fw-del 3082 tcp 192.168.0.0/24 'DSH web'   # 精确删除（同样授权）
 
 ### GitHub hosts 加速（一次性安装，非开关）
 
-把 `github.com` 等域名指向当日可用 IP，源 `hosts.gitcdn.top/hosts.txt`，每天 04:00 自动刷新。
+把 `github.com` 等域名指向**当天探活通过的多个 IP**，每天 04:00 自动刷新。
 
 **为什么做成一次性安装而不是开关**：写 `/etc/hosts` 必须 root，而 root 授权
 （pkexec/polkit）并不总是可靠 —— 实测本机 polkit 对 `org.freedesktop.policykit.exec`
@@ -98,9 +98,22 @@ bash /tmp/horizon-hosts-install.sh     # 先 cat 看一眼内容再执行
 | `/etc/systemd/system/horizon-setup-hosts.service` | oneshot 服务 |
 | `/etc/systemd/system/horizon-setup-hosts.timer` | 每日 04:00，`Persistent=true` |
 
-> **为什么需要每日刷新**：国内访问 `github.com` 的 HTTPS 是**按 SNI 的概率性阻断**
-> （DNS 干净、TCP 常通、TLS 阶段丢包）。实测同一 IP 成功率在 0/5～2/5 之间浮动，
-> 换 IP 只能「挑当时相对好的那个」，无法根治；每日刷新的作用是始终用上较新快照。
+> **为什么每天探活而不是信上游快照**：国内访问 GitHub 是**按 SNI 的概率性阻断**
+> （DNS 干净、TCP 常通、TLS 阶段丢包），且各 IP 状态**小时级翻转**。实测：
+>
+> - 上游 `hosts.gitcdn.top` 是**静态快照**，`github.com` 长期钉在单个
+>   `20.205.243.166` 上 —— 该 IP 一死，整块 hosts 全废。
+> - 公共 DNS（1.1.1.1 / 8.8.8.8 / 223.5.5.5 / 119.29.29.29）对 `github.com`
+>   **也只返回这一个 A 记录**。所以「删掉 hosts 让它自然解析」同样不通。
+> - 只写单条映射：`0/10` 成功；写 5 条存活 IP：`9/10`。
+> - 探活成功那个 IP 立刻复用：仅 `3/10` —— 因为 TLS 层还会概率性丢。
+>
+> ⇒ 刷新器抓完上游后，对 `github.com` / `api` / `codeload` /
+> `raw.githubusercontent.com` / `objects` / `gist` 六个域名，
+> **并行探测候选 IP 池**（`curl --resolve`，判据 HTTP 200/301/302/403/404，
+> 见 403/404 也算「TCP+TLS 已成立」），把**所有存活的 IP 写成多行**。
+> 全并行约 4 秒。某域名一个都没探活成功时保留上游原行（宁可赌一次，也不留空）。
+> 逃生阀：`HORIZON_HOSTS_PROBE=0` 关闭探活，退回纯上游快照。
 >
 > **安全模型（红线）**：root 侧只执行 **root 所有的二进制**（`install` / `tee` /
 > `systemctl`），**绝不执行用户可写的插件脚本** —— 插件目录用户可写，提权它等于
@@ -111,8 +124,9 @@ bash /tmp/horizon-hosts-install.sh     # 先 cat 看一眼内容再执行
 > IP 在合法范围、主机名只含 `[A-Za-z0-9._-]`），任一非法行**整体拒绝**写入。
 >
 > **接管遗留块**：`/etc/hosts` 里若已有外部工具（maxiaof/github-hosts 等）写的块，
-> 写入时会一并清掉 —— 否则同一域名两条映射，而 hosts 取首个匹配，会让本插件
-> 的条目被旧块遮蔽。
+> 写入时会一并清掉。注意 glibc 对同名多行是**全部返回**而非取首个，所以遗留块
+> 不会「遮蔽」本插件 —— 但它会把自己的**过期 IP** 混进候选集，且每天追加会让
+> 文件无限增长。清掉是为了让候选集只由探活结果决定。
 
 面板底部的 `ghhosts` / `ghtimer` 两个状态位分别表示「hosts 块已写入」和
 「每日定时已启用」，装完安装块后两者都会变 1。
