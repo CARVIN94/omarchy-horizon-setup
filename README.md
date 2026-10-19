@@ -119,20 +119,27 @@ bash /tmp/horizon-hosts-install.sh     # 先 cat 看一眼内容再执行
 > 全并行约 4 秒。某域名一个都没探活成功时保留上游原行（宁可赌一次，也不留空）。
 > 逃生阀：`HORIZON_HOSTS_PROBE=0` 关闭探活，退回纯上游快照。
 >
-> **这套方案打不过的那半边（已知天花板）**：`raw.githubusercontent.com` 和
-> `objects.githubusercontent.com` 共用 `185.199.108-111.133` 这一段，实测
-> **四个 IP 会同时全灭**（10:26 与 10:36 各测一轮，均 `000 000 000 000`），
-> 而隔壁 `github.com` 的 `20.205.243.166` 同期从死转活（3 发全 200）。
-> 失效模式不同：前者是整段被端掉，后者是单 IP 死但池子里有活的。
-> ⇒ 探活能让 `github.com` / `api` / `codeload` / `gist` 稳定，但 **`raw` / `objects`
-> 整段失效时 hosts 写几条都没用**（写进去的还是同一段的死 IP）。
-> 这半边只能靠镜像绕过，`git` 侧已由上面的 `insteadOf` 兜住；要直接抓
+> **这套方案管不到的地方（已知天花板）**：实测有三种互不相同的失效方式，
+> hosts 只对第一种有效。
+>
+> | 失效方式 | 实测证据 | hosts 有用吗 |
+> |---|---|---|
+> | **A. 单 IP 死、池中有活** | `github.com` 的 `.166` 死时，`140.82.113.3`/`.114.3`/`20.205.243.169` 均 200 | ✅ 写多条就稳 |
+> | **B. 整段 IP 同时死** | `raw`/`objects` 共用的 `185.199.108-111.133` 四个 IP 同时全 `000`（10:26、10:36 两轮） | ❌ 写几条都是同一段的死 IP |
+> | **C. 按域名 SNI 阻断** | `gist.github.com` 换 7 个 IP 全 `000`；`curl -v` 显示 ClientHello 发出后 `Recv failure: Connection reset`。**同一批 IP 打 `github.com` 却 200** | ❌ 阻断判据是域名不是 IP |
+>
+> 所以：`github.com` / `api` / `codeload` 靠探活能稳（都属 A）；
+> `raw` / `objects`（B）和 `gist`（C）**换任何 IP、写多少条都没用**。
+> 探活对它们的价值只剩「别把死 IP 写进去浪费超时」，失败时保留上游原行兜底。
+>
+> 这几处只能靠镜像绕过。`git` 侧已由上面的 `insteadOf` 兜住；要直接抓
 > `raw` 内容的场景（脚本 `curl`、包管理器、编辑器插件）请自行改走镜像：
 >
 > ```bash
 > # gh-proxy.org 实测最稳（同一 raw 文件 3/3 全 200，直连 0/3）
 > curl -fsSL https://gh-proxy.org/https://raw.githubusercontent.com/<owner>/<repo>/<ref>/<path>
 > ```
+
 
 >
 > **安全模型（红线）**：root 侧只执行 **root 所有的二进制**（`install` / `tee` /
