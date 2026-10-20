@@ -251,14 +251,26 @@ real_curl=$(command -v curl)
 mkdir -p "$TMP/pbin"
 cat > "$TMP/pbin/curl" <<STUBCURL
 #!/usr/bin/env bash
-# 探活调用含 --resolve <host>:443:<ip>；命中 \$PROBE_ALIVE 里的 IP 即算活。
+# 探活调用含 --resolve <host>:443:<ip>，按两个清单决定回什么：
+#   \$PROBE_ALIVE 里的 IP → 真 GitHub 的应答（带 server: github.com 指纹）
+#   \$PROBE_FAKE  里的 IP → 200 + text/plain "OK"，TCP/TLS 通但不带任何指纹
+# 后者是真实踩过的坑（20.205.243.169）：git 拿到 "OK" 会报
+# "info/refs not valid: is this a git repository?"，而浏览器/gh/curl 首页都正常。
 # 其余调用（抓 file:// 上游）原样转给真 curl。
 for b in "\$@"; do
   case "\$b" in
     *:443:*)
       ip=\${b##*:}
-      grep -qxF "\$ip" "\${PROBE_ALIVE:-/dev/null}" 2>/dev/null && { echo 200; exit 0; }
-      echo 000; exit 0
+      if grep -qxF "\$ip" "\${PROBE_ALIVE:-/dev/null}" 2>/dev/null; then
+        printf 'HTTP/2 200\r\nserver: github.com\r\ncontent-type: text/html; charset=utf-8\r\n\r\n'
+        exit 0
+      fi
+      if grep -qxF "\$ip" "\${PROBE_FAKE:-/dev/null}" 2>/dev/null; then
+        printf 'HTTP/2 200\r\ncontent-type: text/plain\r\nx-github-request-id: STUB\r\n\r\nOK'
+        exit 0
+      fi
+      printf 'HTTP/2 000\r\n\r\n'
+      exit 0
       ;;
   esac
 done
@@ -284,17 +296,34 @@ done
 # --- 14b. 存活 IP 全部写入（不是只写一个）---
 new_hosts "127.0.0.1 localhost"
 new_fetch "20.205.243.166 github.com" "185.199.109.133 raw.githubusercontent.com"
-printf '140.82.113.3\n140.82.113.4\n20.205.243.169\n' > "$TMP/alive"
-PROBE_ALIVE="$TMP/alive" HORIZON_HOSTS_PROBE=1 PATH="$TMP/pbin:$PATH" \
+printf '140.82.113.3\n140.82.113.4\n20.205.243.166\n' > "$TMP/alive"
+: > "$TMP/fake"
+PROBE_FAKE="$TMP/fake" PROBE_ALIVE="$TMP/alive" HORIZON_HOSTS_PROBE=1 PATH="$TMP/pbin:$PATH" \
   HORIZON_HOSTS_FILE="$TMP/hosts" HORIZON_HOSTS_URL="file://$TMP/fetch.txt" \
   /usr/bin/bash "$ROOT_SCRIPT" on >"$TMP/out" 2>&1
 eq "探活开启时 on 返回 0" "$?" "0"
 eq "github.com 写入 3 条存活 IP" "$(count_lines ' github.com$')" "3"
-for ip in 140.82.113.3 140.82.113.4 20.205.243.169; do
+for ip in 140.82.113.3 140.82.113.4 20.205.243.166; do
   eq "存活 IP $ip 已写入" "$(count_lines "^$ip github\.com$")" "1"
 done
-eq "死 IP 20.205.243.166 未被写入 github.com" "$(count_lines '^20\.205\.243\.166 github\.com$')" "0"
+eq "三条存活 IP 全部写入（含上游那条）" "$(count_lines '^20\.205\.243\.166 github\.com$')" "1"
 eq "raw 无存活项 ⇒ 保留上游原行（兜底不空）" "$(count_lines '^185\.199\.109\.133 raw\.githubusercontent\.com$')" "1"
+
+# --- 14f. 假节点（200 但无 GitHub 指纹）必须判死 ---
+# 真机案例：20.205.243.169 的 TCP/TLS/HTTP 全通、回 200 text/plain "OK"，
+# 任何 git 操作都报 `info/refs not valid`。只判状态码的探活会把它写进 hosts，
+# 于是每日刷新后 push 随机失败。这里锁定：无指纹 ⇒ 不写。
+new_hosts "127.0.0.1 localhost"
+new_fetch "20.205.243.166 github.com"
+printf '140.82.113.4\n' > "$TMP/alive"
+printf '20.205.243.169\n' > "$TMP/fake"
+PROBE_FAKE="$TMP/fake" PROBE_ALIVE="$TMP/alive" HORIZON_HOSTS_PROBE=1 PATH="$TMP/pbin:$PATH" \
+  HORIZON_HOSTS_FILE="$TMP/hosts" HORIZON_HOSTS_URL="file://$TMP/fetch.txt" \
+  /usr/bin/bash "$ROOT_SCRIPT" on >"$TMP/out" 2>&1
+eq "假节点存在时 on 仍返回 0" "$?" "0"
+eq "假节点 20.205.243.169 未被写入" "$(count_lines '^20\.205\.243\.169 github\.com$')" "0"
+eq "同域真节点 140.82.113.4 已写入" "$(count_lines '^140\.82\.113\.4 github\.com$')" "1"
+eq "只有真节点被写入（1 条）" "$(count_lines ' github.com$')" "1"
 
 # --- 14c. 探活全灭 ⇒ 保留上游原行（宁可赌一次也不留空）---
 new_hosts "127.0.0.1 localhost"

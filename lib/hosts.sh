@@ -138,13 +138,27 @@ pool_ips() {
 }
 
 # 单个 (域名, IP) 探活：--resolve 绕过本机 hosts/解析，直连该 IP 并说该 SNI。
-# 判据含 4xx：403/404 说明 TCP 与 TLS 都已成立，链路是活的；只有连不上/握手
-# 失败（curl 返回 000）才算死。
+#
+# 判据必须**两层**，只判 HTTP 状态码会放进假节点：
+#   * 状态码：200/301/302/403/404 都算链路成立（403/404 说明 TCP 与 TLS 已过，
+#     只是路径不对）；连不上/握手失败（curl 返回 000）算死。
+#   * 指纹：真 GitHub 的应答必带 `strict-transport-security`、`server: github.com`
+#     或 `etag` 之一；只会回 `text/plain "OK"` 的中转/劫持节点三个都没有。
+#
+# 为什么指纹不可省（真机踩过，实测）：/etc/hosts 里 github.com 的一个候选
+# 20.205.243.169 的 TCP/TLS 全通、HTTP 回 200，但任何 git 请求都只拿到
+# `text/plain "OK"` —— git 于是报 `info/refs not valid: is this a git repository?`，
+# 而浏览器、gh auth、curl 首页全都正常，表面上看不出问题。只看状态码的探活
+# 会把它当活 IP 写进 hosts，于是每天刷新后 push 就随机失败一次。
 probe_one() {
-  local code
-  code=$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 2 --max-time 4 \
+  local hdr code fp
+  hdr=$(curl -sS -o /dev/null -D - --connect-timeout 2 --max-time 4 \
               --resolve "$1:443:$2" "https://$1/" 2>/dev/null) || return 0
-  case "$code" in 200|301|302|403|404) printf '%s %s\n' "$2" "$1" ;; esac
+  code=$(printf '%s\n' "$hdr" | sed -n 's|^HTTP/[0-9.]* \([0-9][0-9][0-9]\).*|\1|p' | tail -1)
+  case "$code" in 200|301|302|403|404) ;; *) return 0 ;; esac
+  fp=$(printf '%s\n' "$hdr" | grep -icE '^(strict-transport-security|etag):|^server: *github\.com')
+  [ "${fp:-0}" -gt 0 ] || return 0
+  printf '%s %s\n' "$2" "$1"
 }
 
 # 全池并行探活，输出 `<ip> <domain>` 行。没有存活项时输出为空。

@@ -119,12 +119,20 @@ bash /tmp/horizon-hosts-install.sh     # 先 cat 看一眼内容再执行
 > 全并行约 4 秒。某域名一个都没探活成功时保留上游原行（宁可赌一次，也不留空）。
 > 逃生阀：`HORIZON_HOSTS_PROBE=0` 关闭探活，退回纯上游快照。
 >
+> **「通」不等于「是 GitHub」——探活必须验指纹**：`20.205.243.169` 的
+> TCP/TLS/HTTP 全通、回 `200`，但任何 git 请求都只拿到 `text/plain "OK"`，
+> git 报 `info/refs not valid: is this a git repository?`；而浏览器、`gh auth`、
+> `curl https://github.com/` 全都正常，从表面完全看不出问题。只判状态码的探活
+> 会把它当活 IP 写进 hosts，于是每天刷新后 push 随机失败。故判据是**两层**：
+> 状态码成立 **且** 应答带 GitHub 指纹（`strict-transport-security` /
+> `etag` / `server: github.com` 之一）；只会回 `OK` 的中转/劫持节点三个都没有。
+>
 > **这套方案管不到的地方（已知天花板）**：实测有三种互不相同的失效方式，
 > hosts 只对第一种有效。
 >
 > | 失效方式 | 实测证据 | hosts 有用吗 |
 > |---|---|---|
-> | **A. 单 IP 死、池中有活** | `github.com` 的 `.166` 死时，`140.82.113.3`/`.114.3`/`20.205.243.169` 均 200 | ✅ 写多条就稳 |
+> | **A. 单 IP 死、池中有活** | `github.com` 的 `.166` 死时，`140.82.113.3`/`.114.3`/`.112.3` 均 200 | ✅ 写多条就稳 |
 > | **B. 整段 IP 同时死** | `raw`/`objects` 共用的 `185.199.108-111.133` 四个 IP 同时全 `000`（10:26、10:36 两轮） | ❌ 写几条都是同一段的死 IP |
 > | **C. 按域名 SNI 阻断** | `gist.github.com` 换 7 个 IP 全 `000`；`curl -v` 显示 ClientHello 发出后 `Recv failure: Connection reset`。**同一批 IP 打 `github.com` 却 200** | ❌ 阻断判据是域名不是 IP |
 >
