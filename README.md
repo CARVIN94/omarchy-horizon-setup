@@ -6,7 +6,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-10b981?style=flat-square" alt="MIT license"></a>
   <a href="https://github.com/Hyprwm/Hyprland"><img src="https://img.shields.io/badge/WM-Hyprland-89b4fa?style=flat-square" alt="Hyprland"></a>
   <a href="https://omarchy.com"><img src="https://img.shields.io/badge/OS-Omarchy-f38ba8?style=flat-square" alt="Omarchy"></a>
-  <a href="#快捷键桥接"><img src="https://img.shields.io/badge/Cmd-17%20%E7%BB%84%E6%A1%A5%E6%8E%A5-10b981?style=flat-square" alt="Cmd bridges"></a>
+  <a href="#快捷键桥接"><img src="https://img.shields.io/badge/Cmd-18%20%E7%BB%84%E6%A1%A5%E6%8E%A5-10b981?style=flat-square" alt="Cmd bridges"></a>
 </p>
 
 <p align="center">
@@ -213,6 +213,7 @@ ufw 的删除匹配有两档行为（源码 + 真机 dry-run 双向确认）：
 | `Cmd+W` | `Ctrl+W` | **关闭标签页/文档**（浏览器关标签、编辑器关文件） |
 | `Cmd+Q` | **关闭窗口** | WM 动作（`window.close`），与焦点应用无关；终端里同样成立 |
 | `Cmd+R` | `Ctrl+R` | **重新加载/刷新**（浏览器、编辑器、IM 通用） |
+| `Cmd+Shift+T` | `Ctrl+Shift+T` | **恢复刚关闭的标签页/页面**（等价于原来的 `Ctrl+Shift+T`） |
 | `Cmd+N / S / O / F` | `Ctrl+N / S / O / F` | 新建 / 保存 / 打开 / 查找 |
 | `Cmd+Z` | `Ctrl+Z` | 撤销 |
 | `Cmd+Shift+Z` | `Ctrl+Shift+Z` | 重做 |
@@ -237,7 +238,9 @@ ufw 的删除匹配有两档行为（源码 + 真机 dry-run 双向确认）：
 > **终端分流**：终端里 `Ctrl+W`=删词、`Ctrl+S`=XOFF 冻结、`Ctrl+R`=反查历史
 > （reverse-i-search，macOS 同样是 Ctrl+R）——三者与各自的 Mac 语义冲突或更有价值，
 > 终端焦点时 `W`/`S`/`R` 不桥接，保留终端原生行为。
-> `Cmd+Q` 是 WM 动作，不参与分流。
+> `Cmd+Q` 是 WM 动作，不参与分流。`Cmd+Shift+T` 也不分流——终端里
+> `Ctrl+Shift+T` 本就是「新建标签页」，与浏览器里「恢复关闭的页面」同属
+> 应用自身的标签语义，原样透传即可。
 >
 > **接管了 Omarchy 原生的 `Super+W`（关窗）**：为符合 Mac 习惯，`Super+W`
 > 被改绑为关标签。平铺 WM 下关整窗请用 `Cmd+Q`。本开关关闭时该原生绑定
@@ -248,6 +251,11 @@ ufw 的删除匹配有两档行为（源码 + 真机 dry-run 双向确认）：
 >
 > 被接管的组合（如 `Super+F` 全宽、`Super+S` scratchpad）随本开关走：
 > 开 = 桥接，关 = Omarchy 默认绑定随 `hyprctl reload` 自动恢复。
+>
+> **升级老配置**：绑定块写进 `~/.config/hypr/bindings.conf` 后不会再自动更新，
+> 所以块里带版本戳（`-- horizon.setup:textedit-key-rev N`）。往块里加/删桥接
+> 就提这个版本号；老用户的块版本对不上 ⇒ 开关判定为「关」，面板点一次即整块
+> 重建，新桥接才真正到手。只改块内容却不提版本号，老用户永远拿不到。
 
 ## 插件汉化
 

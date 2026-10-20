@@ -33,6 +33,9 @@ ASTART='-- horizon.setup:selectall-key'
 AEND='-- horizon.setup:selectall-key-end'
 TSTART='-- horizon.setup:textedit-key'
 TEND='-- horizon.setup:textedit-key-end'
+# 文本编辑块的内容版本。改块内容（增删任何一行桥接）都要提这个数字，
+# 否则老用户手上的旧块仍判「就绪」，永远拿不到新桥接。见 mac_textedit_on。
+TREV='-- horizon.setup:textedit-key-rev 2'
 VSTART='-- horizon.setup:media-key'
 VEND='-- horizon.setup:media-key-end'
 
@@ -41,7 +44,14 @@ VEND='-- horizon.setup:media-key-end'
 mac_bool_on() { hyprctl getoption "$1" 2>/dev/null | grep -q '^bool: true'; }
 
 mac_selectall_on() { grep -q "^${ASTART}\$" "$MAC_BIND"; }
-mac_textedit_on()  { grep -q "^${TSTART}\$" "$MAC_BIND"; }
+# 文本编辑块不能只看起始标记：块是用户上次开启时写下的，标记在而内容旧时若判
+# 「就绪」，面板会显示「开」，新加的桥接（如 Cmd+Shift+T）永远发不到老用户手里。
+# 故块内带一行版本号，判定要求版本号匹配；**改动块内容就必须同步提版本**，
+# 老用户于是判未就绪 ⇒ 面板显示「关」，按一次开关即整块重建。
+mac_textedit_on() {
+  # TREV 本身以 `--` 开头，必须用 `--` 终止选项解析，否则 grep 报 unrecognized option。
+  grep -q "^${TSTART}\$" "$MAC_BIND" && grep -qxF -- "${TREV}" "$MAC_BIND"
+}
 mac_clip_on()      { grep -q "^${CSTART}\$" "$MAC_BIND"; }
 mac_media_on()     { grep -q "^${VSTART}\$" "$MAC_BIND"; }
 
@@ -151,9 +161,8 @@ mac_write_textedit_bindings() {
   sed -i.bak "/^${TSTART}\$/,/^${TEND}\$/d" "$MAC_BIND" 2>/dev/null && rm -f "$MAC_BIND.bak"
   if [[ "$1" == 1 ]]; then
     {
+      printf '\n%s\n%s\n' "$TSTART" "$TREV"
       cat <<'LUAEOF'
-
--- horizon.setup:textedit-key
 -- Mac Command 键输出 Super；Linux 文本光标/删除/应用操作用 Ctrl。桥接如下：
 --   Command+←/→        → Home/End        行首/行尾
 --   Command+Shift+←/→  → Shift+Home/End  选到行首/行尾
@@ -164,6 +173,7 @@ mac_write_textedit_bindings() {
 --   Command+R                    → Ctrl+R          重新加载/刷新
 --   Command+N/S/O/F/Z            → Ctrl+N/S/O/F/Z（新建/保存/打开/查找/撤销）
 --   Command+Shift+Z              → Ctrl+Shift+Z（重做）
+--   Command+Shift+T              → Ctrl+Shift+T（恢复刚关闭的标签页/页面）
 -- 依赖 hl.unbind 接管 Omarchy 占用的组合（全屏、scratchpad、pop window 等）；
 -- 关闭本开关时块被删，默认绑定由 hyprctl reload 自动恢复。
 local function send_once(mods, key)
@@ -232,6 +242,11 @@ bridge_app("SUPER + O", "CTRL", "O")
 bridge_app("SUPER + F", "CTRL", "F")
 bridge_app("SUPER + Z", "CTRL", "Z")
 bridge_app("SUPER + SHIFT + Z", "CTRL+SHIFT", "Z")
+-- Command+Shift+T = 恢复刚关闭的标签页/页面（macOS 里与 Ctrl+Shift+T 同义）。
+-- Ctrl+Shift+T 在 hyprland 层未被占用（Omarchy 的 SUPER+SHIFT+T 也空缺，
+-- 已 grep 默认绑定与 hyprctl binds 双向核对），故为纯新增；终端里
+-- Ctrl+Shift+T 是终端自己的「新建标签页」，与 Mac 语义同样成立，不参与分流。
+bridge_app("SUPER + SHIFT + T", "CTRL+SHIFT", "T")
 -- horizon.setup:textedit-key-end
 LUAEOF
     } >> "$MAC_BIND"

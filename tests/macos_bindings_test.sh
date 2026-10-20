@@ -100,6 +100,7 @@ hl = {
 dofile(os.getenv("SIM_BIND"))
 local hasQ, hasW, wSendsCtrlW = false, false, false
 local hasR, rSendsCtrlR = false, false
+local tSendsCtrlShiftT = false
 for _, b in ipairs(binds) do
   if b.k:find("SUPER %+ Q") and b.d:find("Close window") then hasQ = true end
   if b.k:find("SUPER %+ W") and b.d:find("macOS app action") then hasW = true end
@@ -123,10 +124,20 @@ for _, b in ipairs(binds) do
     if type(v) == "table" and v.mods == "CTRL" and v.key == "R" then rSendsCtrlR = true end
   end
 end
+-- 触发 Shift+T，确认它发的是 Ctrl+Shift+T（恢复关闭的标签页）
+for _, b in ipairs(binds) do
+  if b.k == "SUPER + SHIFT + T" then
+    _G.sent = nil
+    b.f()
+    local v = _G.sent
+    if type(v) == "table" and v.mods == "CTRL+SHIFT" and v.key == "T" then tSendsCtrlShiftT = true end
+  end
+end
 print(hasQ and "Q_OK" or "Q_MISSING")
 print(wSendsCtrlW and "W_SENDS_CTRL_W" or "W_WRONG")
 print(hasR and "R_OK" or "R_MISSING")
 print(rSendsCtrlR and "R_SENDS_CTRL_R" or "R_WRONG")
+print(tSendsCtrlShiftT and "T_SENDS_CTRL_SHIFT_T" or "T_WRONG")
 print("BINDING_TOTAL=" .. #binds)
 SIM
   out=$(SIM_BIND="$MAC_BIND" lua "$TMP/sim.lua" 2>&1)
@@ -134,8 +145,9 @@ SIM
   grep -q W_SENDS_CTRL_W <<<"$out" && ok "Cmd+W 实际发送 Ctrl+W（关标签）" || bad "Cmd+W 语义错误" "$out"
   grep -q R_OK <<<"$out" && ok "SUPER+R 已注册为应用动作" || bad "SUPER+R 未注册" "$out"
   grep -q R_SENDS_CTRL_R <<<"$out" && ok "Cmd+R 实际发送 Ctrl+R（刷新）" || bad "Cmd+R 语义错误" "$out"
+  grep -q T_SENDS_CTRL_SHIFT_T <<<"$out" && ok "Cmd+Shift+T 实际发送 Ctrl+Shift+T（恢复关闭的页面）" || bad "Cmd+Shift+T 语义错误" "$out"
   total=$(grep -oE 'BINDING_TOTAL=[0-9]+' <<<"$out" | cut -d= -f2)
-  eq "本插件注册绑定总数（面板标称 17 组）" "${total:-0}" "17"
+  eq "本插件注册绑定总数（面板标称 18 组）" "${total:-0}" "18"
 else
   ok "跳过 Lua 语义断言（无 lua 解释器）"
 fi
@@ -264,6 +276,24 @@ mac_write_media_bindings 1 >/dev/null 2>&1
 eq "四件套齐备 → 就绪" "$(kstat)" "1"
 mac_write_media_bindings 0 >/dev/null 2>&1
 eq "拆掉音量块 → 未就绪" "$(kstat)" "0"
+
+printf '\n=== 9b. 旧版文本编辑块（标记在、缺 Cmd+Shift+T）必须判未就绪 ===\n'
+# 这是本轮的升级闸门：老用户手上有上一版写下的 textedit 块，标记齐全但内容过时。
+# 若就绪判定只看标记，面板就显示「开」，用户永远拿不到新加的 Cmd+Shift+T。
+# 旧块里带的是上一版最后一条绑定（Cmd+Shift+Z），故以此模拟。
+write 'o.bind("SUPER + RETURN", "Terminal", "foot")' \
+      '-- horizon.setup:textedit-key' \
+      '-- 旧版本：只有到 Cmd+Shift+Z 为止的桥接' \
+      'bridge_app("SUPER + W", "CTRL", "W")' \
+      'bridge_app("SUPER + SHIFT + Z", "CTRL+SHIFT", "Z")' \
+      '-- horizon.setup:textedit-key-end'
+mac_write_selectall_binding 1 >/dev/null 2>&1
+mac_write_media_bindings 1 >/dev/null 2>&1
+eq "旧内容块 → 未就绪（面板显示「关」，按一次即重建）" "$(kstat)" "0"
+mac_write_textedit_bindings 1 >/dev/null 2>&1
+eq "重建后 → 就绪" "$(kstat)" "1"
+eq "重建后旧块无残留（仍唯一）" "$(count '^-- horizon.setup:textedit-key$')" "1"
+eq "重建后 Cmd+Shift+T 已写入" "$(count 'bridge_app("SUPER + SHIFT + T", "CTRL+SHIFT", "T")')" "1"
 
 printf '\n---------------------------------------\n'
 printf 'PASS=%d FAIL=%d\n' "$PASS" "$FAIL"
