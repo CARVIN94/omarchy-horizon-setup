@@ -35,7 +35,7 @@ TSTART='-- horizon.setup:textedit-key'
 TEND='-- horizon.setup:textedit-key-end'
 # 文本编辑块的内容版本。改块内容（增删任何一行桥接）都要提这个数字，
 # 否则老用户手上的旧块仍判「就绪」，永远拿不到新桥接。见 mac_textedit_on。
-TREV='-- horizon.setup:textedit-key-rev 2'
+TREV='-- horizon.setup:textedit-key-rev 3'
 VSTART='-- horizon.setup:media-key'
 VEND='-- horizon.setup:media-key-end'
 
@@ -168,6 +168,7 @@ mac_write_textedit_bindings() {
 --   Command+Shift+←/→  → Shift+Home/End  选到行首/行尾
 --   Command+↑/↓        → Ctrl+Home/End   文档首/尾
 --   Command+Backspace  → Ctrl+U          删到行首
+--   Command+Slash       → Ctrl+Slash      注释/取消注释
 --   Command+W          → Ctrl+W          关标签页/文档
 --   Command+Q          → 关闭窗口（WM 动作，见下）
 --   Command+R                    → Ctrl+R          重新加载/刷新
@@ -193,6 +194,13 @@ bridge("SUPER + SHIFT + RIGHT", "CTRL+SHIFT", "End")
 bridge("SUPER + UP", "CTRL", "Home")
 bridge("SUPER + DOWN", "CTRL", "End")
 bridge("SUPER + BACKSPACE", "CTRL", "U")
+
+-- Command+Slash = 注释/取消注释。macOS 里 Cmd+/ 是编辑器与 IDE 的通用注释键，
+-- Linux 侧对应 Ctrl+/（GTK/VS Code/JetBrains/Neovim 皆然）。
+-- hl.unbind 接管 Omarchy 原生的 SUPER+SLASH=显示器缩放放大；平铺 WM 下
+-- 调显示器缩放请改用菜单里的显示器面板，或 SUPER+ALT+SLASH（缩小仍在）。
+-- 注意 Cmd+Q 已经占了 WM 关窗，本条是发按键而非 WM 动作，与它分工不同。
+bridge("SUPER + SLASH", "CTRL", "SLASH")
 
 -- Command+W = 关闭标签页/文档（浏览器关标签、编辑器关文件）。
 -- macOS 的 Cmd+W 就是这个语义，对应 Linux 应用的 Ctrl+W，与窗口无关；

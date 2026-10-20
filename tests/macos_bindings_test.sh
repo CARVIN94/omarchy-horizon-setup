@@ -133,11 +133,24 @@ for _, b in ipairs(binds) do
     if type(v) == "table" and v.mods == "CTRL+SHIFT" and v.key == "T" then tSendsCtrlShiftT = true end
   end
 end
+-- 触发 Slash，确认它发的是 Ctrl+SLASH（注释/取消注释），且不再触发显示器缩放
+local slashSendsCtrlSlash, slashIsScaling = false, false
+for _, b in ipairs(binds) do
+  if b.k == "SUPER + SLASH" then
+    if b.d and (b.d:find("scaling") or b.d:find("scaling")) then slashIsScaling = true end
+    _G.sent = nil
+    b.f()
+    local v = _G.sent
+    if type(v) == "table" and v.mods == "CTRL" and v.key == "SLASH" then slashSendsCtrlSlash = true end
+  end
+end
 print(hasQ and "Q_OK" or "Q_MISSING")
 print(wSendsCtrlW and "W_SENDS_CTRL_W" or "W_WRONG")
 print(hasR and "R_OK" or "R_MISSING")
 print(rSendsCtrlR and "R_SENDS_CTRL_R" or "R_WRONG")
 print(tSendsCtrlShiftT and "T_SENDS_CTRL_SHIFT_T" or "T_WRONG")
+print(slashSendsCtrlSlash and "SLASH_SENDS_CTRL_SLASH" or "SLASH_WRONG")
+print(slashIsScaling and "SLASH_STILL_SCALING" or "SLASH_NOT_SCALING")
 print("BINDING_TOTAL=" .. #binds)
 SIM
   out=$(SIM_BIND="$MAC_BIND" lua "$TMP/sim.lua" 2>&1)
@@ -146,8 +159,10 @@ SIM
   grep -q R_OK <<<"$out" && ok "SUPER+R 已注册为应用动作" || bad "SUPER+R 未注册" "$out"
   grep -q R_SENDS_CTRL_R <<<"$out" && ok "Cmd+R 实际发送 Ctrl+R（刷新）" || bad "Cmd+R 语义错误" "$out"
   grep -q T_SENDS_CTRL_SHIFT_T <<<"$out" && ok "Cmd+Shift+T 实际发送 Ctrl+Shift+T（恢复关闭的页面）" || bad "Cmd+Shift+T 语义错误" "$out"
+  grep -q SLASH_SENDS_CTRL_SLASH <<<"$out" && ok "Cmd+/ 实际发送 Ctrl+SLASH（注释）" || bad "Cmd+/ 语义错误" "$out"
+  grep -q SLASH_NOT_SCALING <<<"$out" && ok "Cmd+/ 不再落在显示器缩放上" || bad "Cmd+/ 仍是缩放动作" "$out"
   total=$(grep -oE 'BINDING_TOTAL=[0-9]+' <<<"$out" | cut -d= -f2)
-  eq "本插件注册绑定总数（面板标称 18 组）" "${total:-0}" "18"
+  eq "本插件注册绑定总数（面板标称 19 组）" "${total:-0}" "19"
 else
   ok "跳过 Lua 语义断言（无 lua 解释器）"
 fi

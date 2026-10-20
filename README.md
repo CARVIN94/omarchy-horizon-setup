@@ -6,7 +6,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-10b981?style=flat-square" alt="MIT license"></a>
   <a href="https://github.com/Hyprwm/Hyprland"><img src="https://img.shields.io/badge/WM-Hyprland-89b4fa?style=flat-square" alt="Hyprland"></a>
   <a href="https://omarchy.com"><img src="https://img.shields.io/badge/OS-Omarchy-f38ba8?style=flat-square" alt="Omarchy"></a>
-  <a href="#快捷键桥接"><img src="https://img.shields.io/badge/Cmd-18%20%E7%BB%84%E6%A1%A5%E6%8E%A5-10b981?style=flat-square" alt="Cmd bridges"></a>
+  <a href="#快捷键桥接"><img src="https://img.shields.io/badge/Cmd-19%20%E7%BB%84%E6%A1%A5%E6%8E%A5-10b981?style=flat-square" alt="Cmd bridges"></a>
 </p>
 
 <p align="center">
@@ -212,6 +212,7 @@ ufw 的删除匹配有两档行为（源码 + 真机 dry-run 双向确认）：
 | `Cmd+Shift+←/→` | `Shift+Home` / `Shift+End` | 选到行首 / 行尾 |
 | `Cmd+↑/↓` | `Ctrl+Home` / `Ctrl+End` | 文档首 / 尾 |
 | `Cmd+Backspace` | `Ctrl+U` | 删到行首 |
+| `Cmd+/` | `Ctrl+/` | **注释 / 取消注释**（编辑器与 IDE 通用） |
 | `Cmd+A` | `Ctrl+A` | 全选 |
 
 **应用操作（P1）**
@@ -253,6 +254,10 @@ ufw 的删除匹配有两档行为（源码 + 真机 dry-run 双向确认）：
 > **接管了 Omarchy 原生的 `Super+W`（关窗）**：为符合 Mac 习惯，`Super+W`
 > 被改绑为关标签。平铺 WM 下关整窗请用 `Cmd+Q`。本开关关闭时该原生绑定
 > 随 `hyprctl reload` 自动恢复。
+>
+> **接管了 Omarchy 原生的 `Super+/`（显示器缩放放大）**：macOS 的 `Cmd+/`
+> 是注释，故该组合改发 `Ctrl+/`。缩放**缩小**仍在 `Super+Alt+/`，放大可改用
+> 菜单里的显示器面板调整。关闭本开关时 `Super+/` 恢复为缩放。
 >
 > **天花板**：`Option+←/→` 的按词移动无法在 Hyprland 层统一做（Chrome 的
 > `Alt+←` 是后退，桥接会打架），升级路径是 per-app 配置，当前不做。
