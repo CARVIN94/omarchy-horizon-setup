@@ -21,7 +21,8 @@ Item {
 
   property bool opened: false
   property var switches: ({ keys: false, scroll: false, clip: false,
-                         npm: false, ghproxy: false, ufw: false, rules: 0 })
+                         npm: false, ghproxy: false, gtranslate: false,
+                         ufw: false, rules: 0 })
   property bool busy: false
   // 写配置失败时的提示（只来自 stderr）。成功则为空。
   // 下方状态栏优先展示它 —— 否则失败时面板没有任何反馈。
@@ -48,13 +49,16 @@ Item {
     { key: "npm", label: "npm 换源",
       description: "npm registry 指向 npmmirror，装包走国内镜像", checked: switches.npm },
     { key: "ghproxy", label: "GitHub 代理",
-      description: "git fetch 走 gh-proxy.org 镜像；push 仍直连 GitHub。（hosts 加速需另行一次性安装）", checked: switches.ghproxy }
+      description: "git fetch 走 gh-proxy.org 镜像；push 仍直连 GitHub。（hosts 加速需另行一次性安装）", checked: switches.ghproxy },
+    { key: "gtranslate", label: "Google 翻译修复",
+      description: "把 translate.googleapis.com 指到当天真能返回译文的 IP，恢复浏览器网页翻译。需一次性安装。", checked: switches.gtranslate }
   ]
 
   readonly property int enabledCount: (switches.keys ? 1 : 0) + (switches.scroll ? 1 : 0)
       + (switches.clip ? 1 : 0) + (switches.npm ? 1 : 0) + (switches.ghproxy ? 1 : 0)
+      + (switches.gtranslate ? 1 : 0)
       + (switches.ufw ? 1 : 0)
-  readonly property int totalCount: 6
+  readonly property int totalCount: 7
 
   readonly property string setupSh: Qt.resolvedUrl("setup.sh").toString().replace("file://", "")
 
@@ -87,7 +91,8 @@ Item {
   }
 
   function applyStatus(text) {
-    // status 行形如：keys=1 scroll=0 clip=1 npm=1 ghproxy=1 ufw=1 rules=10
+    // status 行形如：
+    // keys=1 scroll=0 clip=1 npm=1 ghproxy=1 ufw=1 rules=10 ghhosts=0 ghtimer=1 gtranslate=0
     var out = String(text).trim()
     var next = {}
     out.split(/\s+/).forEach(function(pair) {

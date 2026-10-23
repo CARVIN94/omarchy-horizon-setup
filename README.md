@@ -63,7 +63,7 @@ $P fw-del 3082 tcp 192.168.0.0/24 'DSH web'   # 精确删除（同样授权）
 | Tab | 内容 | 说明 |
 | --- | --- | --- |
 | **Mac 习惯** | Mac 快捷键、自然滚动、剪贴板快捷键 | 键位、滚动与剪贴板。 |
-| **开发环境** | npm 换源、GitHub 加速 | 包管理与网络。 |
+| **开发环境** | npm 换源、GitHub 加速、Google 翻译修复 | 包管理与网络。 |
 | **防火墙** | ufw 规则列表 + 增删 | 读写分离：读免权限，写走一次授权。 |
 | **插件汉化** | 第三方插件中文文案的汉化/还原 | 只改界面文案，写插件目录，免授权。 |
 
@@ -165,6 +165,80 @@ bash /tmp/horizon-hosts-install.sh     # 先 cat 看一眼内容再执行
 
 面板底部的 `ghhosts` / `ghtimer` 两个状态位分别表示「hosts 块已写入」和
 「每日定时已启用」，装完安装块后两者都会变 1。
+
+### Google 翻译修复（一次性安装，非开关）
+
+把 `translate.googleapis.com` 指到**当前真能返回译文**的 IP，恢复 Chromium /
+Chrome 的网页翻译。与上面的 GitHub hosts 加速同构，但完全独立的单元名、独立的
+标记块与独立的 timer，两者互不覆盖。
+
+**为什么需要它**：Chrome 系浏览器的网页翻译只调 `translate.googleapis.com`。
+该域名在国内被解析到不可用的国外地址（实测 `74.125.x` / `173.194.x` / `192.179.x`
+全部 TCP 超时），于是翻译整体失效 —— 表现为点了翻译没反应，或在
+`chrome://translate-internals` 里一直 pending。
+
+**网上流传的做法今天已失效**（都是本机实测）：
+
+| 流传说法 | 实测结果 |
+| --- | --- |
+| 「ping `google.cn` 拿 IP 写进 hosts」 | `113.108.239.x` 整个 /24 **没有一个** IP 带翻译后端 |
+| 「用 `120.253.255.98`」 | 对 `/translate_a/*` 一律 404，证书是 `upload.video.google.com`，该 GFE 无翻译后端 |
+| 「加一行 hosts 就行」 | 命中节点会漂移：实测同一 IP 十分钟前可用、之后 429/超时 |
+
+真正可用的是少数国家 GFE 节点，且**与 DNS 答案不在同一主机地址**：实测某个
+/24 里 DNS 给的 `.95` 是死的，而 `.101/.138/.139/.148` 可用。命中率极低——
+扫描 `108.177.0.0/16` 约 2800 个地址只出 9 个（约 0.3%）。
+
+**判据是功能级的，不是连通性的**：绝大多数 IP 对 `translate.googleapis.com`
+会回 **200 或 404 但内容是 Google 错误页**（该 GFE 上没有翻译后端）。只看状态码
+会把它们当活节点写进 hosts，翻译依旧坏。故探活要求应答**严格等于**那句译文：
+
+```bash
+curl -s --resolve translate.googleapis.com:443:<ip> \
+  "https://translate.googleapis.com/translate_a/t?client=chrome&sl=en&tl=zh-CN&q=hello"
+# 只有恰好返回 ["你好"] 才算活
+```
+
+这也是本项目在 GitHub 那边学到的同一条教训（「通」不等于「是它」），只是判据
+从响应头指纹换成了真实译文。
+
+**两阶段探活，避免每次刷新都慢**：
+
+1. 快路径 —— 只探**已有线索**（缓存里的上轮命中 + DNS 答案）。常态下它们还活着，
+   实测 **2.6 秒**收工。
+2. 慢路径 —— 线索凑不够 3 个才展开种子段与线索所在 /24 的全部邻居（约 1200 个
+   地址，实测 **100 秒**）。冷启动走这条。
+
+种子段（`108.177.96/98/104/122`、`74.125.20`）是实测扫出来的、反复有节点的
+/24；它们会漂移，但缓存里记的是**上一轮真命中**的 IP，其 /24 会自动进入下一轮
+候选，于是种子失效也能被自动替换，不必改代码。覆盖方式：`HORIZON_GT_SEED`。
+
+**全灭时不写块**（与 GitHub 那套刻意不同）：GitHub 那边上游快照本身常是好 IP，
+留一行兜底有意义；这里兜底只能取 DNS 答案，而 DNS 答案实测就是不可用的
+（`173.194.43.95` 连测三次全 DEAD）。写进去的后果是「块存在 ⇒ 状态位为真 ⇒
+面板显示已开启」，但翻译依旧坏 —— 那是假绿。所以探活全灭时**保持关闭态并报错**。
+
+安装（一次密码，装完每日 04:20 自动刷新）：
+
+```bash
+P=~/.config/omarchy/plugins/horizon.setup/setup.sh
+$P gtranslate-install-block > /tmp/gt-install.sh
+cat /tmp/gt-install.sh     # 先看一眼
+bash /tmp/gt-install.sh
+```
+
+命令行等价操作：
+
+```bash
+$P status                   # 末尾的 gtranslate= 字段
+$P toggle gtranslate        # 开/关
+$P update-gtranslate        # 手动刷新一次
+```
+
+> **已知天花板**：这套只管 `translate.googleapis.com`。整页翻译时浏览器还会请求
+> `translate.google.com`，实测在可用 IP 上该域名能回 200 但**响应不结束**
+> （挂到超时），故不在本模块的 hosts 里写它 —— 写了反而拖慢。若将来上游把整页
+> 翻译改成必须经该域名，本模块需要跟着调整判据。
 
 ### 防火墙（ufw）
 
@@ -372,11 +446,15 @@ omarchy-zh-sync             # 之后与 Omarchy 更新同步
 ## 开发
 
 ```bash
-bash tests/firewall_test.sh    # 防火墙层 82 项断言，用 fixture + 桩件，不碰真机
+bash tests/firewall_test.sh     # 防火墙层，用 fixture + 桩件，不碰真机
+bash tests/hosts_test.sh        # GitHub hosts 层
+bash tests/gtranslate_test.sh   # Google 翻译 hosts 层
 ```
 
 `tests/fixtures/` 是真实机器规则的快照；`tests/fake/` 是 `pkexec`/`ufw` 桩件，
-因此测试**不触发任何授权框、不修改真实防火墙**。
+因此测试**不触发任何授权框、不修改真实防火墙**。`hosts_test.sh` 与
+`gtranslate_test.sh` 同理：`curl`/`getent` 全部用桩件接管，
+**不联网、不写真实 `/etc/hosts`、不跑安装块**。
 
 改 `Panel.qml` 等 QML 后 quickshell 会自动重载本地插件；若没生效：
 
@@ -390,9 +468,23 @@ omarchy-restart-shell
 # 1. 先关掉所有开关（恢复默认绑定/配置）
 P=~/.config/omarchy/plugins/horizon.setup/setup.sh
 for t in keys scroll clip npm ghproxy; do $P toggle $t; done
+$P toggle gtranslate      # 需要已安装才能关；未安装时它只报错、不动 hosts
 # 防火墙规则请先在面板里逐条删除（或 $P fw-del …）
 
-# 2. 移除插件并重启 shell
+# 2. hosts 的两套 root 安装物（如果装过）需要手动清掉
+sudo systemctl disable --now horizon-setup-hosts.timer horizon-setup-gtranslate.timer
+sudo rm -f /usr/local/bin/horizon-setup-hosts-refresh \
+           /usr/local/bin/horizon-setup-gtranslate-refresh \
+           /etc/systemd/system/horizon-setup-hosts@.service \
+           /etc/systemd/system/horizon-setup-hosts.timer \
+           /etc/systemd/system/horizon-setup-gtranslate@.service \
+           /etc/systemd/system/horizon-setup-gtranslate.timer \
+           /etc/polkit-1/rules.d/99-horizon-setup-hosts.rules \
+           /etc/polkit-1/rules.d/99-horizon-setup-gtranslate.rules
+sudo rm -rf /var/lib/horizon-setup
+sudo systemctl daemon-reload
+
+# 3. 移除插件并重启 shell
 rm -rf ~/.config/omarchy/plugins/horizon.setup
 omarchy-restart-shell
 ```
