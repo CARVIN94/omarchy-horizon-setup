@@ -374,6 +374,45 @@ $P zhcn-apply stappmus.activity-monitor  # 应用汉化
 $P zhcn-revert stappmus.activity-monitor # 还原英文
 ```
 
+### Omasnap 界面汉化（需编译）
+
+面板「插件汉化」Tab 里还有一行 **Omasnap 界面（需编译）**。它和上面的映射表
+是**两回事**，原因值得说清：
+
+> **Omasnap 上游没有任何 i18n 设施** —— 0 处 `tr()`、无 `.ts/.qm` 文件，
+> 383 条 UI 文案全是硬编码的 C++ 字符串字面量。所以它没法像 QML 插件那样
+> 「改文案文件即生效」；汉化只能是**改源码 + 重新编译**。
+
+这一层做的事：下载固定 tag 的源码 → 用 `lib/omasnap-zh.json` 词表按**词法位置**
+替换 → `cmake` 编译 → 装到 `~/.local`。约 1 分钟。
+
+```bash
+$P omasnap-zh          # 状态：missing / stock / zh / stale
+$P omasnap-zh-install  # 编译安装汉化版
+$P omasnap-zh-revert   # 装回上游原版（汉化版保留，再开不必重编）
+```
+
+设计要点：
+
+- **词表按字面量整串替换，不打 patch**：patch 的行号一碰上游更新就废，而且
+  多行拼接的 C++ 字面量（`"…" "…"`）会被 reflow 打断。词表按词法位置把相邻
+  字面量拼成一个逻辑串再替换，上游怎样折行都不影响。
+- **fail-closed**：任何一条词表没命中（上游改了该文案）就**整条中止**，绝不
+  编出一个半汉化的程序。`stale` 状态就是这么来的——pin 的上游版本变了。
+- **不改二进制、不要 root**：汉化版与上游原版都放在 `~/.local/libexec/omasnap/`，
+  `~/.local/bin/omasnap` 是启动器，用软链切换。缺的系统库
+  （`libLayerShellQtInterface.so.6`）由启动器注入路径，两个版本共用。
+- **翻译边界**：只译「显示用」的字面量。三类明确不译——参与逻辑比较的
+  （`"Screen capture failed:"` 是 `startsWith` 的判据）、协议/键值
+  （`"ShowItems"` 是 D-Bus 方法）、路径与字体名（`"Screenshots"` 是目录名）。
+  上游把显示名（`backgroundName`）与序列化名（`backgroundStyleName`）分成
+  两套函数，正是这条边界成立的前提。
+- **编译依赖**：`cmake` `ninja` `g++` `wayland-scanner` 与 `layer-shell-qt` 的
+  开发文件。没有 root 时，把 Arch 官方 `layer-shell-qt` 包的
+  `include/LayerShellQt/`（**含无扩展名的 `Window`/`Shell` 转发头**，漏了这两个
+  就会 `fatal error: LayerShellQt/Window: No such file`）与
+  `lib/cmake/LayerShellQt/` 放到 `~/.local` 即可，构建会自动找到。
+
 ## 配套推荐
 
 本插件只负责「输入习惯 / 工具链 / 防火墙 / 插件汉化」。下面几个项目补齐
@@ -401,6 +440,7 @@ Omarchy 作者维护的原生 Wayland 截图器，MIT 许可、C++/Qt6 + layer-s
 | 标注（箭头/形状/文字/马赛克/高光/序号） | ✅ 矢量图层，可改可移 | ✅ 更细（16 种工具、图层、粘贴图片） |
 | 美化（渐变底/阴影/圆角） | ✅ | ❌ |
 | 录屏 | ❌ 用 `omarchy screenrecord` | ❌ 用同一个 |
+| 界面汉化 | ✅ 面板一键（改源码重编译） | ❌ 上游无 i18n |
 
 安装：
 
@@ -507,12 +547,14 @@ omarchy-zh-sync             # 之后与 Omarchy 更新同步
 bash tests/firewall_test.sh     # 防火墙层，用 fixture + 桩件，不碰真机
 bash tests/hosts_test.sh        # GitHub hosts 层
 bash tests/gtranslate_test.sh   # Google 翻译 hosts 层
+bash tests/omasnap_zh_test.sh   # Omasnap 汉化层（词表 fail-closed、状态四态）
 ```
 
 `tests/fixtures/` 是真实机器规则的快照；`tests/fake/` 是 `pkexec`/`ufw` 桩件，
 因此测试**不触发任何授权框、不修改真实防火墙**。`hosts_test.sh` 与
 `gtranslate_test.sh` 同理：`curl`/`getent` 全部用桩件接管，
-**不联网、不写真实 `/etc/hosts`、不跑安装块**。
+**不联网、不写真实 `/etc/hosts`、不跑安装块**。`omasnap_zh_test.sh` 也不编译
+（真编译靠人跑一次），只验证词法的拼接与 fail-closed、以及状态四态。
 
 改 `Panel.qml` 等 QML 后 quickshell 会自动重载本地插件；若没生效：
 
@@ -542,7 +584,11 @@ sudo rm -f /usr/local/bin/horizon-setup-hosts-refresh \
 sudo rm -rf /var/lib/horizon-setup
 sudo systemctl daemon-reload
 
-# 3. 移除插件并重启 shell
+# 3. 若装过 Omasnap 汉化：先还原上游原版，再清编译缓存
+$P omasnap-zh-revert
+rm -rf ~/.local/share/omasnap-zh
+
+# 4. 移除插件并重启 shell
 rm -rf ~/.config/omarchy/plugins/horizon.setup
 omarchy-restart-shell
 ```

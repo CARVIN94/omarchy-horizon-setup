@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # horizon.setup — 汉化管理：状态检测与重放。
 #
-# 三组目标：
+# 四组目标（omasnap-ui 的实现不在本文件，见下）：
 #   omarchy-shell    Omarchy 系统汉化 —— bar 挂件从 omarchy.* 原版切到
 #                    carvin.* 中文版（omarchy-zh-sync 重建的 22 个汉化插件）。
 #                    检测即真相：实读 ~/.config/omarchy/shell.json 的 bar
@@ -9,6 +9,8 @@
 #                    clean、混合 = mismatch。
 #   keystroke        evindor.keystroke 的显示文案（多张映射表聚合一行）
 #   activity-monitor stappmus.activity-monitor 的显示文案
+#   omasnap-ui       Omasnap 界面 —— 由 lib/omasnapzh.sh 提供（上游无 i18n，
+#                    要改源码重编译，与映射表组不同层，但共用同一行契约）
 #
 # 映射表资产在 ~/.local/share/omarchy-zh-cn/（与 omarchy-zh-sync 同生态）：
 #   apply-zh.py     幂等应用器（check/apply/revert；失配整体拒绝，绝不半应用）
@@ -128,6 +130,12 @@ zhcn_rows() {
       "$state" "$zh" "$((total - zh))" "$total"
   fi
 
+  # Omasnap：上游无 i18n，走「源码打词表 + 重编译」，与映射表组不同层，
+  # 但输出同一套 7 列契约，面板与 CLI 因此零改动。
+  if declare -F omasnapzh_row >/dev/null; then
+    omasnapzh_row
+  fi
+
   # 映射表组：聚合各 group 的 check 计数
   [ -f "$ZH_APPLY" ] || return 0
   local -A g_title g_state_a g_state_c g_state_m g_total g_missing
@@ -191,6 +199,8 @@ zhcn_rows() {
 
 zhcn_apply() {
   if [ "$1" = "omarchy-shell" ]; then zh_shell_apply; return; fi
+  # omasnap 不是映射表组：它要改源码并重新编译（约 3 分钟）。
+  if [ "$1" = "omasnap-ui" ]; then omasnapzh_install; return; fi
   local m group n=0
   for m in "$ZH_MAPS"/*.json; do
     [ -f "$m" ] || continue
@@ -204,6 +214,7 @@ zhcn_apply() {
 
 zhcn_revert() {
   if [ "$1" = "omarchy-shell" ]; then zh_shell_revert; return; fi
+  if [ "$1" = "omasnap-ui" ]; then omasnapzh_revert; return; fi
   local m group n=0
   for m in "$ZH_MAPS"/*.json; do
     [ -f "$m" ] || continue

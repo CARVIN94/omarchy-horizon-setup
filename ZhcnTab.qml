@@ -31,7 +31,9 @@ Item {
     clean: "未汉化",
     applied: "已汉化",
     mismatch: "已失配（上游改动了文案，先更新映射表）",
-    missing: "插件未安装"
+    missing: "插件未安装",
+    // Omasnap 专用：汉化的目标版本变了，需要重新编译。
+    stale: "汉化已过期（上游版本变了，需重新编译）"
   })
 
   function beginOp() {

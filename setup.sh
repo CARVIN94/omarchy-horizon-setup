@@ -12,6 +12,7 @@
 #   lib/gtranslate.sh Google 翻译 hosts 改写 + 每日定时（同一套 root 安装模型）
 #   lib/firewall.sh 防火墙：ufw 规则的读取与增删（读免权限，写走 pkexec）
 #   lib/zhcn.sh     插件汉化：第三方插件显示文案的状态检测与重放
+#   lib/omasnapzh.sh Omasnap 汉化：源码打词表 + 重编译（上游无 i18n，只能改源码）
 #
 # 用法:
 #   setup.sh status
@@ -24,6 +25,9 @@
 #   setup.sh zhcn                      # 汉化映射表状态（TAB 分隔行）
 #   setup.sh zhcn-apply <id>           # 应用汉化
 #   setup.sh zhcn-revert <id>          # 还原英文
+#   setup.sh omasnap-zh                # Omasnap 汉化状态
+#   setup.sh omasnap-zh-install        # 打词表并编译安装汉化版
+#   setup.sh omasnap-zh-revert         # 装回上游原版
 #   setup.sh fw-add <port> <proto> <src> <comment> [action]
 #   setup.sh fw-del <port> <proto> <src> <comment> [action]
 set -euo pipefail
@@ -41,6 +45,8 @@ source "$HERE/lib/gtranslate.sh"
 source "$HERE/lib/firewall.sh"
 # shellcheck source=lib/zhcn.sh
 source "$HERE/lib/zhcn.sh"
+# shellcheck source=lib/omasnapzh.sh
+source "$HERE/lib/omasnapzh.sh"
 
 mac_ensure_hypr_env
 
@@ -120,6 +126,9 @@ usage:
   setup.sh zhcn
   setup.sh zhcn-apply <id>
   setup.sh zhcn-revert <id>
+  setup.sh omasnap-zh
+  setup.sh omasnap-zh-install
+  setup.sh omasnap-zh-revert
 USAGE
 }
 
@@ -179,6 +188,17 @@ main() {
       [ -n "${2:-}" ] || { usage; exit 2; }
       zhcn_revert "$2"
       zhcn_rows
+      ;;
+    omasnap-zh)
+      omasnapzh_row
+      ;;
+    omasnap-zh-install)
+      omasnapzh_install || true
+      omasnapzh_row
+      ;;
+    omasnap-zh-revert)
+      omasnapzh_revert || true
+      omasnapzh_row
       ;;
     *)
       usage
