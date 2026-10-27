@@ -27,6 +27,13 @@ Item {
 
   readonly property string setupSh: Qt.resolvedUrl("setup.sh").toString().replace("file://", "")
 
+  // 「能不能点汉化 / 能不能点还原」是跨两组状态词的判据，必须集中一处。
+  // 映射表组用 clean/applied；Omasnap 那层用 stock/zh（它由 lib/omasnapzh.sh
+  // 汇报，语义相同但词不同——曾因此让按钮永远点不动）。mismatch/missing 两组
+  // 都不给点。以后新增一层，只在这里补词，不去改按钮条件。
+  readonly property var canApply: ({ clean: true, stock: true, stale: true })
+  readonly property var canRevert: ({ applied: true, zh: true })
+
   readonly property var stateLabel: ({
     clean: "未汉化",
     applied: "已汉化",
@@ -177,8 +184,8 @@ Item {
                 text: "汉化"
                 focusable: true
                 bordered: true
-                enabled: !root.externalBusy && (modelData.state === "clean")
-                selected: modelData.state === "clean"
+                enabled: !root.externalBusy && (root.canApply[modelData.state] === true)
+                selected: root.canApply[modelData.state] === true
                 foreground: root.foreground
                 fontFamily: root.fontFamily
                 onClicked: root.runOp(["zhcn-apply", modelData.id])
@@ -188,7 +195,7 @@ Item {
                 text: "还原"
                 focusable: true
                 bordered: true
-                enabled: !root.externalBusy && (modelData.state === "applied")
+                enabled: !root.externalBusy && (root.canRevert[modelData.state] === true)
                 selected: false
                 foreground: root.foreground
                 fontFamily: root.fontFamily

@@ -161,6 +161,22 @@ grep -q 'source "$HERE/lib/omasnapzh.sh"' "$ROOT/setup.sh" && ok "setup.sh 引�
 grep -q 'omasnap-ui' "$ROOT/lib/zhcn.sh" && ok "zhcn 层路由 omasnap-ui" || bad "zhcn 未路由"
 grep -q 'stale:' "$ROOT/ZhcnTab.qml" && ok "面板认识 stale 状态" || bad "面板缺 stale 文案"
 
+# 回归闸门：面板按钮只看 clean/applied 时，omasnap 的 stock/zh 让按钮永远
+# 点不动（真发生过）。这里断言：本层汇报的每种 state 都能被面板的
+# canApply / canRevert 判据覆盖。
+for st in stock zh stale; do
+  if [ "$st" = "zh" ]; then
+    grep -q "canRevert: ({ applied: true, zh: true })" "$ROOT/ZhcnTab.qml" \
+      && ok "面板可还原 $st 态" || bad "面板不能还原 $st 态（按钮会点不动）"
+  else
+    grep -q "canApply: ({ clean: true, stock: true, stale: true })" "$ROOT/ZhcnTab.qml" \
+      && ok "面板可汉化 $st 态" || bad "面板不能汉化 $st 态（按钮会点不动）"
+  fi
+done
+# 按钮本身必须走判据，不能再写死某个状态词
+grep -q 'modelData.state === "clean"' "$ROOT/ZhcnTab.qml" \
+  && bad "按钮仍写死 clean，会漏掉 stock" || ok "按钮已改用统一判据"
+
 printf '\n---------------------------------------\n'
 printf 'PASS=%d FAIL=%d\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
