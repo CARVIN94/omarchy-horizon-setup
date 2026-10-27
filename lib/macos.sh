@@ -38,6 +38,11 @@ TEND='-- horizon.setup:textedit-key-end'
 TREV='-- horizon.setup:textedit-key-rev 3'
 VSTART='-- horizon.setup:media-key'
 VEND='-- horizon.setup:media-key-end'
+SSTART='-- horizon.setup:screenshot-key'
+SEND='-- horizon.setup:screenshot-key-end'
+# 截图块的内容版本。与 TREV 同一套升级语义：改块内容就提这个数字，
+# 老用户判未就绪 ⇒ 面板显示「关」，按一次开关即整块重建。
+SREV='-- horizon.setup:screenshot-key-rev 1'
 
 # ---- 检测（直接读系统，不缓存）----------------------------------------
 
@@ -54,15 +59,20 @@ mac_textedit_on() {
 }
 mac_clip_on()      { grep -q "^${CSTART}\$" "$MAC_BIND"; }
 mac_media_on()     { grep -q "^${VSTART}\$" "$MAC_BIND"; }
+# 截图块同样要求版本号匹配，理由与 textedit 一致：块在而内容旧时不能判就绪。
+mac_screenshot_on() {
+  grep -q "^${SSTART}\$" "$MAC_BIND" && grep -qxF -- "${SREV}" "$MAC_BIND"
+}
 
 # Mac 快捷键：物理 Ctrl|Win|Alt 变 Ctrl|Option|Command（只需 Win↔Alt 交换），
-# 且全选、文本编辑 P0 桥接、音量三键都存在——同属 keys 开关，缺一不算就绪。
-# 必须含 media：老用户 keys=开 但块是旧内容时，就绪判定转假 ⇒ 面板显示「关」，
-# 按一次开关即整套重建（含新媒体块），自愈而非静默缺功能。
+# 且全选、文本编辑 P0 桥接、音量三键、截图键都存在——同属 keys 开关，缺一
+# 不算就绪。必须含 media/screenshot：老用户 keys=开 但块是旧内容时就绪判定
+# 转假 ⇒ 面板显示「关」，按一次开关即整套重建，自愈而非静默缺功能。
 mac_keys_on() {
   local v
   v=$(hyprctl getoption input:kb_options 2>/dev/null | sed -n 's/^str: //p')
-  [[ "$v" == *"$MAC_KEYS_OPT"* ]] && mac_selectall_on && mac_textedit_on && mac_media_on
+  [[ "$v" == *"$MAC_KEYS_OPT"* ]] && mac_selectall_on && mac_textedit_on \
+    && mac_media_on && mac_screenshot_on
 }
 
 # 自然滚动：顶层管鼠标滚轮 + touchpad 管触控板，两者都要 true。
@@ -281,6 +291,29 @@ o.bind("SUPER + F10", "Mute", "omarchy-audio-output-volume mute-toggle", { locke
 o.bind("SUPER + F11", "Volume down", "omarchy-audio-output-volume lower", { locked = true, repeating = true })
 o.bind("SUPER + F12", "Volume up", "omarchy-audio-output-volume raise", { locked = true, repeating = true })
 -- horizon.setup:media-key-end
+LUAEOF
+    } >> "$MAC_BIND"
+  fi
+  mac_reload
+}
+
+# 截图键：Super+Shift+X 是 macOS 的 Cmd+Shift+X（区域截图并标注）。
+# 走 omasnap（Omarchy 原生、带标注/滚动拼接/OCR 的 Wayland 截图器），没装时
+# 回落到 Omarchy 自带的 omarchy-capture-screenshot —— 不留一个按了没反应的
+# 死键：装了 omasnap 自动升级，没装仍是原来那套 grim+slurp+tensaku。
+# 必须 hl.unbind：Omarchy 预装的 webapp 绑定占了 SUPER+SHIFT+X（打开 x.com），
+# 不先解绑会两条同键并存，谁生效取决于注册顺序。
+mac_write_screenshot_binding() {
+  sed -i.bak "/^${SSTART}\$/,/^${SEND}\$/d" "$MAC_BIND" 2>/dev/null && rm -f "$MAC_BIND.bak"
+  if [[ "$1" == 1 ]]; then
+    {
+      printf '\n%s\n%s\n' "$SSTART" "$SREV"
+      cat <<'LUAEOF'
+-- macOS 的 Cmd+Shift+X = 区域截图并进入标注；omasnap 缺失时回落 Omarchy 原生流程。
+-- 接管了 Omarchy 预装的 Super+Shift+X（打开 X webapp）；关闭本开关后由 reload 恢复。
+hl.unbind("SUPER + SHIFT + X")
+o.bind("SUPER + SHIFT + X", "Screenshot", "if command -v omasnap >/dev/null 2>&1; then exec omasnap; else exec omarchy-capture-screenshot; fi")
+-- horizon.setup:screenshot-key-end
 LUAEOF
     } >> "$MAC_BIND"
   fi

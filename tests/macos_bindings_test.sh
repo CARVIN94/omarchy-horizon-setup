@@ -279,8 +279,9 @@ else
   ok "跳过 Lua 语义断言（无 lua 解释器）"
 fi
 
-printf '\n=== 9. keys 就绪判定要求「kb_options + 全选 + 文本编辑 + 音量」齐备 ===\n'
+printf '\n=== 9. keys 就绪判定要求「kb_options + 全选 + 文本编辑 + 音量 + 截图」齐备 ===\n'
 kstat() { if mac_keys_on; then echo 1; else echo 0; fi; }
+kstat_of_screenshot() { if mac_screenshot_on; then echo 1; else echo 0; fi; }
 write 'o.bind("SUPER + RETURN", "Terminal", "foot")'
 eq "仅默认绑定 → 未就绪" "$(kstat)" "0"
 mac_write_selectall_binding 1 >/dev/null 2>&1
@@ -288,7 +289,9 @@ eq "有全选仍缺文本编辑/音量 → 未就绪" "$(kstat)" "0"
 mac_write_textedit_bindings 1 >/dev/null 2>&1
 eq "缺音量块 → 未就绪（老用户需按一次开关重建）" "$(kstat)" "0"
 mac_write_media_bindings 1 >/dev/null 2>&1
-eq "四件套齐备 → 就绪" "$(kstat)" "1"
+eq "缺截图块 → 未就绪" "$(kstat)" "0"
+mac_write_screenshot_binding 1 >/dev/null 2>&1
+eq "五件套齐备 → 就绪" "$(kstat)" "1"
 mac_write_media_bindings 0 >/dev/null 2>&1
 eq "拆掉音量块 → 未就绪" "$(kstat)" "0"
 
@@ -304,11 +307,64 @@ write 'o.bind("SUPER + RETURN", "Terminal", "foot")' \
       '-- horizon.setup:textedit-key-end'
 mac_write_selectall_binding 1 >/dev/null 2>&1
 mac_write_media_bindings 1 >/dev/null 2>&1
+mac_write_screenshot_binding 1 >/dev/null 2>&1
 eq "旧内容块 → 未就绪（面板显示「关」，按一次即重建）" "$(kstat)" "0"
 mac_write_textedit_bindings 1 >/dev/null 2>&1
 eq "重建后 → 就绪" "$(kstat)" "1"
 eq "重建后旧块无残留（仍唯一）" "$(count '^-- horizon.setup:textedit-key$')" "1"
 eq "重建后 Cmd+Shift+T 已写入" "$(count 'bridge_app("SUPER + SHIFT + T", "CTRL+SHIFT", "T")')" "1"
+
+printf '\n=== 10. 截图块：Super+Shift+X → omasnap，带回落与解绑 ===\n'
+write 'o.bind("SUPER + RETURN", "Terminal", "foot")'
+mac_write_screenshot_binding 1 >/dev/null 2>&1
+eq "块标记成对出现" "$(count '^-- horizon.setup:screenshot-key$')/$(count '^-- horizon.setup:screenshot-key-end$')" "1/1"
+eq "版本戳已写入" "$(count '^-- horizon.setup:screenshot-key-rev 1$')" "1"
+eq "先解绑被占用的 SUPER+SHIFT+X" "$(count 'hl.unbind("SUPER + SHIFT + X")')" "1"
+eq "绑定到 omasnap 且带原生回落" \
+  "$(grep -c 'o.bind("SUPER + SHIFT + X", "Screenshot", "if command -v omasnap' "$MAC_BIND")" "1"
+eq "回落目标是 Omarchy 原生截图" "$(count 'exec omarchy-capture-screenshot')" "1"
+
+for _ in 1 2 3; do mac_write_screenshot_binding 1 >/dev/null 2>&1; done
+eq "重复开启不累积" "$(count '^-- horizon.setup:screenshot-key$')" "1"
+eq "unbind 仍只一条" "$(count 'hl.unbind("SUPER + SHIFT + X")')" "1"
+
+mac_write_screenshot_binding 0 >/dev/null 2>&1
+eq "关闭后无块残留" "$(count 'horizon.setup:screenshot-key')" "0"
+eq "关闭不动既有绑定" "$(count 'SUPER + RETURN')" "1"
+
+# 升级闸门：旧块没有版本戳（或版本号不符）时判未就绪，按一次开关才重建。
+write '-- horizon.setup:screenshot-key' \
+      'o.bind("SUPER + SHIFT + X", "Screenshot", "omasnap")' \
+      '-- horizon.setup:screenshot-key-end'
+eq "无版本戳的旧块 → 未就绪" "$(kstat_of_screenshot)" "0"
+mac_write_screenshot_binding 1 >/dev/null 2>&1
+eq "重建后带版本戳 → 就绪" "$(kstat_of_screenshot)" "1"
+
+if command -v lua >/dev/null 2>&1; then
+  cat > "$TMP/sim_shot.lua" <<'SIM'
+local binds, unbinds = {}, {}
+o = { bind = function(keys, desc, cmd, opts) binds[#binds+1] = { k = keys, d = desc, c = cmd, o = opts } end }
+hl = { unbind = function(c) unbinds[#unbinds+1] = c end, dispatch = function() end, timer = function() end,
+       dsp = { send_key_state = function(t) return t end, window = { close = function() end } },
+       get_active_window = function() return nil end }
+dofile(os.getenv("SIM_BIND"))
+local hit
+for _, b in ipairs(binds) do if b.k == "SUPER + SHIFT + X" then hit = b end end
+print(hit and "SHOT_OK" or "SHOT_MISSING")
+print(hit and hit.c:find("omasnap") and "HAS_OMASNAP" or "NO_OMASNAP")
+print(hit and hit.c:find("omarchy%-capture%-screenshot") and "HAS_FALLBACK" or "NO_FALLBACK")
+local unbound = false
+for _, u in ipairs(unbinds) do if u == "SUPER + SHIFT + X" then unbound = true end end
+print(unbound and "UNBOUND" or "NOT_UNBOUND")
+SIM
+  o4=$(SIM_BIND="$MAC_BIND" lua "$TMP/sim_shot.lua" 2>&1)
+  grep -q SHOT_OK <<<"$o4" && ok "Lua：SUPER+SHIFT+X 已注册截图绑定" || bad "Lua：截图绑定缺失" "$o4"
+  grep -q HAS_OMASNAP <<<"$o4" && ok "Lua：动作调用 omasnap" || bad "Lua：未调用 omasnap" "$o4"
+  grep -q HAS_FALLBACK <<<"$o4" && ok "Lua：带 Omarchy 原生回落" || bad "Lua：缺回落" "$o4"
+  grep -q UNBOUND <<<"$o4" && ok "Lua：先解绑被占用的组合" || bad "Lua：未解绑" "$o4"
+else
+  ok "跳过 Lua 语义断言（无 lua 解释器）"
+fi
 
 printf '\n---------------------------------------\n'
 printf 'PASS=%d FAIL=%d\n' "$PASS" "$FAIL"

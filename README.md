@@ -6,7 +6,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-10b981?style=flat-square" alt="MIT license"></a>
   <a href="https://github.com/Hyprwm/Hyprland"><img src="https://img.shields.io/badge/WM-Hyprland-89b4fa?style=flat-square" alt="Hyprland"></a>
   <a href="https://omarchy.com"><img src="https://img.shields.io/badge/OS-Omarchy-f38ba8?style=flat-square" alt="Omarchy"></a>
-  <a href="#快捷键桥接"><img src="https://img.shields.io/badge/Cmd-19%20%E7%BB%84%E6%A1%A5%E6%8E%A5-10b981?style=flat-square" alt="Cmd bridges"></a>
+  <a href="#快捷键桥接"><img src="https://img.shields.io/badge/Cmd-20%20%E7%BB%84%E6%A1%A5%E6%8E%A5-10b981?style=flat-square" alt="Cmd bridges"></a>
 </p>
 
 <p align="center">
@@ -300,6 +300,12 @@ ufw 的删除匹配有两档行为（源码 + 真机 dry-run 双向确认）：
 | `Cmd+N / S / O / F` | `Ctrl+N / S / O / F` | 新建 / 保存 / 打开 / 查找 |
 | `Cmd+Z` | `Ctrl+Z` | 撤销 |
 | `Cmd+Shift+Z` | `Ctrl+Shift+Z` | 重做 |
+| `Cmd+Shift+X` | **截图并标注** | 呼出 `omasnap`；未装时回落 Omarchy 原生 `omarchy-capture-screenshot` |
+
+> **`Cmd+Shift+X` 接管了 Omarchy 预装的 `Super+Shift+X`（打开 x.com）**。
+> 该组合在 macOS 上是系统截图快捷键，这里改绑为截图。`Super+Shift+Alt+X`
+> （发帖）不受影响。装了 [Omasnap](#截图omasnap) 即用它的标注/滚动拼接/OCR；
+> 没装则照旧走 Omarchy 的 grim+slurp+tensaku——两种情况都不会出现「按了没反应」。
 
 **音量三键（Mac 顶排语义）**
 
@@ -370,13 +376,66 @@ $P zhcn-revert stappmus.activity-monitor # 还原英文
 
 ## 配套推荐
 
-本插件只负责「输入习惯 / 工具链 / 防火墙 / 插件汉化」。下面两个项目补齐
-**中文体验**，都是实测在用的：
+本插件只负责「输入习惯 / 工具链 / 防火墙 / 插件汉化」。下面几个项目补齐
+**中文体验**与**截图体验**，都是实测在用的：
 
 | 项目 | 说明 | Star |
 | --- | --- | --- |
 | [iDvel/rime-ice](https://github.com/iDvel/rime-ice) | **雾凇拼音** — 长期维护的简体词库，中文输入的首选方案。装完即可打字，`F4` 切换方案与开关功能 | 19.7k |
 | [QueedWen/omarchy-zh-cn](https://github.com/QueedWen/omarchy-zh-cn) | **Omarchy 简体中文界面** — 菜单、通知、天气、快捷键面板中文化，与本插件的中文面板互补 | 31 |
+| [omacom/omasnap](https://github.com/omacom/omasnap) | **Omasnap** — Omarchy 原生截图+标注一体（layer-shell 覆盖层）：智能选区、滚动拼接、OCR、贴图预览，MIT | 571 |
+
+### 截图：Omasnap
+
+Linux 上没有 macshot（那是个 macOS 应用）。功能最接近的是 **Omasnap**：
+Omarchy 作者维护的原生 Wayland 截图器，MIT 许可、C++/Qt6 + layer-shell。
+
+与 Omarchy 自带的 grim+slurp+tensaku 相比，差的正是 macshot 那部分**截完之后的流**：
+
+| 能力 | Omasnap | Omarchy 自带（tensaku） |
+| --- | --- | --- |
+| 智能选区（拖=区域 / 点=窗口 / 点空白=整屏） | ✅ 同一浮层里 | 分三个命令 |
+| 截完自动复制 + 10 秒浮动预览（可钉住、可拖进别的应用） | ✅ | ❌ 只有通知 |
+| 滚动长截图 | ✅ 手动/自动滚动拼接 | 仅 tensaku 0.29 的 `--scroll-capture` |
+| OCR | ✅ 整图或框选 | 独立命令 `omarchy-capture-text` |
+| 标注（箭头/形状/文字/马赛克/高光/序号） | ✅ 矢量图层，可改可移 | ✅ 更细（16 种工具、图层、粘贴图片） |
+| 美化（渐变底/阴影/圆角） | ✅ | ❌ |
+| 录屏 | ❌ 用 `omarchy screenrecord` | ❌ 用同一个 |
+
+安装：
+
+```bash
+yay -S omasnap-bin                      # AUR，一次装齐（含 layer-shell-qt 依赖）
+sudo pacman -S tesseract-data-chi_sim   # 需要中文 OCR 才装
+```
+
+> 手动装官方 tarball 时**必须另装 `layer-shell-qt`**：omasnap 硬链接
+> `libLayerShellQtInterface.so.6`，缺了它 `ldd` 报 not found、启动即失败。
+> 这是 AUR 包唯一比手动装多做的事。
+
+> **没有 root 时**（本机就是这样装的）：把 Arch 官方 `layer-shell-qt`
+> 包里的那一个 `.so` 解到 `~/.local/lib/omasnap/`，再用一个 3 行的启动器
+> 设 `LD_LIBRARY_PATH` 指向它——二进制保持上游原样（`sha256` 与上游
+> release 及 AUR PKGBUILD 一致）。系统日后装了 `layer-shell-qt`，系统路径
+> 优先命中，这份副本变冗余但不冲突。
+
+> **保存位置不一样**：omasnap 存 `~/Pictures/Screenshots`（可用
+> `[output] directory` 或 `OMASNAP_SCREENSHOT_DIR` 改），**不认** Omarchy 的
+> `OMARCHY_SCREENSHOT_DIR`。想跟 Omarchy 截图放一起，写
+> `~/.config/omasnap/omasnap.conf`：
+>
+> ```toml
+> [output]
+> directory = ~/Pictures
+> ```
+
+装完按 `Super+Shift+X` 即可用——本插件的 Mac 快捷键开关会**自动检测**：
+`omasnap` 在 `PATH` 里就用它，否则保持 Omarchy 原生流程，无需改配置。
+
+> **已知天花板**：omasnap 用 `hyprctl` 做显示器/窗口发现，只在 Hyprland 上成立；
+> 它的更新比 Omarchy 本体快（一周两版），面板不跟踪它的版本——升级请走
+> `yay -Syu`。想换回 Omarchy 原生的 `Print` 行为，直接按 `Print` 即可，
+> 两条键互不干扰。
 
 ### 雾凇拼音（rime-ice）
 
