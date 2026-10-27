@@ -413,11 +413,10 @@ sudo pacman -S tesseract-data-chi_sim   # 需要中文 OCR 才装
 > `libLayerShellQtInterface.so.6`，缺了它 `ldd` 报 not found、启动即失败。
 > 这是 AUR 包唯一比手动装多做的事。
 
-> **没有 root 时**（本机就是这样装的）：把 Arch 官方 `layer-shell-qt`
-> 包里的那一个 `.so` 解到 `~/.local/lib/omasnap/`，再用一个 3 行的启动器
-> 设 `LD_LIBRARY_PATH` 指向它——二进制保持上游原样（`sha256` 与上游
-> release 及 AUR PKGBUILD 一致）。系统日后装了 `layer-shell-qt`，系统路径
-> 优先命中，这份副本变冗余但不冲突。
+> **没有 root 时**：把 Arch 官方 `layer-shell-qt` 包里的那一个 `.so` 解到
+> `~/.local/lib/omasnap/`，再用一个 3 行的启动器设 `LD_LIBRARY_PATH` 指向它
+> ——二进制保持上游原样（`sha256` 与上游 release 及 AUR PKGBUILD 一致）。
+> 系统日后装了 `layer-shell-qt`，系统路径优先命中，这份副本变冗余但不冲突。
 
 > **保存位置不一样**：omasnap 存 `~/Pictures/Screenshots`（可用
 > `[output] directory` 或 `OMASNAP_SCREENSHOT_DIR` 改），**不认** Omarchy 的
