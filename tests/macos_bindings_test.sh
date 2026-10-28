@@ -151,6 +151,36 @@ print(rSendsCtrlR and "R_SENDS_CTRL_R" or "R_WRONG")
 print(tSendsCtrlShiftT and "T_SENDS_CTRL_SHIFT_T" or "T_WRONG")
 print(slashSendsCtrlSlash and "SLASH_SENDS_CTRL_SLASH" or "SLASH_WRONG")
 print(slashIsScaling and "SLASH_STILL_SCALING" or "SLASH_NOT_SCALING")
+-- Cmd+Delete 必须发 Ctrl+K（删到行尾）；与 Cmd+Backspace 的 Ctrl+U（删到行首）成对，
+-- 两者若互换就是「删错方向」，故分别断言。
+local delSendsCtrlK, bsSendsCtrlU = false, false
+for _, b in ipairs(binds) do
+  if b.k == "SUPER + DELETE" then
+    _G.sent = nil
+    b.f()
+    local v = _G.sent
+    if type(v) == "table" and v.mods == "CTRL" and v.key == "K" then delSendsCtrlK = true end
+  end
+  if b.k == "SUPER + BACKSPACE" then
+    _G.sent = nil
+    b.f()
+    local v = _G.sent
+    if type(v) == "table" and v.mods == "CTRL" and v.key == "U" then bsSendsCtrlU = true end
+  end
+end
+print(delSendsCtrlK and "DELETE_SENDS_CTRL_K" or "DELETE_WRONG")
+print(bsSendsCtrlU and "BACKSPACE_SENDS_CTRL_U" or "BACKSPACE_WRONG")
+-- Cmd+Shift+V 必须发 Ctrl+Shift+V（纯文本粘贴）
+local shiftVSendsCtrlShiftV = false
+for _, b in ipairs(binds) do
+  if b.k == "SUPER + SHIFT + V" then
+    _G.sent = nil
+    b.f()
+    local v = _G.sent
+    if type(v) == "table" and v.mods == "CTRL+SHIFT" and v.key == "V" then shiftVSendsCtrlShiftV = true end
+  end
+end
+print(shiftVSendsCtrlShiftV and "SHIFT_V_SENDS_CTRL_SHIFT_V" or "SHIFT_V_WRONG")
 print("BINDING_TOTAL=" .. #binds)
 SIM
   out=$(SIM_BIND="$MAC_BIND" lua "$TMP/sim.lua" 2>&1)
@@ -161,8 +191,11 @@ SIM
   grep -q T_SENDS_CTRL_SHIFT_T <<<"$out" && ok "Cmd+Shift+T 实际发送 Ctrl+Shift+T（恢复关闭的页面）" || bad "Cmd+Shift+T 语义错误" "$out"
   grep -q SLASH_SENDS_CTRL_SLASH <<<"$out" && ok "Cmd+/ 实际发送 Ctrl+SLASH（注释）" || bad "Cmd+/ 语义错误" "$out"
   grep -q SLASH_NOT_SCALING <<<"$out" && ok "Cmd+/ 不再落在显示器缩放上" || bad "Cmd+/ 仍是缩放动作" "$out"
+  grep -q DELETE_SENDS_CTRL_K <<<"$out" && ok "Cmd+Delete 实际发送 Ctrl+K（删到行尾）" || bad "Cmd+Delete 语义错误" "$out"
+  grep -q BACKSPACE_SENDS_CTRL_U <<<"$out" && ok "Cmd+Backspace 实际发送 Ctrl+U（删到行首）" || bad "Cmd+Backspace 语义错误" "$out"
+  grep -q SHIFT_V_SENDS_CTRL_SHIFT_V <<<"$out" && ok "Cmd+Shift+V 实际发送 Ctrl+Shift+V（纯文本粘贴）" || bad "Cmd+Shift+V 语义错误" "$out"
   total=$(grep -oE 'BINDING_TOTAL=[0-9]+' <<<"$out" | cut -d= -f2)
-  eq "本插件注册绑定总数（面板标称 19 组）" "${total:-0}" "19"
+  eq "本插件注册绑定总数（面板标称 21 组）" "${total:-0}" "21"
 else
   ok "跳过 Lua 语义断言（无 lua 解释器）"
 fi
@@ -313,6 +346,25 @@ mac_write_textedit_bindings 1 >/dev/null 2>&1
 eq "重建后 → 就绪" "$(kstat)" "1"
 eq "重建后旧块无残留（仍唯一）" "$(count '^-- horizon.setup:textedit-key$')" "1"
 eq "重建后 Cmd+Shift+T 已写入" "$(count 'bridge_app("SUPER + SHIFT + T", "CTRL+SHIFT", "T")')" "1"
+
+printf '\n=== 9c. 版本戳升级：rev 3 旧块必须判未就绪（新增 Cmd+Delete / Cmd+Shift+V）===\n'
+# 与 9b 同一套闸门，但用真实版本号而非「缺内容」模拟：块内容看起来完整
+# （含 rev 3 的全部桥接），只有版本号是旧的。若判定只看标记与旧版本号，
+# 老用户永远拿不到本轮新增的两条绑定。
+write 'o.bind("SUPER + RETURN", "Terminal", "foot")' \
+      '-- horizon.setup:textedit-key' \
+      '-- horizon.setup:textedit-key-rev 3' \
+      'bridge_app("SUPER + SHIFT + T", "CTRL+SHIFT", "T")' \
+      '-- horizon.setup:textedit-key-end'
+mac_write_selectall_binding 1 >/dev/null 2>&1
+mac_write_media_bindings 1 >/dev/null 2>&1
+mac_write_screenshot_binding 1 >/dev/null 2>&1
+eq "rev 3 旧块 → 未就绪" "$(kstat)" "0"
+mac_write_textedit_bindings 1 >/dev/null 2>&1
+eq "重建后 → 就绪" "$(kstat)" "1"
+eq "重建后版本戳为 4" "$(count '^-- horizon.setup:textedit-key-rev 4$')" "1"
+eq "重建后 Cmd+Delete 已写入" "$(count 'bridge("SUPER + DELETE", "CTRL", "K")')" "1"
+eq "重建后 Cmd+Shift+V 已写入" "$(count 'bridge_app("SUPER + SHIFT + V", "CTRL+SHIFT", "V")')" "1"
 
 printf '\n=== 10. 截图块：Super+Shift+X → omasnap，带回落与解绑 ===\n'
 write 'o.bind("SUPER + RETURN", "Terminal", "foot")'

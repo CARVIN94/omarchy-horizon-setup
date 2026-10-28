@@ -286,6 +286,7 @@ ufw 的删除匹配有两档行为（源码 + 真机 dry-run 双向确认）：
 | `Cmd+Shift+←/→` | `Shift+Home` / `Shift+End` | 选到行首 / 行尾 |
 | `Cmd+↑/↓` | `Ctrl+Home` / `Ctrl+End` | 文档首 / 尾 |
 | `Cmd+Backspace` | `Ctrl+U` | 删到行首 |
+| `Cmd+Delete` | `Ctrl+K` | 删到行尾（与上行成对） |
 | `Cmd+/` | `Ctrl+/` | **注释 / 取消注释**（编辑器与 IDE 通用） |
 | `Cmd+A` | `Ctrl+A` | 全选 |
 
@@ -297,15 +298,19 @@ ufw 的删除匹配有两档行为（源码 + 真机 dry-run 双向确认）：
 | `Cmd+Q` | **关闭窗口** | WM 动作（`window.close`），与焦点应用无关；终端里同样成立 |
 | `Cmd+R` | `Ctrl+R` | **重新加载/刷新**（浏览器、编辑器、IM 通用） |
 | `Cmd+Shift+T` | `Ctrl+Shift+T` | **恢复刚关闭的标签页/页面**（等价于原来的 `Ctrl+Shift+T`） |
+| `Cmd+Shift+V` | `Ctrl+Shift+V` | **纯文本粘贴**（去掉格式） |
 | `Cmd+N / S / O / F` | `Ctrl+N / S / O / F` | 新建 / 保存 / 打开 / 查找 |
 | `Cmd+Z` | `Ctrl+Z` | 撤销 |
 | `Cmd+Shift+Z` | `Ctrl+Shift+Z` | 重做 |
 | `Cmd+Shift+X` | **截图并标注** | 呼出 `omasnap`；未装时回落 Omarchy 原生 `omarchy-capture-screenshot` |
 
-> **`Cmd+Shift+X` 接管了 Omarchy 预装的 `Super+Shift+X`（打开 x.com）**。
-> 该组合在 macOS 上是系统截图快捷键，这里改绑为截图。`Super+Shift+Alt+X`
-> （发帖）不受影响。装了 [Omasnap](#截图omasnap) 即用它的标注/滚动拼接/OCR；
-> 没装则照旧走 Omarchy 的 grim+slurp+tensaku——两种情况都不会出现「按了没反应」。
+> **`Cmd+Shift+X` 是本插件自选的组合，不是 macOS 原生键**。macOS 的系统截图是
+> `Cmd+Shift+3/4/5`，但那三个数字键被 Omarchy 的「移动窗口到工作区 N」占着
+> （`tiling.lua:22-24`），抢过来会换掉一个常用窗口动作，故改选空闲的
+> `Super+Shift+X`——它接管了 Omarchy 预装的 `Super+Shift+X`（打开 x.com），
+> `Super+Shift+Alt+X`（发帖）不受影响。装了 [Omasnap](#截图omasnap) 即用它的
+> 标注/滚动拼接/OCR；没装则照旧走 Omarchy 的 grim+slurp+tensaku——两种情况都
+> 不会出现「按了没反应」。
 
 **音量三键（Mac 顶排语义）**
 
@@ -342,10 +347,14 @@ ufw 的删除匹配有两档行为（源码 + 真机 dry-run 双向确认）：
 > **天花板**：`Option+←/→` 的按词移动无法在 Hyprland 层统一做（Chrome 的
 > `Alt+←` 是后退，桥接会打架），升级路径是 per-app 配置，当前不做。
 >
+> 同理 `Cmd+[` / `Cmd+]`（后退 / 前进）需要向应用注入 `Alt+←/→`，而
+> `send_key_state` 的 `mods` 只验证过 `CTRL` 与 `CTRL+SHIFT`（Omarchy 自身的
+> 唯一先例），`ALT` 未证实——故本轮不绑，验证后再加。
+>
 > 被接管的组合（如 `Super+F` 全宽、`Super+S` scratchpad）随本开关走：
 > 开 = 桥接，关 = Omarchy 默认绑定随 `hyprctl reload` 自动恢复。
 >
-> **升级老配置**：绑定块写进 `~/.config/hypr/bindings.conf` 后不会再自动更新，
+> **升级老配置**：绑定块写进 `~/.config/hypr/bindings.lua` 后不会再自动更新，
 > 所以块里带版本戳（`-- horizon.setup:textedit-key-rev N`）。往块里加/删桥接
 > 就提这个版本号；老用户的块版本对不上 ⇒ 开关判定为「关」，面板点一次即整块
 > 重建，新桥接才真正到手。只改块内容却不提版本号，老用户永远拿不到。

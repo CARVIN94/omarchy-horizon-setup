@@ -35,7 +35,7 @@ TSTART='-- horizon.setup:textedit-key'
 TEND='-- horizon.setup:textedit-key-end'
 # 文本编辑块的内容版本。改块内容（增删任何一行桥接）都要提这个数字，
 # 否则老用户手上的旧块仍判「就绪」，永远拿不到新桥接。见 mac_textedit_on。
-TREV='-- horizon.setup:textedit-key-rev 3'
+TREV='-- horizon.setup:textedit-key-rev 4'
 VSTART='-- horizon.setup:media-key'
 VEND='-- horizon.setup:media-key-end'
 SSTART='-- horizon.setup:screenshot-key'
@@ -164,6 +164,9 @@ LUAEOF
 # Omarchy 默认绑定随 reload 自动恢复，脚本不负责重绑。
 # 天花板：Option+←/→ 的"按词移动"无法在 Hyprland 层做（Chrome 的 Alt+← 是
 # 后退，会打架），升级路径是 per-app 配置，当前不做。
+# 同理 Command+[ / ] 的「后退/前进」需要注入 ALT+LEFT/RIGHT，而 send_key_state
+# 的 mods 只验证过 "CTRL" / "CTRL+SHIFT"（Omarchy 自身的唯一先例），ALT 未证实，
+# 故本批不绑——留作升级路径，验证后再说。
 mac_write_textedit_bindings() {
   # 先删旧块再按需重写——不能用「块已存在就跳过」：块是用户上次开启时写下的，
   # 内容可能已过时，跳过会让老用户永远拿不到桥接修复。幂等的正确含义是
@@ -185,6 +188,8 @@ mac_write_textedit_bindings() {
 --   Command+N/S/O/F/Z            → Ctrl+N/S/O/F/Z（新建/保存/打开/查找/撤销）
 --   Command+Shift+Z              → Ctrl+Shift+Z（重做）
 --   Command+Shift+T              → Ctrl+Shift+T（恢复刚关闭的标签页/页面）
+--   Command+Delete               → Ctrl+K          删到行尾
+--   Command+Shift+V              → Ctrl+Shift+V     纯文本粘贴
 -- 依赖 hl.unbind 接管 Omarchy 占用的组合（全屏、scratchpad、pop window 等）；
 -- 关闭本开关时块被删，默认绑定由 hyprctl reload 自动恢复。
 local function send_once(mods, key)
@@ -204,6 +209,11 @@ bridge("SUPER + SHIFT + RIGHT", "CTRL+SHIFT", "End")
 bridge("SUPER + UP", "CTRL", "Home")
 bridge("SUPER + DOWN", "CTRL", "End")
 bridge("SUPER + BACKSPACE", "CTRL", "U")
+
+-- Command+Delete = 删到行尾。macOS 里 Cmd+Delete 删光标到行尾；Linux/GTK/Qt/
+-- VSCode 的对应键是 Ctrl+K（emacs 风格 kill-line），终端 readline 里同样成立，
+-- 故无需终端分流。与上面的 Cmd+Backspace（删到行首 → Ctrl+U）成对。
+bridge("SUPER + DELETE", "CTRL", "K")
 
 -- Command+Slash = 注释/取消注释。macOS 里 Cmd+/ 是编辑器与 IDE 的通用注释键，
 -- Linux 侧对应 Ctrl+/（GTK/VS Code/JetBrains/Neovim 皆然）。
@@ -265,6 +275,10 @@ bridge_app("SUPER + SHIFT + Z", "CTRL+SHIFT", "Z")
 -- 已 grep 默认绑定与 hyprctl binds 双向核对），故为纯新增；终端里
 -- Ctrl+Shift+T 是终端自己的「新建标签页」，与 Mac 语义同样成立，不参与分流。
 bridge_app("SUPER + SHIFT + T", "CTRL+SHIFT", "T")
+-- Command+Shift+V = 纯文本粘贴（去掉格式）。macOS 里 Cmd+Shift+V 就是这个语义，
+-- Linux/GTK/Qt 的对应键是 Ctrl+Shift+V。终端里 Ctrl+Shift+V 也是「粘贴」，
+-- 与 Mac 语义一致，故不参与终端分流。
+bridge_app("SUPER + SHIFT + V", "CTRL+SHIFT", "V")
 -- horizon.setup:textedit-key-end
 LUAEOF
     } >> "$MAC_BIND"
@@ -297,7 +311,10 @@ LUAEOF
   mac_reload
 }
 
-# 截图键：Super+Shift+X 是 macOS 的 Cmd+Shift+X（区域截图并标注）。
+# 截图键：Super+Shift+X 是本插件自选的区域截图组合，**不是** macOS 原生键。
+# macOS 的系统截图是 Cmd+Shift+3/4/5；这里没法照搬，因为 Omarchy 把
+# SUPER+SHIFT+数字 全给了「移动窗口到工作区 N」（tiling.lua:22-24），
+# 抢 3/4/5 会换掉一个常用窗口动作。故退而选空闲的 Super+Shift+X。
 # 走 omasnap（Omarchy 原生、带标注/滚动拼接/OCR 的 Wayland 截图器），没装时
 # 回落到 Omarchy 自带的 omarchy-capture-screenshot —— 不留一个按了没反应的
 # 死键：装了 omasnap 自动升级，没装仍是原来那套 grim+slurp+tensaku。
@@ -309,7 +326,8 @@ mac_write_screenshot_binding() {
     {
       printf '\n%s\n%s\n' "$SSTART" "$SREV"
       cat <<'LUAEOF'
--- macOS 的 Cmd+Shift+X = 区域截图并进入标注；omasnap 缺失时回落 Omarchy 原生流程。
+-- 区域截图并进入标注（自选组合，非 macOS 原生：macOS 用 Cmd+Shift+3/4/5，
+-- 但那几个数字键被 Omarchy 的「移动窗口到工作区」占了）。omasnap 缺失时回落原生流程。
 -- 接管了 Omarchy 预装的 Super+Shift+X（打开 X webapp）；关闭本开关后由 reload 恢复。
 hl.unbind("SUPER + SHIFT + X")
 o.bind("SUPER + SHIFT + X", "Screenshot", "if command -v omasnap >/dev/null 2>&1; then exec omasnap; else exec omarchy-capture-screenshot; fi")
