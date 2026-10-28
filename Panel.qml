@@ -38,7 +38,7 @@ Item {
 
   readonly property var macItems: [
     { key: "keys", label: "Mac 快捷键",
-      description: "Command 键按 Ctrl 语义发键；关标签(Cmd+W)/关窗(Cmd+Q)/刷新(Cmd+R)/恢复标签(Cmd+Shift+T)/注释(Cmd+/)、行首尾、保存等 19 组；截图 Cmd+Shift+X；音量 Super+F10/F11/F12", checked: switches.keys },
+      description: "Command 键按 Ctrl 语义发键；关标签(Cmd+W)/关窗(Cmd+Q)/刷新(Cmd+R)/恢复标签(Cmd+Shift+T)/删到行尾(Cmd+Delete)/纯文本粘贴(Cmd+Shift+V)/注释(Cmd+/)、行首尾、保存等 21 组；截图 Cmd+Shift+X；音量 Super+F10/F11/F12", checked: switches.keys },
     { key: "scroll", label: "自然滚动",
       description: "滚轮方向改为「内容跟手」；鼠标与触控板都改", checked: switches.scroll },
     { key: "clip", label: "剪贴板快捷键",
