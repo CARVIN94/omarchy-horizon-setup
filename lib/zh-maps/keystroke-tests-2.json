@@ -1,0 +1,254 @@
+{
+  "id": "keystroke-tests-2",
+  "title": "Keystroke 测试断言同步 · 修订",
+  "root": "~/.config/omarchy/plugins/evindor.keystroke",
+  "note": "v1（keystroke-tests）已应用后的增量修正：期望值对照当前源码逐字核对。修正：detailRows/screenRows 的 accessory 是单字「开/关」（stateText），section 是「已开启/可用」；dictation fallback 行 title 是「复制到剪贴板」（非入口行「听写到剪贴板」）。还原：navRow action.title 与 voice 开关 accessory 现值未译（navigate(KEY,\"Extensions\")、switch 标准 accessory）v1 误改。增补：commands 错误消息「参数 0 需要一个 name」、usage「必填 · 本行剩余内容」、extensions「id calculator 属于内置提供商」、detailRows enabled 行 title「启用」、settingstree 搜索结果 title「启用」/设置屏数组「启用」/无语音屏「外观,打开配置文件」。已知不修：tst_settingstree 缩写搜索（'setaiprv' 等英文缩写对中文标题的匹配为翻译行为副作用，需决定缩写策略，超出断言同步范围）；其余 v1 note 的跳过项不变。",
+  "replacements": [
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(rows[0].accessory, \"开\"); compare(rows[0].section, \"开\"); compare(rows[0].badge, \"extension\")",
+      "replace": "        compare(rows[0].accessory, \"开\"); compare(rows[0].section, \"已开启\"); compare(rows[0].badge, \"extension\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(rows[1].accessory, \"关闭\"); compare(rows[1].section, \"可用\"); compare(rows[1].badge, \"local\")",
+      "replace": "        compare(rows[1].accessory, \"关\"); compare(rows[1].section, \"可用\"); compare(rows[1].badge, \"local\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(rows[0].accessory, \"关闭\")",
+      "replace": "        compare(rows[0].accessory, \"关\")",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_extensions_check.py",
+      "find": "     test.check(row(\"启用\") && row(\"启用\").accessory === \"关闭\" && row(\"启用\").confirm === \"开启 Probe？\", \"turning on asks first: \" + (row(\"启用\") && row(\"启用\").confirm))",
+      "replace": "     test.check(row(\"启用\") && row(\"启用\").accessory === \"关\" && row(\"启用\").confirm === \"开启 Probe？\", \"turning on asks first: \" + (row(\"启用\") && row(\"启用\").confirm))",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_dictation.qml",
+      "find": "    compare(rows[0].title, \"听写到剪贴板\")",
+      "replace": "    compare(rows[0].title, \"复制到剪贴板\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(Extensions.navRow(8).action, { type: \"navigate\", scope: \"extensions\", title: \"扩展\" })",
+      "replace": "        compare(Extensions.navRow(8).action, { type: \"navigate\", scope: \"extensions\", title: \"Extensions\" })",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(screen[0].accessory, \"开\")",
+      "replace": "        compare(screen[0].accessory, \"On\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_commands.qml",
+      "find": "        verify(c.errors[4].indexOf(\"argument 0 needs a name\") > 0, c.errors[4])",
+      "replace": "        verify(c.errors[4].indexOf(\"参数 0 需要一个 name\") > 0, c.errors[4])",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_commands.qml",
+      "find": "        compare(rows[2].subtitle, \"Required · the rest of the line\")",
+      "replace": "        compare(rows[2].subtitle, \"必填 · 本行剩余内容\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(found.problems[1].message, \"The id calculator belongs to a bundled provider\")",
+      "replace": "        compare(found.problems[1].message, \"id calculator 属于内置提供商\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(ranked(Extensions.detailRows(\"\", plain[0]), \"\")[0].title, \"Enabled\")",
+      "replace": "        compare(ranked(Extensions.detailRows(\"\", plain[0]), \"\")[0].title, \"启用\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(rows[0].title, \"Enabled\")",
+      "replace": "        compare(rows[0].title, \"启用\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(titles(SettingsTree.rows(t.nodes, \"settings/ai\", \"\")), [\"Enabled\", \"Preferred assistant\", \"Open conversations in\", \"Send immediately in the browser\"])",
+      "replace": "        compare(titles(SettingsTree.rows(t.nodes, \"settings/ai\", \"\")), [\"启用\", \"Preferred assistant\", \"Open conversations in\", \"Send immediately in the browser\"])",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(titles(SettingsTree.rows(t.nodes, \"settings\", \"\")).slice(0, 2), [\"Appearance\", \"Open config file\"])",
+      "replace": "        compare(titles(SettingsTree.rows(t.nodes, \"settings\", \"\")).slice(0, 2), [\"外观\", \"打开配置文件\"])",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_commands.qml",
+      "find": "        compare(Commands.enabledNotice(\"Translate\", [compiled(translate)], \"\"), \"Translate is on · type tr [to] <text>, or find it by name\")",
+      "replace": "        compare(Commands.enabledNotice(\"Translate\", [compiled(translate)], \"\"), \"Translate 已开启 · 输入 tr [to] <text>，或按名字找到它\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_commands.qml",
+      "find": "        compare(Commands.enabledNotice(\"Plain\", [], \"\"), \"Plain is on\")",
+      "replace": "        compare(Commands.enabledNotice(\"Plain\", [], \"\"), \"Plain 已开启\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(rows[0].confirm, \"Turn on Model?\")",
+      "replace": "        compare(rows[0].confirm, \"开启 Model？\")",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_route_check.py",
+      "find": "    test.check(palette.scopeTitle === \"Applications\", \"the enabled breadcrumb is preserved\")",
+      "replace": "    test.check(palette.scopeTitle === \"应用\", \"the enabled breadcrumb is preserved\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/tests/test_search.py",
+      "find": "        self.assertIn(\"No enabled\", self.search()[\"error\"])",
+      "replace": "        self.assertIn(\"没有已启用\", self.search()[\"error\"])",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/tests/test_search.py",
+      "find": "        self.assertIn(\"detect\", self.search(desktop=\"\")[\"error\"])",
+      "replace": "        self.assertIn(\"检测\", self.search(desktop=\"\")[\"error\"])",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/tests/test_search.py",
+      "find": "        self.assertIn(\"not supported\", self.search(desktop=\"unknown.desktop\")[\"error\"])",
+      "replace": "        self.assertIn(\"不支持的默认浏览器\", self.search(desktop=\"unknown.desktop\")[\"error\"])",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/tests/test_search.py",
+      "find": "            self.assertIn(\"No browser profiles\", self.search(desktop=\"helium.desktop\")[\"error\"])",
+      "replace": "            self.assertIn(\"未在标准位置找到\", self.search(desktop=\"helium.desktop\")[\"error\"])",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/tests/palette_check.py",
+      "find": "     check(svc.items.length === 0 && svc.message.indexOf(\"Could not reach\") === 0, \"request error visible\")",
+      "replace": "     check(svc.items.length === 0 && svc.message.indexOf(\"无法连接 GIPHY\") === 0, \"request error visible\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/tests/palette_check.py",
+      "find": "     check(svc.items.length === 0 && svc.message.indexOf(\"No GIFs\") === 0, \"empty state\")",
+      "replace": "     check(svc.items.length === 0 && svc.message.indexOf(\"未找到 GIF\") === 0, \"empty state\")",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_graphics_loss_check.py",
+      "find": "    test.check(palette.errorMessage.indexOf(\"graphics resources\") >= 0, \"failure stays inspectable\")",
+      "replace": "    test.check(palette.errorMessage.indexOf(\"图形资源\") >= 0, \"failure stays inspectable\")",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_graphics_loss_check.py",
+      "find": "    test.check(palette.errorMessage.indexOf(\"graphics resources\") >= 0, \"a loss after the close is still reported\")",
+      "replace": "    test.check(palette.errorMessage.indexOf(\"图形资源\") >= 0, \"a loss after the close is still reported\")",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_route_check.py",
+      "find": "    test.check(palette.statusMessage === \"Applications is disabled in Keystroke Settings\", \"the fallback explains why\")",
+      "replace": "    test.check(palette.statusMessage === \"应用 已在 Keystroke 设置中禁用\", \"the fallback explains why\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(found.problems[4].message, \"extension.json needs a name\")",
+      "replace": "        compare(found.problems[4].message, \"extension.json 需要 name\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(rows[5].title, \"Answers queries like model cat · model dog\")",
+      "replace": "        compare(rows[5].title, \"回答类似这样的查询：model cat · model dog\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(found.problems[2].message, \"extension.json is not valid JSON\")",
+      "replace": "        compare(found.problems[2].message, \"extension.json 不是有效的 JSON\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(rows[0].subtitle, \"Keystroke Settings › Clipboard History\")",
+      "replace": "        compare(rows[0].subtitle, \"Keystroke 设置 › Clipboard History\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(hello[0].confirm, \"Turn on Hello?\")",
+      "replace": "        compare(hello[0].confirm, \"开启 Hello？\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        verify(screen[3].confirm.indexOf(\"Add the Keystroke voice block\") === 0)",
+      "replace": "        verify(screen[3].confirm.indexOf(\"添加\") === 0)",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        verify(rows[0].confirmDetail.indexOf(\"automatically checked and reviewed\") > 0)",
+      "replace": "        verify(rows[0].confirmDetail.indexOf(\"自动检查与审查\") > 0)",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        verify(rows[0].confirmDetail.indexOf(\"Nonetheless, run it at your own risk.\") > 0)",
+      "replace": "        verify(rows[0].confirmDetail.indexOf(\"仍请自负风险\") > 0)",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(found.problems[3].message, \"Needs Keystroke provider API 1, extension.json declares 2\")",
+      "replace": "        compare(found.problems[3].message, \"需要 Keystroke provider API 1，而 extension.json 声明的是 2\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        verify(hello[0].confirmDetail.indexOf(\"run it at your own risk\") > 0)",
+      "replace": "        verify(hello[0].confirmDetail.indexOf(\"仍请自负风险\") > 0)",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(rows[0].title, \"语音\")",
+      "replace": "        compare(rows[0].title, \"Voice\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        verify(localRows[0].confirmDetail.indexOf(\"local folder in \" + builtin + \"/model that nobody has reviewed\") > 0)",
+      "replace": "        verify(localRows[0].confirmDetail.indexOf(builtin + \"/model 中的一个本地文件夹，未经任何人审查\") > 0)",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(rows[1].confirm, \"Open a terminal and run bin/setup from \" + builtin + \"/model? Downloads a 40 MB model\")",
+      "replace": "        compare(rows[1].confirm, \"打开终端并在 \" + builtin + \"/model 中运行 bin/setup？ Downloads a 40 MB model\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(rows[0].subtitle, \"Keystroke Settings › Voice\")",
+      "replace": "        compare(rows[0].subtitle, \"Keystroke 设置 › 语音\")",
+      "count": 1
+    }
+  ]
+}

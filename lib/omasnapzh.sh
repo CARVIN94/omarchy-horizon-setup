@@ -25,7 +25,7 @@
 OMASNAP_ZH_ROOT="${OMASNAP_ZH_ROOT:-$HOME/.local/share/omasnap-zh}"
 OMASNAP_ZH_TABLE="${OMASNAP_ZH_TABLE:-$HERE/lib/omasnap-zh.json}"
 OMASNAP_ZH_APPLY="${OMASNAP_ZH_APPLY:-$HERE/lib/apply-omasnap-zh.py}"
-OMASNAP_ZH_PIN="${OMASNAP_ZH_PIN:-1.23.0}"
+OMASNAP_ZH_PIN="${OMASNAP_ZH_PIN:-1.25.0}"
 OMASNAP_BIN_DIR="${OMASNAP_BIN_DIR:-$HOME/.local/libexec/omasnap}"
 OMASNAP_ZH_MARK="${OMASNAP_ZH_MARK:-$OMASNAP_BIN_DIR/.zh-version}"
 
@@ -63,7 +63,7 @@ omasnapzh_build_deps() {
     command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
   done
   # LayerShellQt 的开发文件：系统的 layer-shell-qt 包提供，或用户态副本
-  # （~/.local/lib/cmake/LayerShellQt，由 setup.sh omasnap-zh-deps 装）。
+  # （~/.local/lib/cmake/LayerShellQt，需用户自行放置；本插件不代装）。
   if [ ! -d /usr/lib/cmake/LayerShellQt ] && [ ! -d "$HOME/.local/lib/cmake/LayerShellQt" ]; then
     missing+=("layer-shell-qt")
   fi
@@ -149,7 +149,25 @@ omasnapzh_revert() {
   omasnapzh_use stock
 }
 
-# 面板行：与 zhcn_rows 一样的 TAB 契约，复用同一个 Tab 渲染。
+# 面板行：本层的对外行契约（面板 ZhcnTab.qml 与 CLI `setup.sh omasnap-zh` 消费）。
+#
+# TAB 分隔 7 列，顺序固定：
+#   id  title  state  applied  clean  mismatch  total
+#
+#   id        omasnap-ui（面板按 id 路由到本层，改 id = 改契约）
+#   title     展示名
+#   state     四态，取自 omasnapzh_state：
+#               missing  没装 omasnap
+#               stock    装的是上游原版
+#               zh       装的是汉化版
+#               stale    汉化版存在，但对应上游版本已不是当前 pin（需重建）
+#   applied   state=zh 时为 1，否则 0
+#   clean     state=stock 时为 1，否则 0
+#   mismatch  本层恒为 0（重编译型汉化不存在「部分失配」，词表未命中即整体中止）
+#   total     已装 omasnap 时恒为 1（本层只有一条目标），未装为 0
+#
+# 列数必须恰好 7——面板 parseRows 见列数不符就整行丢弃，不猜列
+# （同 RuleList 的教训）。
 omasnapzh_row() {
   local state title applied clean total
   state=$(omasnapzh_state)

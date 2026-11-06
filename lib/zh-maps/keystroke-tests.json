@@ -1,0 +1,555 @@
+{
+  "id": "keystroke-tests",
+  "group": "keystroke",
+  "title": "Keystroke 测试断言同步",
+  "root": "~/.config/omarchy/plugins/evindor.keystroke",
+  "note": "上游测试断言期望值与已应用的 core/ui/align/ext-a 译文对齐。fixture 输入数据一律不动；未译扩展(timer/translate/windows/recent-projects/keyboard-cleaner)的透传期望保持英文。跳过项：①hotkeys_check 的 flcrn/Super+F/keys-themselves/menu-order/dispatcher-argv 为本机 Omarchy 绑定漂移（revert 后同样红，非汉化因果）；②palette_dictation_check 的 quickshell 超时为环境问题；③tst_commands.qml 的 fixture 命令对象与其透传 compare；④palette_commands 中 row(\"Set a timer\")/row(\"Translate\")/row(\"tr bonjour\")/\"tm <duration> [name]\" 期望（timer/translate 扩展未译）；⑤palette_extensions 描述串误命中、recent-projects altVerb \"Open terminal\"（该扩展未译）、herdr test_helper 的 kind 参数 \"pane\"（标识值）、palette_graphics_loss 的 prompt \"Retry\"（用户输入模拟）；⑥extensions/currency/tests/tst_currency.qml、extensions/*/tests/*.qml 不在本次范围（extensions/*/tests/*.py 已覆盖）。",
+  "replacements": [
+    {
+      "file": "tests/codex_session_check.py",
+      "find": "     test.check(session.activity===\"Stopped\",\"stop acknowledged\");session.newQuestion(\"next question\");test.stage=4",
+      "replace": "     test.check(session.activity===\"已停止\",\"stop acknowledged\");session.newQuestion(\"next question\");test.stage=4",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_commands_check.py",
+      "find": "     test.check(row(\"What can I type?\") !== null, \"the root offers the commands screen: \" + titles().slice(-3).join(\" | \"))",
+      "replace": "     test.check(row(\"我能输入什么？\") !== null, \"the root offers the commands screen: \" + titles().slice(-3).join(\" | \"))",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_commands_check.py",
+      "find": "     test.check(s.hint === \"Translate · to: a language code or name; leave it out to use your targets (optional)\", \"hint names the action and the first argument: \" + s.hint)",
+      "replace": "     test.check(s.hint === \"Translate · to: a language code or name; leave it out to use your targets（可选）\", \"hint names the action and the first argument: \" + s.hint)",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_commands_check.py",
+      "find": "     test.check(state().hint === \"Set a timer · name: a label for the notification (optional)\", \"hint on the last argument: \" + state().hint)",
+      "replace": "     test.check(state().hint === \"Set a timer · name: a label for the notification（可选）\", \"hint on the last argument: \" + state().hint)",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_commands_check.py",
+      "find": "     test.check(state().hint === \"Emoji · feeling: a name or a feeling: smile, cat, party\", \"sigil hint: \" + state().hint)",
+      "replace": "     test.check(state().hint === \"表情符号 · feeling: 名称或心情：smile、cat、party\", \"sigil hint: \" + state().hint)",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_commands_check.py",
+      "find": "     test.check(row(\"Translate\") !== null && row(\"Set a timer\") !== null && row(\"Emoji\") !== null && row(\"Find files\") !== null && row(\"What can I type?\") === null, \"/ lists every command: \" + titles().join(\" | \"))",
+      "replace": "     test.check(row(\"Translate\") !== null && row(\"Set a timer\") !== null && row(\"表情符号\") !== null && row(\"查找文件\") !== null && row(\"我能输入什么？\") === null, \"/ lists every command: \" + titles().join(\" | \"))",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_commands_check.py",
+      "find": "     test.check(row(\"Translate\") !== null && row(\"Emoji\") === null, \"/tr filters the list: \" + titles().join(\" | \"))",
+      "replace": "     test.check(row(\"Translate\") !== null && row(\"表情符号\") === null, \"/tr filters the list: \" + titles().join(\" | \"))",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_commands_check.py",
+      "find": "     test.check(palette.rows[0].title === \"tr [to] <text>\" && palette.rows[0].section === \"Usage\", \"usage line first: \" + titles().slice(0, 3).join(\" | \"))",
+      "replace": "     test.check(palette.rows[0].title === \"tr [to] <text>\" && palette.rows[0].section === \"用法\", \"usage line first: \" + titles().slice(0, 3).join(\" | \"))",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_commands_check.py",
+      "find": "     test.check(row(\"tr bonjour\") !== null && row(\"tr bonjour\").verb === \"Try\", \"examples are runnable\")",
+      "replace": "     test.check(row(\"tr bonjour\") !== null && row(\"tr bonjour\").verb === \"试一下\", \"examples are runnable\")",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_commands_check.py",
+      "find": "     test.check(row(\"Prefix\") !== null && row(\"Prefix\").accessory === \"tr\" && row(\"Prefix\").action.scope === \"settings/translate/prefix\", \"the prefix row leads to the setting\")",
+      "replace": "     test.check(row(\"触发词\") !== null && row(\"触发词\").accessory === \"tr\" && row(\"触发词\").action.scope === \"settings/translate/prefix\", \"the prefix row leads to the setting\")",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_commands_check.py",
+      "find": "     test.check(row(\"Enabled\") !== null, \"the switch is still there\")",
+      "replace": "     test.check(row(\"启用\") !== null, \"the switch is still there\")",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_commands_check.py",
+      "find": "     if (palette.pending || !row(\"Enabled\")) return",
+      "replace": "     if (palette.pending || !row(\"启用\")) return",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_commands_check.py",
+      "find": "     palette.perform({ type: \"setting\", path: [\"providers\", \"timer\"], key: \"enabled\", value: true, schema: { key: \"enabled\", type: \"boolean\" } }, row(\"Enabled\"))",
+      "replace": "     palette.perform({ type: \"setting\", path: [\"providers\", \"timer\"], key: \"enabled\", value: true, schema: { key: \"enabled\", type: \"boolean\" } }, row(\"启用\"))",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_commands_check.py",
+      "find": "     test.check(palette.statusMessage === \"Timer is on · type tm <duration> [name], or find it by name\", \"the notice says what to type: \" + palette.statusMessage)",
+      "replace": "     test.check(palette.statusMessage === \"Timer 已开启 · 输入 tm <duration> [name]，或按名字找到它\", \"the notice says what to type: \" + palette.statusMessage)",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_commands_check.py",
+      "find": "     test.check(row(\"Prefix\") !== null && row(\"Prefix\").accessory === \"tm\", \"Prefix is a setting: \" + (row(\"Prefix\") ? row(\"Prefix\").accessory : titles().join(\" | \")))",
+      "replace": "     test.check(row(\"触发词\") !== null && row(\"触发词\").accessory === \"tm\", \"Prefix is a setting: \" + (row(\"触发词\") ? row(\"触发词\").accessory : titles().join(\" | \")))",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_extensions_check.py",
+      "find": "     test.check(problem(\"Bad_Name\").indexOf(\"Folder name must be\") === 0, \"a bad folder name is reported: \" + problem(\"Bad_Name\"))",
+      "replace": "     test.check(problem(\"Bad_Name\").indexOf(\"文件夹名只能使用\") === 0, \"a bad folder name is reported: \" + problem(\"Bad_Name\"))",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_extensions_check.py",
+      "find": "     test.check(row(\"Timer\") && row(\"Timer\").accessory === \"On\", \"Timer listed as on: \" + JSON.stringify(row(\"Timer\") && row(\"Timer\").accessory))",
+      "replace": "     test.check(row(\"Timer\") && row(\"Timer\").accessory === \"开\", \"Timer listed as on: \" + JSON.stringify(row(\"Timer\") && row(\"Timer\").accessory))",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_extensions_check.py",
+      "find": "     test.check(row(\"Broken\") && row(\"Broken\").accessory === \"Needs attention\", \"Broken listed as needing attention\")",
+      "replace": "     test.check(row(\"Broken\") && row(\"Broken\").accessory === \"需要注意\", \"Broken listed as needing attention\")",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_extensions_check.py",
+      "find": "     test.check(row(\"Write your own\") !== null, \"the guide row is there\")",
+      "replace": "     test.check(row(\"自己动手写\") !== null, \"the guide row is there\")",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_extensions_check.py",
+      "find": "     test.check(row(\"Enabled\") && row(\"Enabled\").accessory === \"On\" && !row(\"Enabled\").confirm, \"Enabled row shows on, no confirmation to turn off\")",
+      "replace": "     test.check(row(\"启用\") && row(\"启用\").accessory === \"开\" && !row(\"启用\").confirm, \"Enabled row shows on, no confirmation to turn off\")",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_extensions_check.py",
+      "find": "     test.check(row(\"Open folder\") && row(\"Open folder\").action.argv[1].indexOf(\"/probe\") > 0, \"local extension offers its folder\")",
+      "replace": "     test.check(row(\"打开文件夹\") && row(\"打开文件夹\").action.argv[1].indexOf(\"/probe\") > 0, \"local extension offers its folder\")",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_extensions_check.py",
+      "find": "     test.check(row(\"Enabled\") && row(\"Enabled\").confirmDetail.indexOf(\"local folder in \") > 0 && row(\"Enabled\").confirmDetail.indexOf(\"/probe\") > 0, \"the confirmation names the folder: \" + (row(\"Enabled\") && row(\"Enabled\").confirmDetail))",
+      "replace": "     test.check(row(\"启用\") && row(\"启用\").confirmDetail.indexOf(\"中的一个本地文件夹\") > 0 && row(\"启用\").confirmDetail.indexOf(\"/probe\") > 0, \"the confirmation names the folder: \" + (row(\"启用\") && row(\"启用\").confirmDetail))",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_currency_check.py",
+      "find": "     test.check(row(\"Exchange rates unavailable\") !== null, \"empty answer: the status row says the rates are unavailable: \" + titles().join(\" | \"))",
+      "replace": "     test.check(row(\"汇率不可用\") !== null, \"empty answer: the status row says the rates are unavailable: \" + titles().join(\" | \"))",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_currency_check.py",
+      "find": "     test.check(row(\"Exchange rates unavailable\") && row(\"Exchange rates unavailable\").subtitle.indexOf(\"Frankfurter answered nothing\") === 0, \"the row says why: \" + (row(\"Exchange rates unavailable\") || {}).subtitle)",
+      "replace": "     test.check(row(\"汇率不可用\") && row(\"汇率不可用\").subtitle.indexOf(\"Frankfurter 没有返回内容\") === 0, \"the row says why: \" + (row(\"汇率不可用\") || {}).subtitle)",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_currency_check.py",
+      "find": "     test.check(service().failedAt > 0 && service().error === \"Frankfurter answered nothing\", \"the failure is recorded on the service: \" + service().error)",
+      "replace": "     test.check(service().failedAt > 0 && service().error === \"Frankfurter 没有返回内容\", \"the failure is recorded on the service: \" + service().error)",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_currency_check.py",
+      "find": "     test.check(row(\"Exchange rates unavailable\") !== null, \"still the status row: \" + titles().join(\" | \"))",
+      "replace": "     test.check(row(\"汇率不可用\") !== null, \"still the status row: \" + titles().join(\" | \"))",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_currency_check.py",
+      "find": "     if (palette.pending || service().fetching || !palette.rows.length || row(\"Downloading exchange rates…\") || row(\"Exchange rates unavailable\") || curlCalls() < 2) return",
+      "replace": "     if (palette.pending || service().fetching || !palette.rows.length || row(\"正在下载汇率…\") || row(\"汇率不可用\") || curlCalls() < 2) return",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_shortcut_check.py",
+      "find": "   test.check(palette.confirmPending && palette.confirmPending.message === \"Uninstall Keystroke Test App?\" && palette.confirmPending.cancelText === \"Keep it\",\"Delete opens the uninstall confirmation\")",
+      "replace": "   test.check(palette.confirmPending && palette.confirmPending.message === \"卸载 Keystroke Test App？\" && palette.confirmPending.cancelText === \"保留\",\"Delete opens the uninstall confirmation\")",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_url_check.py",
+      "find": "     check(row(\"Open URL\") && row(\"Open URL\").accessory === \"$\", \"command appears in help\")",
+      "replace": "     check(row(\"打开网址\") && row(\"打开网址\").accessory === \"$\", \"command appears in help\")",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_url_check.py",
+      "find": "     if (palette.pending || !row(\"Prefix\")) return",
+      "replace": "     if (palette.pending || !row(\"触发词\")) return",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_url_check.py",
+      "find": "     check(row(\"Enabled\") && row(\"Enabled\").accessory === \"On\" && row(\"Prefix\").accessory === \"$\", \"enabled and prefix settings default correctly\")",
+      "replace": "     check(row(\"启用\") && row(\"启用\").accessory === \"开\" && row(\"触发词\").accessory === \"$\", \"enabled and prefix settings default correctly\")",
+      "count": 1
+    },
+    {
+      "file": "tests/hotkeys_check.py",
+      "find": "      check(rows[0].section === \"Hotkeys\" && rows[0].remember === true, \"row is a remembered Hotkeys item\")",
+      "replace": "      check(rows[0].section === \"快捷键\" && rows[0].remember === true, \"row is a remembered Hotkeys item\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_ai.qml",
+      "find": "        compare(g.title, \"Ask Codex\")",
+      "replace": "        compare(g.title, \"向 Codex 提问\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_ai.qml",
+      "find": "        verify(g.subtitle.indexOf(\"sends your prompt\") > 0)",
+      "replace": "        verify(g.subtitle.indexOf(\"已发送你的提示词\") > 0)",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_ai.qml",
+      "find": "        compare(Ai.cursorPlan(\"browser\", all, \"x\", \"\").subtitle, \"Cursor · prompt ready in the composer · no browser hand-off\")",
+      "replace": "        compare(Ai.cursorPlan(\"browser\", all, \"x\", \"\").subtitle, \"Cursor · 提示词已在输入框就绪 · no browser hand-off\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_commands.qml",
+      "find": "        verify(c.errors[3].indexOf(\"only the last argument\") > 0, c.errors[3])",
+      "replace": "        verify(c.errors[3].indexOf(\"只有最后一个参数\") > 0, c.errors[3])",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_commands.qml",
+      "find": "        compare(Commands.compile(\"x\").errors, [\"commands must be an array\"])",
+      "replace": "        compare(Commands.compile(\"x\").errors, [\"commands 必须是数组\"])",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_commands.qml",
+      "find": "        compare(Commands.hintLine(Commands.match(items, \"tr\")), \"Translate · to: a language code or name (optional)\")",
+      "replace": "        compare(Commands.hintLine(Commands.match(items, \"tr\")), \"Translate · to: a language code or name（可选）\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_commands.qml",
+      "find": "        compare(Commands.hintLine(Commands.match(items, \"timer 10m tea\")), \"Set a timer · name: a label (optional)\")",
+      "replace": "        compare(Commands.hintLine(Commands.match(items, \"timer 10m tea\")), \"Set a timer · name: a label（可选）\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_commands.qml",
+      "find": "        compare(rows[1].subtitle, \"Optional\")",
+      "replace": "        compare(rows[1].subtitle, \"可选\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_commands.qml",
+      "find": "        compare(rows[3].verb, \"Try\")",
+      "replace": "        compare(rows[3].verb, \"试一下\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_commands.qml",
+      "find": "        compare(rows[5].action, { type: \"navigate\", scope: \"settings/translate/prefix\", title: \"Prefix\" })",
+      "replace": "        compare(rows[5].action, { type: \"navigate\", scope: \"settings/translate/prefix\", title: \"触发词\" })",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(found.problems[0].message, \"Folder name must be lowercase letters, digits and dashes\")",
+      "replace": "        compare(found.problems[0].message, \"文件夹名只能使用小写字母、数字和连字符\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(found.problems[5].message, \"entry must be a .qml file inside the extension folder\")",
+      "replace": "        compare(found.problems[5].message, \"entry 必须是扩展文件夹内的 .qml 文件\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(found.problems[7].message, \"setup.run must be a script inside the extension folder\")",
+      "replace": "        compare(found.problems[7].message, \"setup.run 必须是扩展文件夹内的脚本\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(rows[0].altVerb, \"Turn off\")",
+      "replace": "        compare(rows[0].altVerb, \"关闭\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(Extensions.navRow(8, { total: 3, on: 1 }).subtitle, \"1 of 3 on\")",
+      "replace": "        compare(Extensions.navRow(8, { total: 3, on: 1 }).subtitle, \"已开启 1 / 3\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(Extensions.navRow(8, { total: 0, on: 0 }).subtitle, \"Third-party providers that ship with Keystroke\")",
+      "replace": "        compare(Extensions.navRow(8, { total: 0, on: 0 }).subtitle, \"Keystroke 附带的第三方提供商\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(titles(ranked(Extensions.detailRows(\"setup\", sick), \"setup\")), [\"Run setup\"])",
+      "replace": "        compare(titles(ranked(Extensions.detailRows(\"setup\", sick), \"setup\")), [\"运行安装脚本\"])",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(bad.problems[0].message, \"commands must be an array\")",
+      "replace": "        compare(bad.problems[0].message, \"commands 必须是数组\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(rows[0].section, \"Usage\")",
+      "replace": "        compare(rows[0].section, \"用法\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(rows[4].title, \"Prefix\")",
+      "replace": "        compare(rows[4].title, \"触发词\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_extensions.qml",
+      "find": "        compare(rows[5].title, \"Enabled\")",
+      "replace": "        compare(rows[5].title, \"启用\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_files.qml",
+      "find": "            compare(rows[i].section, \"Files\")",
+      "replace": "            compare(rows[i].section, \"文件\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_files.qml",
+      "find": "        compare(folders[0].verb, \"Open folder\")",
+      "replace": "        compare(folders[0].verb, \"打开文件夹\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_files.qml",
+      "find": "        compare(folder.subtitle, \"~/Documents · Folder\")",
+      "replace": "        compare(folder.subtitle, \"~/Documents · 文件夹\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_files.qml",
+      "find": "        compare(folder.altVerb, \"Open terminal\")",
+      "replace": "        compare(folder.altVerb, \"打开终端\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_files.qml",
+      "find": "        compare(image.previewLabel, \"IMAGE\")",
+      "replace": "        compare(image.previewLabel, \"图片\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_hotkeys.qml",
+      "find": "        compare(rows[0].section, \"Hotkeys\")",
+      "replace": "        compare(rows[0].section, \"快捷键\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_hotkeys.qml",
+      "find": "        compare(rows[5].subtitle, \"Only from the keyboard\")",
+      "replace": "        compare(rows[5].subtitle, \"仅键盘直接触发\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_patterns.qml",
+      "find": "        verify(c.errors[3].indexOf(\"pattern 4\") === 0)",
+      "replace": "        verify(c.errors[3].indexOf(\"第 4 个 pattern\") === 0)",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_patterns.qml",
+      "find": "        compare(Patterns.compile(\"oops\").errors, [\"patterns must be an array\"])",
+      "replace": "        compare(Patterns.compile(\"oops\").errors, [\"patterns 必须是数组\"])",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_patterns.qml",
+      "find": "        verify(c.errors[0].indexOf(\"longer\") > 0)",
+      "replace": "        verify(c.errors[0].indexOf(\"超过\") > 0)",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settings.qml",
+      "find": "        verify(parsed.error.indexOf(\"kept at last valid version\") >= 0)",
+      "replace": "        verify(parsed.error.indexOf(\"保留为上一个有效版本\") >= 0)",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "            compare(rows[0].subtitle, \"Keystroke Settings › AI & Web Search\")",
+      "replace": "            compare(rows[0].subtitle, \"Keystroke 设置 › AI & Web Search\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(rows[0].previewDetail, \"Keystroke Settings › AI & Web Search › Preferred assistant › Claude\")",
+      "replace": "        compare(rows[0].previewDetail, \"Keystroke 设置 › AI & Web Search › Preferred assistant › Claude\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(hello[0].title, \"Enabled\")",
+      "replace": "        compare(hello[0].title, \"启用\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(titles(root), [\"Keystroke Settings\"])",
+      "replace": "        compare(titles(root), [\"Keystroke 设置\"])",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(hello[1].title, \"Manage extension\")",
+      "replace": "        compare(hello[1].title, \"管理扩展\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(titles(SettingsTree.rows(t.nodes, \"settings\", \"\")).slice(0, 3), [\"Appearance\", \"Voice\", \"Open config file\"])",
+      "replace": "        compare(titles(SettingsTree.rows(t.nodes, \"settings\", \"\")).slice(0, 3), [\"外观\", \"语音\", \"打开配置文件\"])",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(screen[3].accessory, \"Missing\")",
+      "replace": "        compare(screen[3].accessory, \"缺失\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(screen[3].verb, \"Install\")",
+      "replace": "        compare(screen[3].verb, \"安装\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        verify([\"Voice\", \"Voxtype voice command integration\"].indexOf(rows[0].title) >= 0, rows[0].title)",
+      "replace": "        verify([\"语音\", \"Voxtype voice command integration\"].indexOf(rows[0].title) >= 0, rows[0].title)",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(bindings.accessory, \"Outdated\")",
+      "replace": "        compare(bindings.accessory, \"已过期\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(bindings.verb, \"Update\")",
+      "replace": "        compare(bindings.verb, \"更新\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        verify(bindings.confirm.indexOf(\"Rewrite\") === 0)",
+      "replace": "        verify(bindings.confirm.indexOf(\"重写\") === 0)",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(entry.title, \"Voice\")",
+      "replace": "        compare(entry.title, \"语音\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(entry.subtitle, \"Voxtype is not installed\")",
+      "replace": "        compare(entry.subtitle, \"未安装 Voxtype\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(titles(screen), [\"Voxtype is not installed\", \"Install dictation (voxtype)\"])",
+      "replace": "        compare(titles(screen), [\"未安装 Voxtype\", \"安装听写（voxtype）\"])",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(rows[0].title, \"Learn Keystroke\")",
+      "replace": "        compare(rows[0].title, \"学习 Keystroke\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(search(\"\", \"guide\")[0].title, \"Learn Keystroke\")",
+      "replace": "        compare(search(\"\", \"guide\")[0].title, \"学习 Keystroke\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(search(\"settings\", \"help\")[0].title, \"Learn Keystroke\")",
+      "replace": "        compare(search(\"settings\", \"help\")[0].title, \"学习 Keystroke\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(titles(SettingsTree.rows(t.nodes, \"settings\", \"\")), [\"Appearance\", \"Open config file\", \"Learn Keystroke\", \"AI & Web Search\", \"Clipboard History\", \"Hello\", \"broken\"])",
+      "replace": "        compare(titles(SettingsTree.rows(t.nodes, \"settings\", \"\")), [\"外观\", \"打开配置文件\", \"学习 Keystroke\", \"AI & Web Search\", \"Clipboard History\", \"Hello\", \"broken\"])",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_settingstree.qml",
+      "find": "        compare(rows[0].subtitle, \"Keystroke Settings\")",
+      "replace": "        compare(rows[0].subtitle, \"Keystroke 设置\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_smartmatch.qml",
+      "find": "    compare(Tree.rows(tree.nodes, \"settings/matching/mode\", \"\").map(function(r) {return r.title}).join(\"|\"), \"Off|Only voice|Voice and text\")",
+      "replace": "    compare(Tree.rows(tree.nodes, \"settings/matching/mode\", \"\").map(function(r) {return r.title}).join(\"|\"), \"关闭|仅语音|语音和文本\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_smartmatch.qml",
+      "find": "    compare(Tree.rows(tree.nodes, \"settings/matching/model\", \"\").map(function(r) {return r.title}).join(\"|\"), \"Small (2M)|Large (8M)\")",
+      "replace": "    compare(Tree.rows(tree.nodes, \"settings/matching/model\", \"\").map(function(r) {return r.title}).join(\"|\"), \"小 (2M)|大 (8M)\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/tests/palette_check.py",
+      "find": "     check(svc.message === \"Copied to clipboard\", \"copy link succeeded\")",
+      "replace": "     check(svc.message === \"已复制到剪贴板\", \"copy link succeeded\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/tests/palette_check.py",
+      "find": "     check(svc.message === \"Copied to clipboard\" && palette.opened, \"image copy keeps view open\")",
+      "replace": "     check(svc.message === \"已复制到剪贴板\" && palette.opened, \"image copy keeps view open\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/tests/test_copy.py",
+      "find": "                self.assertIn(\"Copy failed\", output.getvalue())",
+      "replace": "                self.assertIn(\"复制失败：\", output.getvalue())",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-profiles/tests/palette_check.py",
+      "find": "      check(row && row.altAction.argv[4] === \"--inprivate\" && row.altVerb === \"InPrivate window\", \"private window\")",
+      "replace": "      check(row && row.altAction.argv[4] === \"--inprivate\" && row.altVerb === \"InPrivate 窗口\", \"private window\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/tests/test_search.py",
+      "find": "        self.assertEqual(self.search(desktop=\"helium.desktop\")[\"error\"], \"No browser profiles found in the standard location\")",
+      "replace": "        self.assertEqual(self.search(desktop=\"helium.desktop\")[\"error\"], \"未在标准位置找到浏览器配置\")",
+      "count": 1
+    }
+  ]
+}

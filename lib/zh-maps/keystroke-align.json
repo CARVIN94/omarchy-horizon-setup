@@ -1,0 +1,375 @@
+{
+  "id": "keystroke-align",
+  "group": "keystroke",
+  "title": "Keystroke 对齐层",
+  "root": "~/.config/omarchy/plugins/evindor.keystroke",
+  "note": "对齐补漏：①previewLabel/verb 既显示又作比较值的地方，比较值随译文同步（译了赋值不译比较会切断渲染分支/指示符）；②ui/ 目录（ConfirmSheet/PreviewPane/ResultRow）此前不在任何批次内的显示文案。CLIPBOARD/DICTATION/IMAGE 等徽标译成中文后，PreviewPane 的布局分支比较同步用中文。已核实：无其它地方再比较这些值（全局 grep）。",
+  "replacements": [
+    {
+      "file": "ui/PreviewPane.qml",
+      "find": "(row.previewLabel || \"\") === \"CLIPBOARD\" || (row.previewLabel || \"\") === \"DICTATION\"",
+      "replace": "(row.previewLabel || \"\") === \"剪贴板\" || (row.previewLabel || \"\") === \"听写\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Clipboard.qml",
+      "find": "previewLabel: \"CLIPBOARD\",",
+      "replace": "previewLabel: \"剪贴板\",",
+      "count": 1
+    },
+    {
+      "file": "ui/PreviewPane.qml",
+      "find": "text: root.row.previewLabel || \"PREVIEW\"",
+      "replace": "text: root.row.previewLabel || \"预览\"",
+      "count": 1
+    },
+    {
+      "file": "ui/PreviewPane.qml",
+      "find": "\"Press return to \" + String(root.row.verb).toLowerCase()",
+      "replace": "\"按回车\" + String(root.row.verb)",
+      "count": 1
+    },
+    {
+      "file": "ui/ResultRow.qml",
+      "find": "root.verb === \"Open\" ? \"›\" : \"\"",
+      "replace": "root.verb === \"打开\" ? \"›\" : \"\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "? \"Open\" : \"Run\")",
+      "replace": "? \"打开\" : \"运行\")",
+      "count": 1
+    },
+    {
+      "file": "ui/ConfirmSheet.qml",
+      "find": "property string cancelText: \"Cancel\"",
+      "replace": "property string cancelText: \"取消\"",
+      "count": 1
+    },
+    {
+      "file": "ui/ConfirmSheet.qml",
+      "find": "property string confirmText: \"Confirm\"",
+      "replace": "property string confirmText: \"确认\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Converter.qml",
+      "find": "label: \"Your time zone\"",
+      "replace": "label: \"你的时区\"",
+      "count": 1
+    },
+    {
+      "file": "core/AiTargets.js",
+      "find": "title: claude ? \"Ask Claude Code\" : \"Ask Codex\",",
+      "replace": "title: claude ? \"向 Claude Code 提问\" : \"向 Codex 提问\",",
+      "count": 1
+    },
+    {
+      "file": "core/AiTargets.js",
+      "find": "subtitle: \"Terminal · new \" + cli + \" session with your prompt\", verb: \"Open terminal\",",
+      "replace": "subtitle: \"终端 · 新建 \" + cli + \" 会话并带上你的提示词\", verb: \"打开终端\",",
+      "count": 1
+    },
+    {
+      "file": "core/AiTargets.js",
+      "find": "title: \"Ask Claude\",\n               subtitle: \"Claude desktop · new chat, prompt ready to send\", verb: \"Open Claude\",",
+      "replace": "title: \"向 Claude 提问\",\n               subtitle: \"Claude 桌面 · 新对话，提示词已就绪\", verb: \"打开 Claude\",",
+      "count": 1
+    },
+    {
+      "file": "core/AiTargets.js",
+      "find": "title: \"Ask Codex\",\n               subtitle: \"Codex desktop · new thread, prompt ready to send\", verb: \"Open Codex\",",
+      "replace": "title: \"向 Codex 提问\",\n               subtitle: \"Codex 桌面 · 新线程，提示词已就绪\", verb: \"打开 Codex\",",
+      "count": 1
+    },
+    {
+      "file": "core/AiTargets.js",
+      "find": "subtitle: \"claude.ai · prompt ready to send\" + why, verb: \"Open Claude\",",
+      "replace": "subtitle: \"claude.ai · 提示词已就绪\" + why, verb: \"打开 Claude\",",
+      "count": 1
+    },
+    {
+      "file": "core/AiTargets.js",
+      "find": "title: \"Ask ChatGPT\",\n           subtitle: \"chatgpt.com · \" + (autoSend ? \"sends your prompt\" : \"prompt ready to send\") + why, verb: \"Open ChatGPT\",",
+      "replace": "title: \"向 ChatGPT 提问\",\n           subtitle: \"chatgpt.com · \" + (autoSend ? \"已发送你的提示词\" : \"提示词已就绪\") + why, verb: \"打开 ChatGPT\",",
+      "count": 1
+    },
+    {
+      "file": "core/AiTargets.js",
+      "find": "title: \"Ask Cursor Agent\",\n             subtitle: \"Terminal · agent with your prompt\", verb: \"Open terminal\",",
+      "replace": "title: \"让 Cursor Agent 处理\",\n             subtitle: \"终端 · 智能体带上你的提示词\", verb: \"打开终端\",",
+      "count": 1
+    },
+    {
+      "file": "core/AiTargets.js",
+      "find": "title: \"Ask Cursor\",\n             subtitle: \"Cursor · prompt ready in the composer\" + why, verb: \"Open Cursor\",",
+      "replace": "title: \"向 Cursor 提问\",\n             subtitle: \"Cursor · 提示词已在输入框就绪\" + why, verb: \"打开 Cursor\",",
+      "count": 1
+    },
+    {
+      "file": "core/AiTargets.js",
+      "find": "title: \"Search Google\", subtitle: prompt, icon: ICONS.google, section: \"Continue with\",",
+      "replace": "title: \"Google 搜索\", subtitle: prompt, icon: ICONS.google, section: \"继续用\",",
+      "count": 1
+    },
+    {
+      "file": "core/AiTargets.js",
+      "find": "verb: \"Search\", tier: \"fallback\", score: 2,",
+      "replace": "verb: \"搜索\", tier: \"fallback\", score: 2,",
+      "count": 1
+    },
+    {
+      "file": "core/AiTargets.js",
+      "find": "icon: ICONS[a], section: \"Continue with\",",
+      "replace": "icon: ICONS[a], section: \"继续用\",",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "verb: \"Open\", tier: \"item\", order: 4,",
+      "replace": "verb: \"打开\", tier: \"item\", order: 4,",
+      "count": 2
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "section: \"\", verb: \"Select\", tier: \"item\", score: 1, order: i,",
+      "replace": "section: \"\", verb: \"选择\", tier: \"item\", score: 1, order: i,",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "root.confirmPending.confirmText : \"Confirm\"",
+      "replace": "root.confirmPending.confirmText : \"确认\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "root.confirmPending.cancelText : \"Cancel\"",
+      "replace": "root.confirmPending.cancelText : \"取消\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Converter.qml",
+      "find": "verb: \"Copy result\",",
+      "replace": "verb: \"复制结果\",",
+      "count": 1
+    },
+    {
+      "file": "providers/Converter.qml",
+      "find": "previewLabel: \"CONVERSION\",",
+      "replace": "previewLabel: \"换算\",",
+      "count": 1
+    },
+    {
+      "file": "providers/Dictation.qml",
+      "find": "section: \"Continue with\", tier: \"fallback\", score: 1, verb: \"复制\",",
+      "replace": "section: \"继续用\", tier: \"fallback\", score: 1, verb: \"复制\",",
+      "count": 1
+    },
+    {
+      "file": "providers/Emoji.qml",
+      "find": "verb: \"Open\",",
+      "replace": "verb: \"打开\",",
+      "count": 1
+    },
+    {
+      "file": "providers/Emoji.qml",
+      "find": "verb: \"Copy emoji\",",
+      "replace": "verb: \"复制表情\",",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "section:\"Files\"",
+      "replace": "section:\"文件\"",
+      "count": 1
+    },
+    {
+      "file": "providers/OpenUrl.qml",
+      "find": "previewDetail: \"Open in your default browser\"",
+      "replace": "previewDetail: \"在默认浏览器中打开\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Emoji.qml",
+      "find": "previewLabel: \"EMOJI\" })",
+      "replace": "previewLabel: \"表情\" })",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "action: { type: \"navigate\", scope: \"files\", title: \"Files\" }",
+      "replace": "action: { type: \"navigate\", scope: \"files\", title: \"文件\" }",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "root.scope = \"applications\"; root.scopeTitle = \"Applications\"",
+      "replace": "root.scope = \"applications\"; root.scopeTitle = \"应用\"",
+      "count": 1
+    },
+    {
+      "file": "core/AiTargets.js",
+      "find": "return { id: assistant, target: \"claude-web\", title: \"Ask Claude\",",
+      "replace": "return { id: assistant, target: \"claude-web\", title: \"向 Claude 提问\",",
+      "count": 1
+    },
+    {
+      "file": "core/AiTargets.js",
+      "find": "preview: prompt, previewLabel: \"PROMPT\", previewDetail: \"Opens with this prompt in the composer\" })",
+      "replace": "preview: prompt, previewLabel: \"提示词\", previewDetail: \"在输入框中带上这条提示词打开\" })",
+      "count": 1
+    },
+    {
+      "file": "providers/AiWeb.qml",
+      "find": "label: \"Cursor workspace folder\"",
+      "replace": "label: \"Cursor 工作区文件夹\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Applications.qml",
+      "find": "section: \"Applications\", verb: \"Launch\", tier: \"item\", score: score, order: order, remember: true,",
+      "replace": "section: \"应用\", verb: \"启动\", tier: \"item\", score: score, order: order, remember: true,",
+      "count": 1
+    },
+    {
+      "file": "providers/Applications.qml",
+      "find": "icon: \"󰀻\", section: \"Applications\",",
+      "replace": "icon: \"󰀻\", section: \"应用\",",
+      "count": 1
+    },
+    {
+      "file": "providers/Calculator.qml",
+      "find": "previewLabel: \"CALCULATOR\", previewDetail: \"Add the next number\" })",
+      "replace": "previewLabel: \"计算器\", previewDetail: \"继续输入下一个数\" })",
+      "count": 1
+    },
+    {
+      "file": "providers/Calculator.qml",
+      "find": "verb: \"Copy result\",",
+      "replace": "verb: \"复制结果\",",
+      "count": 1
+    },
+    {
+      "file": "providers/Calculator.qml",
+      "find": "preview: text, previewLabel: \"RESULT\",",
+      "replace": "preview: text, previewLabel: \"结果\",",
+      "count": 1
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "label: \"Task working folder\"",
+      "replace": "label: \"任务工作目录\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "subtitle: \"Type or speak a quick question\"",
+      "replace": "subtitle: \"键入或说出一个快捷问题\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Colors.qml",
+      "find": "verb: \"Copy color\",",
+      "replace": "verb: \"复制颜色\",",
+      "count": 1
+    },
+    {
+      "file": "providers/Colors.qml",
+      "find": "previewLabel: \"COLOR\",",
+      "replace": "previewLabel: \"颜色\",",
+      "count": 1
+    },
+    {
+      "file": "providers/AiWeb.qml",
+      "find": "name: \"AI & Web Search\",",
+      "replace": "name: \"AI 与网页搜索\",",
+      "count": 1
+    },
+    {
+      "file": "providers/Applications.qml",
+      "find": "name: \"Applications\",",
+      "replace": "name: \"应用\",",
+      "count": 1
+    },
+    {
+      "file": "providers/Calculator.qml",
+      "find": "name: \"Calculator\",",
+      "replace": "name: \"计算器\",",
+      "count": 1
+    },
+    {
+      "file": "providers/Clipboard.qml",
+      "find": "name: \"Clipboard History\",",
+      "replace": "name: \"剪贴板历史\",",
+      "count": 1
+    },
+    {
+      "file": "providers/Colors.qml",
+      "find": "name: \"Colors\",",
+      "replace": "name: \"颜色\",",
+      "count": 1
+    },
+    {
+      "file": "providers/CommandsProvider.qml",
+      "find": "name: \"Commands\",",
+      "replace": "name: \"命令\",",
+      "count": 1
+    },
+    {
+      "file": "providers/Converter.qml",
+      "find": "name: \"Converter\",",
+      "replace": "name: \"万能换算\",",
+      "count": 1
+    },
+    {
+      "file": "providers/Dictation.qml",
+      "find": "name: \"Dictate to Clipboard\",",
+      "replace": "name: \"听写到剪贴板\",",
+      "count": 1
+    },
+    {
+      "file": "providers/Emoji.qml",
+      "find": "name: \"Emoji Picker\",",
+      "replace": "name: \"表情选择\",",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "name: \"Files\",",
+      "replace": "name: \"文件\",",
+      "count": 1
+    },
+    {
+      "file": "providers/Hotkeys.qml",
+      "find": "name: \"Hotkeys\",",
+      "replace": "name: \"快捷键\",",
+      "count": 1
+    },
+    {
+      "file": "providers/OpenUrl.qml",
+      "find": "name: \"Open URL\",",
+      "replace": "name: \"打开网址\",",
+      "count": 1
+    },
+    {
+      "file": "providers/SettingsProvider.qml",
+      "find": "name: \"Keystroke Settings\",",
+      "replace": "name: \"Keystroke 设置\",",
+      "count": 1
+    },
+    {
+      "file": "codex/ConversationView.qml",
+      "find": "text: session.busy ? \"Connecting to Codex…\" : \"Ask a question. Keep the conversation here.\\nType or use your voice hotkey.\"",
+      "replace": "text: session.busy ? \"正在连接 Codex…\" : \"提个问题，把对话留在这里。\\n键入或使用语音热键。\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "root.statusMessage = entry.provider.name + \" is disabled in Keystroke Settings\"",
+      "replace": "root.statusMessage = entry.provider.name + \" 已在 Keystroke 设置中禁用\"",
+      "count": 1
+    }
+  ]
+}

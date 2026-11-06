@@ -1,21 +1,23 @@
 #!/usr/bin/env bash
 # horizon.setup — 汉化管理：状态检测与重放。
 #
-# 四组目标（omasnap-ui 的实现不在本文件，见下）：
-#   omarchy-shell    Omarchy 系统汉化 —— bar 挂件从 omarchy.* 原版切到
-#                    carvin.* 中文版（omarchy-zh-sync 重建的 22 个汉化插件）。
-#                    检测即真相：实读 ~/.config/omarchy/shell.json 的 bar
-#                    layout，可汉化挂件全部 carvin.* = applied、全 omarchy.* =
-#                    clean、混合 = mismatch。
+# 三组目标（omasnap-ui 的实现不在本文件，见下）：
 #   keystroke        evindor.keystroke 的显示文案（多张映射表聚合一行）
 #   activity-monitor stappmus.activity-monitor 的显示文案
 #   omasnap-ui       Omasnap 界面 —— 由 lib/omasnapzh.sh 提供（上游无 i18n，
 #                    要改源码重编译，与映射表组不同层，但共用同一行契约）
 #
-# 映射表资产在 ~/.local/share/omarchy-zh-cn/（与 omarchy-zh-sync 同生态）：
-#   apply-zh.py     幂等应用器（check/apply/revert；失配整体拒绝，绝不半应用）
-#   maps/*.json     显示文案映射表：精确片段 + 期望次数 + group 归属
-#   patches/*.patch git diff 快照（留档）
+# 注：Omarchy 自身（omarchy.* 挂件、菜单、通知等）的界面语言由 Omarchy 0.4.5
+# 起的自带多语言接管（/usr/share/omarchy/default/i18n/*，Commons/I18n.qml +
+# Translations.qml），本层不再做 bar 挂件切换。
+#
+# 但第三方插件不在此列：evindor.keystroke、stappmus.activity-monitor 上游
+# 没有任何 i18n 设施（无 .ts/.qm、无 tr()），中文只能靠改源码实现，故映射表
+# 组仍保留。
+#
+# 映射表资产随插件分发在 lib/（不再依赖任何外部共享目录）：
+#   lib/apply-zh.py  幂等应用器（check/apply/revert；失配整体拒绝，绝不半应用）
+#   lib/zh-maps/*.json 显示文案映射表：精确片段 + 期望次数 + group 归属
 #
 # 设计原则与本插件其余部分一致——检测即真相：状态每次实读配置与映射表，
 # 不维护状态副本。上游 git pull 把英文带回来即转 clean，重新汉化即可；
@@ -28,79 +30,16 @@
 #
 # zhcn_rows 行契约（TAB 分隔 7 列）：
 #   group  title  state  applied  clean  mismatch  total
-# state ∈ missing|clean|applied|mismatch
+# 映射表组的 state ∈ missing|clean|applied|mismatch；
+# omasnap-ui 行的 state ∈ missing|stock|zh|stale（由 lib/omasnapzh.sh 定义）。
+# 面板 ZhcnTab.qml 按 id 路由，两组状态词不同但共用这 7 列。
 
-ZH_ROOT="${ZH_ROOT:-$HOME/.local/share/omarchy-zh-cn}"
-ZH_APPLY="${ZH_APPLY:-$ZH_ROOT/apply-zh.py}"
-ZH_MAPS="${ZH_MAPS:-$ZH_ROOT/maps}"
-ZH_SHELL_JSON="${ZH_SHELL_JSON:-$HOME/.config/omarchy/shell.json}"
+# 资产位置从本文件自身定位，不依赖调用者的变量或当前目录：本文件就在 lib/ 下，
+# 故 ZH_SELF 即资产目录。名字刻意独立，避免覆盖调用者（setup.sh）自己算出的根目录。
+ZH_SELF=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-# 可汉化的 bar 挂件集（omarchy-zh-sync 重建了 carvin.* 中文版的那些；
-# keyboard-layout/workspaces 无中文版且无显示文案，不在列）。
-ZH_SHELL_WIDGETS="agents audio bluetooth clock indicators monitor network power system-update tray weather"
-
-# ---- omarchy-shell 组：bar 挂件切换 -----------------------------------------
-
-zh_shell_pairs() { # $1=方向 输出 "id" 行
-  local w
-  for w in $ZH_SHELL_WIDGETS; do
-    case "$1" in
-      to-zh) echo "omarchy.$w carvin.$w" ;;
-      to-en) echo "carvin.$w omarchy.$w" ;;
-    esac
-  done
-}
-
-zh_shell_state() {
-  local total=0 zh=0 id w
-  [ -f "$ZH_SHELL_JSON" ] || { echo "0 0"; return; }
-  for w in $ZH_SHELL_WIDGETS; do
-    if jq -e --arg a "omarchy.$w" --arg b "carvin.$w" \
-        '.bar.layout | [.left[], .center[], .right[]] | map(.id) | (index($a) != null or index($b) != null)' \
-        "$ZH_SHELL_JSON" >/dev/null 2>&1; then
-      total=$((total + 1))
-      if jq -e --arg b "carvin.$w" \
-          '.bar.layout | [.left[], .center[], .right[]] | map(.id) | index($b) != null' \
-          "$ZH_SHELL_JSON" >/dev/null 2>&1; then
-        zh=$((zh + 1))
-      fi
-    fi
-  done
-  echo "$total $zh"
-}
-
-# jq 原子改写 bar.layout 内的 id；disabledPlugins 等其它字段绝不动。
-zh_shell_rewrite() { # $1=from $2=to
-  [ -f "$ZH_SHELL_JSON" ] || { echo "missing $ZH_SHELL_JSON" >&2; return 2; }
-  local tmp
-  tmp=$(mktemp "${ZH_SHELL_JSON}.XXXXXX")
-  jq --arg from "$1" --arg to "$2" '
-    .bar.layout |= (
-      with_entries(.value |= map(if .id == $from then .id = $to else . end))
-    )' "$ZH_SHELL_JSON" > "$tmp" && mv "$tmp" "$ZH_SHELL_JSON"
-}
-
-zh_shell_apply() {
-  local p from to n=0
-  while read -r from to; do
-    if jq -e --arg a "$from" '.bar.layout | [.left[], .center[], .right[]] | map(.id) | index($a) != null' "$ZH_SHELL_JSON" >/dev/null 2>&1; then
-      zh_shell_rewrite "$from" "$to" || return 1
-      n=$((n + 1))
-    fi
-  done < <(zh_shell_pairs to-zh)
-  echo "bar widgets switched to Chinese: $n"
-}
-
-zh_shell_revert() {
-  local from to n=0
-  while read -r from to; do
-    if jq -e --arg a "$from" '.bar.layout | [.left[], .center[], .right[]] | map(.id) | index($a) != null' "$ZH_SHELL_JSON" >/dev/null 2>&1; then
-      zh_shell_rewrite "$from" "$to" || return 1
-      n=$((n + 1))
-    fi
-  done < <(zh_shell_pairs to-en)
-  echo "bar widgets switched back to English: $n"
-}
+ZH_APPLY="${ZH_APPLY:-$ZH_SELF/apply-zh.py}"
+ZH_MAPS="${ZH_MAPS:-$ZH_SELF/zh-maps}"
 
 # ---- 映射表组：按 group 聚合 -------------------------------------------------
 
@@ -116,19 +55,7 @@ zh_group_of() {
 }
 
 zhcn_rows() {
-  local total zh state
-  # 第一行：Omarchy 系统汉化（bar 挂件切中文版）
-  read -r total zh < <(zh_shell_state)
-  if [ "$total" = "0" ]; then
-    printf 'omarchy-shell\tOmarchy 系统汉化\tmissing\t0\t0\t0\t0\n'
-  else
-    if [ "$zh" = "0" ]; then state=clean
-    elif [ "$zh" = "$total" ]; then state=applied
-    else state=mismatch
-    fi
-    printf 'omarchy-shell\tOmarchy 系统汉化\t%s\t%s\t%s\t0\t%s\n' \
-      "$state" "$zh" "$((total - zh))" "$total"
-  fi
+  local state
 
   # Omasnap：上游无 i18n，走「源码打词表 + 重编译」，与映射表组不同层，
   # 但输出同一套 7 列契约，面板与 CLI 因此零改动。
@@ -198,7 +125,6 @@ zhcn_rows() {
 }
 
 zhcn_apply() {
-  if [ "$1" = "omarchy-shell" ]; then zh_shell_apply; return; fi
   # omasnap 不是映射表组：它要改源码并重新编译（约 3 分钟）。
   if [ "$1" = "omasnap-ui" ]; then omasnapzh_install; return; fi
   local m group n=0
@@ -213,7 +139,6 @@ zhcn_apply() {
 }
 
 zhcn_revert() {
-  if [ "$1" = "omarchy-shell" ]; then zh_shell_revert; return; fi
   if [ "$1" = "omasnap-ui" ]; then omasnapzh_revert; return; fi
   local m group n=0
   for m in "$ZH_MAPS"/*.json; do

@@ -1,0 +1,842 @@
+{
+ "id": "keystroke-ext-b",
+ "title": "Keystroke 扩展（后批）",
+ "root": "~/.config/omarchy/plugins/evindor.keystroke",
+ "note": "keyboard-cleaner/recent-projects/timer/translate/windows 全量显示文案。跳过并保留英文（测试断言锁定）：Timer/Timers 名称族与组合句（Start a … timer / Ends at / Cancel the … timer? / tooltip / No timers running / Timers）、describeDuration 时长格式、blockRow 三组合句、rate-limit 副标题（try again in/60 s）、Did you mean: 、Translating…、Type text to translate、Target languages 名称族、Open in the editor / Open in Google Translate / Speak / Too many requests / Translate 标题族、Copy/Paste/Add/Remove 动词、Translation copied、Back to 语言名前缀、arrow 的 → 与语言名（Languages.js 全表保留，兼作解析数据）、Windows 名称族与 Switch to 动词、workspaceLabel（Workspace N/Scratchpad）、dict 冒号拼接；跳过但非断言：TranslateView 状态串（与 onTextChanged 的 indexOf('Copied'/'Pasted'/'No ') 前缀清空逻辑耦合）、row description/keywords 搜索串、examples 命令字面量、id/prefix/value/regex/图标/单位。",
+ "replacements": [
+  {
+   "file": "extensions/keyboard-cleaner/extension.json",
+   "find": "\"name\": \"Keyboard Cleaner\",",
+   "replace": "\"name\": \"键盘清洁器\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/extension.json",
+   "find": "\"description\": \"Block every keyboard and pointer for a moment so you can wipe them: wipe 30s\",",
+   "replace": "\"description\": \"临时屏蔽所有键盘和指针以便擦拭：wipe 30s\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/extension.json",
+   "find": "\"title\": \"Block input to wipe the keyboard\",",
+   "replace": "\"title\": \"擦键盘时屏蔽输入\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/extension.json",
+   "find": "\"summary\": \"Disables every keyboard and pointer for a while, then brings them back\",",
+   "replace": "\"summary\": \"暂时禁用所有键盘和指针，随后自动恢复\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/extension.json",
+   "find": "\"hint\": \"30s, 2m, 90 seconds or a bare number of seconds; 5 minutes at most\",",
+   "replace": "\"hint\": \"30s、2m、90 seconds 或纯数字秒；最长 5 分钟\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/extension.json",
+   "find": "\"hint\": \"shown next to the countdown\",",
+   "replace": "\"hint\": \"显示在倒计时旁\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/Service.qml",
+   "find": "description: \"Block every keyboard and pointer for a moment so you can wipe them\",",
+   "replace": "description: \"临时屏蔽所有键盘和指针以便擦拭\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/Service.qml",
+   "find": "label: \"Default duration (seconds)\",",
+   "replace": "label: \"默认时长（秒）\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/Service.qml",
+   "find": "description: \"Used by `wipe` when no duration is typed; 5 minutes at most\" },",
+   "replace": "description: \"不输入时长时 `wipe` 使用；最长 5 分钟\" },",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/Service.qml",
+   "find": "label: \"Also block mice and touchpads\",",
+   "replace": "label: \"同时屏蔽鼠标和触控板\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/Service.qml",
+   "find": "description: \"Off keeps the pointer working while the keyboard is blocked\" }",
+   "replace": "description: \"关闭后屏蔽键盘时指针仍可用\" }",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/Service.qml",
+   "find": "root.error = \"The helper exited with code \" + code",
+   "replace": "root.error = \"辅助程序退出，代码 \" + code",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/core/Parser.js",
+   "find": "example: \"block 30s\", description: \"Block input for a number of seconds\" },",
+   "replace": "example: \"block 30s\", description: \"按秒数屏蔽输入\" },",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/core/Parser.js",
+   "find": "example: \"clean 2 minutes\", description: \"Block input for a number of minutes\" },",
+   "replace": "example: \"clean 2 minutes\", description: \"按分钟数屏蔽输入\" },",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/core/Parser.js",
+   "find": "example: \"block\", description: \"A verb on its own uses the default duration\" },",
+   "replace": "example: \"block\", description: \"单独一个动词即使用默认时长\" },",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/core/Parser.js",
+   "find": "example: \"30s\", description: \"A bare duration, offered below the Timer\" },",
+   "replace": "example: \"30s\", description: \"纯时长，排在计时器下方\" },",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/core/Parser.js",
+   "find": "example: \"5m\", description: \"A bare duration, offered below the Timer\" }",
+   "replace": "example: \"5m\", description: \"纯时长，排在计时器下方\" }",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/core/Parser.js",
+   "find": "var NAME = \"Keyboard Cleaner\"",
+   "replace": "var NAME = \"键盘清洁器\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/core/Parser.js",
+   "find": "subtitle: \"Block input while you wipe the keyboard: wipe 30s\",",
+   "replace": "subtitle: \"擦键盘时屏蔽输入：wipe 30s\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/core/Parser.js",
+   "find": "previewDetail: parsed.label || \"Wipe, then wait for the countdown\",",
+   "replace": "previewDetail: parsed.label || \"擦拭，然后等倒计时结束\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/core/Parser.js",
+   "find": "previewLabel: \"BLOCK INPUT\"",
+   "replace": "previewLabel: \"屏蔽输入\"",
+   "count": 2
+  },
+  {
+   "file": "extensions/keyboard-cleaner/core/Parser.js",
+   "find": "title: \"Block for \" + describeDuration(f[0])",
+   "replace": "title: \"屏蔽 \" + describeDuration(f[0])",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/core/Parser.js",
+   "find": "var fixed = [[15, \"Quick wipe\"], [30, \"The usual\"], [60, \"Keys and the touchpad\"]]",
+   "replace": "var fixed = [[15, \"快速擦拭\"], [30, \"常规\"], [60, \"键盘和触控板\"]]",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/core/Parser.js",
+   "find": "verb: \"Block\"",
+   "replace": "verb: \"屏蔽\"",
+   "count": 2
+  },
+  {
+   "file": "extensions/keyboard-cleaner/core/Parser.js",
+   "find": "verb: \"Open\"",
+   "replace": "verb: \"打开\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/core/Parser.js",
+   "find": "+ \"? Nothing you press or move counts until the countdown ends.\"",
+   "replace": "+ \"? 倒计时结束前你按的任何键或移动都不生效。\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/BlockView.qml",
+   "find": "if (root.error) return \"Nothing was blocked\"",
+   "replace": "if (root.error) return \"没有屏蔽任何设备\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/BlockView.qml",
+   "find": "return root.done ? \"Input restored\" + suffix : \"Nothing running\"",
+   "replace": "return root.done ? \"输入已恢复\" + suffix : \"没有正在进行的屏蔽\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/BlockView.qml",
+   "find": "if (root.blocked < 0) return \"Switching input off…\"",
+   "replace": "if (root.blocked < 0) return \"正在关闭输入…\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/BlockView.qml",
+   "find": "return \"Blocking \" + root.blocked + (root.blocked === 1 ? \" device\" : \" devices\") + \" · back in \"",
+   "replace": "return \"已屏蔽 \" + root.blocked + (root.blocked === 1 ? \" 个设备\" : \" 个设备\") + \" · 剩余 \"",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/BlockView.qml",
+   "find": "(root.idleParked ? \" · screensaver and lock paused\" : \"\")",
+   "replace": "(root.idleParked ? \" · 屏保与锁屏已暂停\" : \"\")",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/BlockView.qml",
+   "find": "if (root.done) return \"Wipe finished. The keyboard and pointer are back.\"",
+   "replace": "if (root.done) return \"擦拭完成，键盘和指针已恢复。\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/BlockView.qml",
+   "find": "return \"Wipe away. Nothing you press or move counts until the countdown ends.\"",
+   "replace": "return \"开始擦拭吧，倒计时结束前你按的任何键或移动都不生效。\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/BlockView.qml",
+   "find": "tooltipText: \"Back to results\"",
+   "replace": "tooltipText: \"返回结果列表\"",
+   "count": 2
+  },
+  {
+   "file": "extensions/keyboard-cleaner/BlockView.qml",
+   "find": "text: \"Back to results\"",
+   "replace": "text: \"返回结果列表\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/BlockView.qml",
+   "find": "label: \"Close\"; tooltipText: \"Esc\"",
+   "replace": "label: \"关闭\"; tooltipText: \"Esc\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/BlockView.qml",
+   "find": "text: \"Total\"",
+   "replace": "text: \"共计\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/bin/keyboard-cleaner",
+   "find": "emit({\"error\": \"hyprctl is not installed; this extension needs Hyprland\"})",
+   "replace": "emit({\"error\": \"hyprctl 未安装；此扩展需要 Hyprland\"})",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/bin/keyboard-cleaner",
+   "find": "emit({\"error\": \"Could not list input devices: %s\" % error})",
+   "replace": "emit({\"error\": \"无法列出输入设备：%s\" % error})",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/bin/keyboard-cleaner",
+   "find": "emit({\"error\": \"No keyboard or pointer to block\"})",
+   "replace": "emit({\"error\": \"没有可屏蔽的键盘或指针\"})",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/bin/keyboard-cleaner",
+   "find": "emit({\"error\": \"Something is still holding a key down — let go of the keyboard and start the wipe again\"})",
+   "replace": "emit({\"error\": \"还有按键未松开——请松开键盘后重新开始擦拭\"})",
+   "count": 1
+  },
+  {
+   "file": "extensions/keyboard-cleaner/bin/keyboard-cleaner",
+   "find": "emit({\"error\": \"Hyprland refused to disable any device\"})",
+   "replace": "emit({\"error\": \"Hyprland 拒绝禁用任何设备\"})",
+   "count": 1
+  },
+  {
+   "file": "extensions/recent-projects/extension.json",
+   "find": "\"name\": \"Recent projects\",",
+   "replace": "\"name\": \"最近项目\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/recent-projects/extension.json",
+   "find": "\"description\": \"Reopen a recent VS Code, VSCodium or Cursor project: proj keystroke\",",
+   "replace": "\"description\": \"重新打开最近用过的 VS Code、VSCodium 或 Cursor 项目：proj keystroke\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/recent-projects/extension.json",
+   "find": "\"title\": \"Open a recent project\",",
+   "replace": "\"title\": \"打开最近项目\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/recent-projects/extension.json",
+   "find": "\"summary\": \"A folder, workspace or remote a VS Code-family editor opened recently\",",
+   "replace": "\"summary\": \"VS Code 系编辑器最近打开的文件夹、工作区或远程连接\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/recent-projects/extension.json",
+   "find": "\"hint\": \"a project name or part of its path\",",
+   "replace": "\"hint\": \"项目名或路径的一部分\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/recent-projects/Service.qml",
+   "find": "name: \"Recent projects\", icon: Projects.ICON,",
+   "replace": "name: \"最近项目\", icon: Projects.ICON,",
+   "count": 1
+  },
+  {
+   "file": "extensions/recent-projects/Service.qml",
+   "find": "description: \"Reopen a recent VS Code or Cursor project\",",
+   "replace": "description: \"重新打开最近用过的 VS Code 或 Cursor 项目\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/recent-projects/core/Projects.js",
+   "find": "var SECTION = \"Recent projects\"",
+   "replace": "var SECTION = \"最近项目\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/recent-projects/core/Projects.js",
+   "find": "label: \"Show projects in the main search\",",
+   "replace": "label: \"在主搜索中显示项目\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/recent-projects/core/Projects.js",
+   "find": "description: \"Off: projects appear only after the proj command or on this extension's screen\" },",
+   "replace": "description: \"关闭时项目只在 proj 命令或本扩展页面出现\" },",
+   "count": 1
+  },
+  {
+   "file": "extensions/recent-projects/core/Projects.js",
+   "find": "label: \"Include recent files\",",
+   "replace": "label: \"包含最近打开的文件\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/recent-projects/core/Projects.js",
+   "find": "description: \"On: single files the editors opened are listed too, not only folders and workspaces\" }",
+   "replace": "description: \"开启后编辑器打开的单个文件也会列出，不只文件夹和工作区\" }",
+   "count": 1
+  },
+  {
+   "file": "extensions/recent-projects/core/Projects.js",
+   "find": "error: \"Could not read the recent project list\"",
+   "replace": "error: \"无法读取最近项目列表\"",
+   "count": 2
+  },
+  {
+   "file": "extensions/recent-projects/core/Projects.js",
+   "find": "status(\"No recent projects found\", \"VS Code, VSCodium, Cursor and Windsurf are supported\")",
+   "replace": "status(\"No recent projects found\", \"支持 VS Code、VSCodium、Cursor 和 Windsurf\")",
+   "count": 1
+  },
+  {
+   "file": "extensions/recent-projects/bin/projects.py",
+   "find": "\"error\": \"Could not list recent projects: %s\" % type(exc).__name__",
+   "replace": "\"error\": \"无法列出最近项目：%s\" % type(exc).__name__",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/extension.json",
+   "find": "\"description\": \"Countdown timers with a sound, a notification and a countdown in the bar: timer 10m tea\",",
+   "replace": "\"description\": \"带声音、通知和顶栏倒计时的计时器：timer 10m tea\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/extension.json",
+   "find": "\"summary\": \"A countdown with a notification when it ends\",",
+   "replace": "\"summary\": \"倒计时结束时发出通知\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/extension.json",
+   "find": "\"hint\": \"10m, 1h30m, 0:45, or a bare number of minutes\"",
+   "replace": "\"hint\": \"10m、1h30m、0:45 或纯数字分钟\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/Service.qml",
+   "find": "description: \"Countdown timers with a sound, a notification and a countdown in the bar\",",
+   "replace": "description: \"带声音、通知和顶栏倒计时的计时器\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/Service.qml",
+   "find": "label: \"Default length (minutes)\",",
+   "replace": "label: \"默认时长（分钟）\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/Service.qml",
+   "find": "description: \"Used by `timer tea` when no duration is given\" },",
+   "replace": "description: \"不给时长时 `timer tea` 使用\" },",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/Service.qml",
+   "find": "label: \"Sound when a timer ends\",",
+   "replace": "label: \"计时结束时的提示音\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/Service.qml",
+   "find": "optionLabels: { off: \"Off\", chime: \"Chime\", drop: \"Drop\", alarm: \"Alarm\" },",
+   "replace": "optionLabels: { off: \"关闭\", chime: \"铃声\", drop: \"水滴\", alarm: \"警报\" },",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/Service.qml",
+   "find": "description: \"Chime, Drop and Alarm are the freedesktop sounds in /usr/share/sounds; Custom sound file replaces the chosen one\" },",
+   "replace": "description: \"铃声、水滴和警报是 /usr/share/sounds 里的系统音效；自定义音频文件会替代所选音效\" },",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/Service.qml",
+   "find": "label: \"Custom sound file\",",
+   "replace": "label: \"自定义音频文件\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/Service.qml",
+   "find": "description: \"Path to an audio file played instead of the built-in sound; empty uses the choice above\" },",
+   "replace": "description: \"替代内置音效播放的音频文件路径；留空则用上面所选\" },",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/Service.qml",
+   "find": "label: \"Notify when a timer ends\",",
+   "replace": "label: \"计时结束时发通知\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/Service.qml",
+   "find": "label: \"Show the countdown in the bar\",",
+   "replace": "label: \"在顶栏显示倒计时\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/Service.qml",
+   "find": "description: \"The soonest timer counts down next to the Keystroke menu button from the moment it starts\" }",
+   "replace": "description: \"最近的计时器从启动起就在 Keystroke 菜单按钮旁倒计时\" }",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/core/Timer.js",
+   "find": "(req.defaulted ? \" · default length, add e.g. 10m to change it\" : \"\")",
+   "replace": "(req.defaulted ? \" · 默认时长，可加如 10m 修改\" : \"\")",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/core/Timer.js",
+   "find": "preview: countdown(req.seconds), previewLabel: \"TIMER\", previewDetail: req.label || \"No label\",",
+   "replace": "preview: countdown(req.seconds), previewLabel: \"计时器\", previewDetail: req.label || \"无名称\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/core/Timer.js",
+   "find": "confirmText: \"Cancel timer\", cancelText: \"Keep running\",",
+   "replace": "confirmText: \"取消计时器\", cancelText: \"继续计时\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/core/Timer.js",
+   "find": "title: \"No timers running\", subtitle: \"Type a duration: 10m tea, 1h30m, 0:45\",",
+   "replace": "title: \"No timers running\", subtitle: \"输入时长：10m tea、1h30m、0:45\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/core/Timer.js",
+   "find": "subtitle: timers.length ? timers.length + \" running\" : \"Countdown timers: timer 10m tea\",",
+   "replace": "subtitle: timers.length ? timers.length + \" 个进行中\" : \"倒计时提醒：timer 10m tea\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/core/Timer.js",
+   "find": "section: \"Timer\"",
+   "replace": "section: \"计时器\"",
+   "count": 3
+  },
+  {
+   "file": "extensions/timer/core/Timer.js",
+   "find": "section: \"Running\",",
+   "replace": "section: \"运行中\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/core/Timer.js",
+   "find": "verb: \"Start\"",
+   "replace": "verb: \"开始\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/core/Timer.js",
+   "find": "verb: \"Cancel\"",
+   "replace": "verb: \"取消\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/timer/core/Timer.js",
+   "find": "verb: \"Open\"",
+   "replace": "verb: \"打开\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/windows/extension.json",
+   "find": "\"description\": \"Switch to any open window: > firefox\",",
+   "replace": "\"description\": \"切换到任意打开的窗口：> firefox\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/windows/extension.json",
+   "find": "\"title\": \"Switch to a window\",",
+   "replace": "\"title\": \"切换到某个窗口\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/windows/extension.json",
+   "find": "\"summary\": \"Every open Hyprland window, most recently used first\",",
+   "replace": "\"summary\": \"所有打开的 Hyprland 窗口，最近使用的排在前面\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/windows/extension.json",
+   "find": "\"hint\": \"a window title or application\",",
+   "replace": "\"hint\": \"窗口标题或应用名\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/windows/Service.qml",
+   "find": "description: \"Switch to any open window\",",
+   "replace": "description: \"切换到任意打开的窗口\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/windows/core/Windows.js",
+   "find": "label: \"Show windows in the main search\",",
+   "replace": "label: \"在主搜索中显示窗口\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/windows/core/Windows.js",
+   "find": "description: \"Off: windows appear only after the > command or on this extension's screen\" },",
+   "replace": "description: \"关闭时窗口只在 > 命令或本扩展页面出现\" },",
+   "count": 1
+  },
+  {
+   "file": "extensions/windows/core/Windows.js",
+   "find": "label: \"Windows in the main search\",",
+   "replace": "label: \"主搜索中的窗口数\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/windows/core/Windows.js",
+   "find": "description: \"At most this many windows mix into the main results\" },",
+   "replace": "description: \"最多混入主结果的窗口数量\" },",
+   "count": 1
+  },
+  {
+   "file": "extensions/windows/core/Windows.js",
+   "find": "label: \"List the focused window\",",
+   "replace": "label: \"列出当前聚焦的窗口\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/windows/core/Windows.js",
+   "find": "description: \"On: the window you came from is listed too, last\" }",
+   "replace": "description: \"开启后你来源的那个窗口也列出，排在最后\" }",
+   "count": 1
+  },
+  {
+   "file": "extensions/windows/core/Windows.js",
+   "find": "c.title || c.initialTitle || cls || \"Untitled\"",
+   "replace": "c.title || c.initialTitle || cls || \"无标题\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/windows/core/Windows.js",
+   "find": "out.push(status(\"No other windows are open\"))",
+   "replace": "out.push(status(\"没有其他打开的窗口\"))",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/extension.json",
+   "find": "\"description\": \"Google Translate without an account: tr bonjour, bonjour to english\",",
+   "replace": "\"description\": \"免登录的谷歌翻译：tr bonjour、bonjour to english\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/extension.json",
+   "find": "\"summary\": \"Translate text into your target languages\",",
+   "replace": "\"summary\": \"把文本翻译成你的目标语言\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/Service.qml",
+   "find": "description: \"Google Translate without an account: tr bonjour, bonjour to english, every target at once in an editor\",",
+   "replace": "description: \"免登录的谷歌翻译：tr bonjour、bonjour to english，编辑器一次看全目标语言\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/Service.qml",
+   "find": "job.paste ? \"Pasted the translation\" : \"Translation copied\"",
+   "replace": "job.paste ? \"已粘贴译文\" : \"Translation copied\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/Service.qml",
+   "find": "notify(\"Translation failed\", v.main.error)",
+   "replace": "notify(\"翻译失败\", v.main.error)",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/Service.qml",
+   "find": "store(proc.key, { error: \"Translation unavailable\", at: Date.now() })",
+   "replace": "store(proc.key, { error: \"翻译不可用\", at: Date.now() })",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/Service.qml",
+   "find": "store(proc.key, { error: \"Google answered HTTP \" + parts.status, at: Date.now() })",
+   "replace": "store(proc.key, { error: \"Google 返回 HTTP \" + parts.status, at: Date.now() })",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/Service.qml",
+   "find": "store(proc.key, { error: \"Translation failed (curl exit \" + code + \")\", at: Date.now() })",
+   "replace": "store(proc.key, { error: \"翻译失败（curl 退出码 \" + code + \"）\", at: Date.now() })",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "description: \"Language codes separated by commas, tried in order; pick them on the Translate screen\" },",
+   "replace": "description: \"逗号分隔的语言代码，按顺序尝试；可在翻译页面挑选\" },",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "label: \"Translate from\",",
+   "replace": "label: \"翻译来源\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "label: \"Default action\",",
+   "replace": "label: \"默认操作\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "description: \"What Enter does on a translation; Ctrl+Enter does the other\" },",
+   "replace": "description: \"回车对译文的操作；Ctrl+回车执行另一个\" },",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "label: \"Prioritise cross-language results\",",
+   "replace": "label: \"跨语言结果优先\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "description: \"When the text is already in one of your target languages, that echo goes last\" },",
+   "replace": "description: \"文本已是目标语言之一时，该回声排到最后\" },",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "label: \"Offer the selected text\",",
+   "replace": "label: \"提供选中文本\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "description: \"Reads the primary selection (or the clipboard) when the palette opens and offers to translate it\" },",
+   "replace": "description: \"面板打开时读取主选区（或剪贴板）并提供翻译\" },",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "label: \"Offer pronunciation playback\",",
+   "replace": "label: \"提供发音朗读\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "description: \"A Speak row that streams Google's text-to-speech through mpv\" },",
+   "replace": "description: \"一行朗读，用 mpv 播放谷歌文字转语音\" },",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "label: \"HTTP proxy\",",
+   "replace": "label: \"HTTP 代理\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "description: \"Passed to curl as --proxy, e.g. http://proxy.example.com:8080\" }",
+   "replace": "description: \"以 --proxy 传给 curl，如 http://proxy.example.com:8080\" }",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "description: \"Translates into a named language\" }",
+   "replace": "description: \"译成指定的语言\" }",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "subtitle: ctx.selection ? \"Translate the selection or type: tr bonjour\" : \"Google Translate: tr bonjour, bonjour to english\",",
+   "replace": "subtitle: ctx.selection ? \"翻译选中文本或输入：tr bonjour\" : \"谷歌翻译：tr bonjour、bonjour to english\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "\"Type text after \" + prefix",
+   "replace": "\"在 \" + prefix + \" 后输入文本\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "subtitle: \"Into \" + ctx.targets.map(languageName).join(\", \") + \" · \" + prefix + \" fr bonjour picks a language\",",
+   "replace": "subtitle: \"译入 \" + ctx.targets.map(languageName).join(\", \") + \" · \" + prefix + \" fr bonjour 可指定语言\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "title: \"Keep typing\", subtitle: \"At least two characters\",",
+   "replace": "title: \"继续输入\", subtitle: \"至少两个字符\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "+ \" · a check on the translation\",",
+   "replace": "+ \" · 对译文的核对\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "view.correction.auto ? \"Google translated the corrected spelling\" : \"Translate the corrected spelling instead\",",
+   "replace": "view.correction.auto ? \"谷歌已自动翻译纠正后的拼写\" : \"改为翻译纠正后的拼写\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "subtitle: \"Every target language, with the reverse translation\",",
+   "replace": "subtitle: \"所有目标语言，并附反向翻译\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "subtitle: \"Play the \" + toName + \" pronunciation with mpv\",",
+   "replace": "subtitle: \"用 mpv 播放 \" + toName + \" 的发音\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "subtitle: \"translate.google.com in your browser\",",
+   "replace": "subtitle: \"在浏览器打开 translate.google.com\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "text + \" · replaces the selection in the focused app\",",
+   "replace": "text + \" · 替换当前应用中的选中内容\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "altVerb: \"Copy translation\"",
+   "replace": "altVerb: \"复制译文\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "var why = last ? \" · keep at least one\" : full ? \" · at most \" + MAX_TARGETS : \"\"",
+   "replace": "var why = last ? \" · 至少保留一个\" : full ? \" · 最多 \" + MAX_TARGETS : \"\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "subtitle: (chosen ? \"Target \" + (at + 1) + \" of \" + ctx.targets.length + \" · \" + code : code) + why,",
+   "replace": "subtitle: (chosen ? \"目标 \" + (at + 1) + \"/\" + ctx.targets.length + \" · \" + code : code) + why,",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "section: chosen ? \"Chosen\" : \"Languages\",",
+   "replace": "section: chosen ? \"已选\" : \"语言\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "+ \" · in this order\",",
+   "replace": "+ \" · 按此顺序\",",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "verb: \"Change\"",
+   "replace": "verb: \"更改\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "verb: \"Retry\"",
+   "replace": "verb: \"重试\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "verb: \"Play\"",
+   "replace": "verb: \"播放\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/core/Translate.js",
+   "find": "verb: \"Open\"",
+   "replace": "verb: \"打开\"",
+   "count": 4
+  },
+  {
+   "file": "extensions/translate/TranslateView.qml",
+   "find": "text: \"Type or dictate text to translate\"",
+   "replace": "text: \"输入或口述要翻译的文本\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/TranslateView.qml",
+   "find": "? \"Finishing transcript…\" : \"Listening…\"",
+   "replace": "? \"正在完成转写…\" : \"正在聆听…\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/TranslateView.qml",
+   "find": "? \"Detecting…\" :",
+   "replace": "? \"检测中…\" :",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/TranslateView.qml",
+   "find": "label: \"New line\"; cap: \"⇧ ↵\"",
+   "replace": "label: \"换行\"; cap: \"⇧ ↵\"",
+   "count": 1
+  },
+  {
+   "file": "extensions/translate/TranslateView.qml",
+   "find": "tooltipText: \"Back to results\"",
+   "replace": "tooltipText: \"返回结果列表\"",
+   "count": 1
+  }
+ ]
+}

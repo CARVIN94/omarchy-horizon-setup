@@ -28,18 +28,22 @@ Item {
   readonly property string setupSh: Qt.resolvedUrl("setup.sh").toString().replace("file://", "")
 
   // 「能不能点汉化 / 能不能点还原」是跨两组状态词的判据，必须集中一处。
-  // 映射表组用 clean/applied；Omasnap 那层用 stock/zh（它由 lib/omasnapzh.sh
-  // 汇报，语义相同但词不同——曾因此让按钮永远点不动）。mismatch/missing 两组
-  // 都不给点。以后新增一层，只在这里补词，不去改按钮条件。
+  // 映射表组用 clean/applied；Omasnap 那层用 stock/zh/stale（它由
+  // lib/omasnapzh.sh 汇报，语义相同但词不同——曾因此让按钮永远点不动）。
+  // mismatch/missing 两组都不给点。stale 是「汉化版还在但基于旧 pin」：
+  // 既能重编译，也能退回上游原版（omasnapzh_revert 接受 stale）。以后新增
+  // 一层，只在这里补词，不去改按钮条件。
   readonly property var canApply: ({ clean: true, stock: true, stale: true })
-  readonly property var canRevert: ({ applied: true, zh: true })
+  readonly property var canRevert: ({ applied: true, zh: true, stale: true })
 
   readonly property var stateLabel: ({
     clean: "未汉化",
     applied: "已汉化",
     mismatch: "已失配（上游改动了文案，先更新映射表）",
     missing: "插件未安装",
-    // Omasnap 专用：汉化的目标版本变了，需要重新编译。
+    // Omasnap 专用三态：词由 lib/omasnapzh.sh 汇报，与映射表组不同。
+    stock: "上游原版（未汉化）",
+    zh: "已汉化（Omasnap 编译版）",
     stale: "汉化已过期（上游版本变了，需重新编译）"
   })
 
@@ -210,7 +214,8 @@ Item {
             text: (root.stateLabel[modelData.state] || modelData.state)
               + " · " + modelData.applied + "/" + modelData.total + " 条"
               + (Number(modelData.mismatch) > 0 ? " · 失配 " + modelData.mismatch + " 条" : "")
-            color: modelData.state === "mismatch" ? root.foreground : Qt.darker(root.foreground, 1.5)
+            color: (modelData.state === "mismatch" || modelData.state === "stale")
+                ? root.foreground : Qt.darker(root.foreground, 1.5)
             wrapMode: Text.WordWrap
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption

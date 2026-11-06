@@ -6,7 +6,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-10b981?style=flat-square" alt="MIT license"></a>
   <a href="https://github.com/Hyprwm/Hyprland"><img src="https://img.shields.io/badge/WM-Hyprland-89b4fa?style=flat-square" alt="Hyprland"></a>
   <a href="https://omarchy.com"><img src="https://img.shields.io/badge/OS-Omarchy-f38ba8?style=flat-square" alt="Omarchy"></a>
-  <a href="#快捷键桥接"><img src="https://img.shields.io/badge/Cmd-20%20%E7%BB%84%E6%A1%A5%E6%8E%A5-10b981?style=flat-square" alt="Cmd bridges"></a>
+  <a href="#快捷键桥接"><img src="https://img.shields.io/badge/Cmd-21%20%E7%BB%84%E6%A1%A5%E6%8E%A5-10b981?style=flat-square" alt="Cmd bridges"></a>
 </p>
 
 <p align="center">
@@ -29,20 +29,71 @@
 
 ## 快速安装
 
-需要 **Omarchy（Hyprland + Quickshell）**。克隆到插件目录即可：
+需要 **Omarchy（Hyprland + Quickshell）**。克隆到插件目录：
 
 ```bash
 git clone https://github.com/CARVIN94/omarchy-horizon-setup.git \
   ~/.config/omarchy/plugins/horizon.setup
 ```
 
-然后重启 Omarchy shell：
+**然后必须启用它** —— 第三方插件不会自动启用：判定是「`shell.json` 里有引用」
+（`shell/services/PluginRegistry.qml:135-163`，`plugins[]` 或 `bar.layout.*` 任一处；
+只有 first-party 才默认启用）。不启用的话 `omarchy plugin list` 显示 `disabled`，
+`omarchy-shell shell summon` 只回 `unknown`，面板点不开：
 
 ```bash
+omarchy plugin enable horizon.setup     # 往 ~/.config/omarchy/shell.json 的 plugins[] 里登记
+omarchy plugin list | grep horizon      # 应显示 enabled
 omarchy-restart-shell
 ```
 
-打开 **菜单 → 设置 → Horizon Setup**；点开即是面板。
+> 没有 `omarchy plugin enable` 子命令（老版本）时，等价做法是手工登记：
+>
+> ```bash
+> jq '.plugins = ((.plugins // []) + ["horizon.setup"] | unique)' \
+>   ~/.config/omarchy/shell.json > /tmp/shell.json \
+>   && mv /tmp/shell.json ~/.config/omarchy/shell.json
+> omarchy-restart-shell
+> ```
+
+### 加菜单入口（一次性）
+
+面板装好后还需要一个点得开的入口。Omarchy 的菜单是 `jsonc`，用户扩展文件
+`~/.config/omarchy/extensions/omarchy-menu.jsonc` 默认不存在——自己建一个，
+把下面这条加进去（已有别的条目就以同样格式追加，别覆盖掉你原有的）：
+
+```jsonc
+{
+  "setup.horizon": {
+    "icon": "⚙️",
+    "label": "Horizon Setup",
+    "aliases": ["horizon", "mackeys", "mac"],
+    "action": "omarchy-shell shell toggle horizon.setup"
+  }
+}
+```
+
+> **加一次，永久有效**：这个条目属于「用户自加」，1.3.x → 1.4.0 的迁移脚本
+> 精简该文件时**会显式保留它**（保留清单里第一条就是 `setup.horizon`）。所以
+> 先跑迁移再加菜单、或者先加菜单再跑迁移，结果一样，不冲突。
+>
+> 不想动菜单也行，命令行等价：
+> `omarchy-shell shell toggle horizon.setup`（或 `omarchy-shell shell summon horizon.setup '{}'`）。
+
+装好后打开 **菜单 → 设置 → Horizon Setup**；点开即是面板。
+
+> **从 1.3.x 升级的老用户**：1.4.0 不再依赖 omarchy-zh-cn（第三方汉化项目），
+> 而 Omarchy 0.4.5 自带多语言。升级后跑一次迁移脚本，把旧项目写进用户态的东西
+> 一次清干净 —— bar 挂件切回 `omarchy.*`、删 `carvin.*` 插件目录、把旧中文菜单
+> 副本**精简**成只留你自己加的条目（`setup.horizon` 面板入口等，其余交给 0.4.5
+> 原生中文菜单）、删 `bindings.lua` 里的 zh 块（SUPER+K 恢复原生）、删三个
+> `omarchy-zh-*` 脚本与 post-update hook、删它的 state 目录。脚本**幂等**，
+> 跑几次都一样，无事可做时只打印「已是干净状态」：
+>
+> ```bash
+> bash ~/.config/omarchy/plugins/horizon.setup/lib/migrate-drop-omarchy-zh-cn.sh --dry-run
+> bash ~/.config/omarchy/plugins/horizon.setup/lib/migrate-drop-omarchy-zh-cn.sh
+> ```
 
 命令行直查/切换（面板之外的等价操作）：
 
@@ -65,7 +116,7 @@ $P fw-del 3082 tcp 192.168.0.0/24 'DSH web'   # 精确删除（同样授权）
 | **Mac 习惯** | Mac 快捷键、自然滚动、剪贴板快捷键 | 键位、滚动与剪贴板。 |
 | **开发环境** | npm 换源、GitHub 加速、Google 翻译修复 | 包管理与网络。 |
 | **防火墙** | ufw 规则列表 + 增删 | 读写分离：读免权限，写走一次授权。 |
-| **插件汉化** | 第三方插件中文文案的汉化/还原 | 只改界面文案，写插件目录，免授权。 |
+| **插件汉化** | 第三方插件中文文案与 Omasnap 界面的汉化/还原 | 映射表组改文案 + Omasnap 改源码重编译，都免授权。 |
 
 头部显示 `已启用/总数` 胶囊徽章；底部在写配置时显示进行中。
 
@@ -276,7 +327,13 @@ ufw 的删除匹配有两档行为（源码 + 真机 dry-run 双向确认）：
 
 ## 快捷键桥接
 
-`Command` 键输出 `Super`，以下桥接把 `Super+…` 转发为 Linux 侧等价键：
+`Command` 键输出 `Super`，以下桥接把 `Super+…` 转发为 Linux 侧等价键。
+**共 21 组 Cmd 类桥接** = 文本编辑 10 组（`bridge()` 9 条 + `Cmd+A` 全选）
++ 应用操作 11 组（`bridge_app()` 10 条 + `Cmd+Q` 关窗）；另加 3 条音量键与
+1 条截图键——**全部随「Mac 快捷键」这一个开关走**，关掉一起消失。
+数法可复现：在 `lib/macos.sh` 的 `mac_write_textedit_bindings()` 块内数
+`^bridge(`（9）+ `^bridge_app(`（10）+ `^o\.bind(` 直接绑（1，`SUPER+Q`），
+再加 `mac_write_selectall_binding()` 里的 `SUPER+A`（1）。
 
 **文本编辑（P0）**
 
@@ -302,15 +359,17 @@ ufw 的删除匹配有两档行为（源码 + 真机 dry-run 双向确认）：
 | `Cmd+N / S / O / F` | `Ctrl+N / S / O / F` | 新建 / 保存 / 打开 / 查找 |
 | `Cmd+Z` | `Ctrl+Z` | 撤销 |
 | `Cmd+Shift+Z` | `Ctrl+Shift+Z` | 重做 |
-| `Cmd+Shift+X` | **截图并标注** | 呼出 `omasnap`；未装时回落 Omarchy 原生 `omarchy-capture-screenshot` |
+| `Cmd+Shift+X` | **截图并标注** | 呼出 `omasnap`（Omarchy 的截图就是它） |
 
 > **`Cmd+Shift+X` 是本插件自选的组合，不是 macOS 原生键**。macOS 的系统截图是
 > `Cmd+Shift+3/4/5`，但那三个数字键被 Omarchy 的「移动窗口到工作区 N」占着
 > （`tiling.lua:22-24`），抢过来会换掉一个常用窗口动作，故改选空闲的
 > `Super+Shift+X`——它接管了 Omarchy 预装的 `Super+Shift+X`（打开 x.com），
-> `Super+Shift+Alt+X`（发帖）不受影响。装了 [Omasnap](#截图omasnap) 即用它的
-> 标注/滚动拼接/OCR；没装则照旧走 Omarchy 的 grim+slurp+tensaku——两种情况都
-> 不会出现「按了没反应」。
+> `Super+Shift+Alt+X`（发帖）不受影响。落地就是 [Omasnap](#截图omasnap) 的
+> 标注/滚动拼接/OCR：**Omarchy 0.4.5 默认就装 omasnap，`omarchy-capture-screenshot`
+> 现在本身就是 `exec omasnap`**（`bin/omarchy-capture-screenshot:27`）——旧那套
+> grim/slurp/tensaku 已被 `migrations/1788129995.sh` 取代。所以这个键不会
+> 出现「按了没反应」。
 
 **音量三键（Mac 顶排语义）**
 
@@ -361,45 +420,47 @@ ufw 的删除匹配有两档行为（源码 + 真机 dry-run 双向确认）：
 
 ## 插件汉化
 
-给第三方 Omarchy 插件（如 `evindor.keystroke`、`stappmus.activity-monitor`）
-的**显示文案**一键汉化。只改界面文案：命令触发词、示例命令、存档枚举值、
-关键词与标识符一律保持原样，功能零变化。
+面板「插件汉化」Tab 里有两层，机制完全不同，所以分开说：
 
-- **映射表驱动**：文案以「精确片段 + 期望次数」存放在
-  `~/.local/share/omarchy-zh-cn/maps/*.json`，应用器
-  `~/.local/share/omarchy-zh-cn/apply-zh.py` 幂等执行；
-  任何一条失配则**整体拒绝**，绝不半应用。
+| 层 | 目标 | 做法 |
+| --- | --- | --- |
+| **映射表组** | `evindor.keystroke`、`stappmus.activity-monitor` | 改插件源码里的显示文案字面量 |
+| **Omasnap** | `omacom/omasnap` | 改 C++ 源码 + 重新编译 |
+
+> **为什么还要自己汉化第三方插件**：Omarchy 0.4.5 的 i18n 只覆盖**第一方 shell**
+> （`/usr/share/omarchy/default/i18n/<code>/{shell,menu,keybindings,cli}.json`）。
+> 第三方插件不在其列：`evindor.keystroke` 与 `stappmus.activity-monitor` 上游
+> 零 i18n 设施（无 `.ts/.qm`、无 `tr()`），中文只能改源码。本插件自带映射表，
+> **fail-closed**——任何一条失配就整体拒绝，绝不半应用；上游更新把英文带回来，
+> 重新点一次即可。
+
+Omarchy 自身的界面语言不用本插件管：**菜单 → 设置 → 语言**（详见
+[下面那节](#omarchy-界面中文已自带无需装)）。
+
+### 映射表组（keystroke / activity-monitor）
+
+只改界面文案：命令触发词、示例命令、存档枚举值、关键词与标识符一律保持原样，
+功能零变化。
+
+- **资产随插件分发**：映射表在 `lib/zh-maps/*.json`（精确片段 + 期望次数），
+  应用器 `lib/apply-zh.py` 幂等执行（`check` / `apply` / `revert`）。
+  **不读** `~/.local/share/omarchy-zh-cn/` —— 那是旧的第三方项目，与本插件无关。
 - **检测即真相**：状态每次实读映射表与插件源码——`未汉化 / 已汉化 / 已失配`。
   上游 `git pull` 把英文带回来即转「未汉化」，重新点汉化即可；
   上游改动了文案字面量则转「已失配」，此时按钮禁用、先更新映射表。
 - **免授权**：写的是插件目录（用户自己的文件），不碰系统配置。
 
-命令行等价操作（映射表 id 见 `$P zhcn` 首列）：
-
-```bash
-P=~/.config/omarchy/plugins/horizon.setup/setup.sh
-$P zhcn                                  # 各映射表状态（TAB 分隔）
-$P zhcn-apply stappmus.activity-monitor  # 应用汉化
-$P zhcn-revert stappmus.activity-monitor # 还原英文
-```
-
 ### Omasnap 界面汉化（需编译）
 
-面板「插件汉化」Tab 里还有一行 **Omasnap 界面（需编译）**。它和上面的映射表
-是**两回事**，原因值得说清：
+给 [Omasnap](#截图omasnap) 截图器换中文界面。**改源码 + 重新编译**，约 1 分钟，
+不要 root，也不碰系统配置。
 
-> **Omasnap 上游没有任何 i18n 设施** —— 0 处 `tr()`、无 `.ts/.qm` 文件，
-> 383 条 UI 文案全是硬编码的 C++ 字符串字面量。所以它没法像 QML 插件那样
-> 「改文案文件即生效」；汉化只能是**改源码 + 重新编译**。
+> **为什么不能像普通插件那样改文案文件**：Omasnap 上游没有任何 i18n 设施 ——
+> 0 处 `tr()`、无 `.ts/.qm` 文件，383 条 UI 文案全是硬编码的 C++ 字符串字面量。
+> 所以汉化只能是**改源码 + 重新编译**。
 
 这一层做的事：下载固定 tag 的源码 → 用 `lib/omasnap-zh.json` 词表按**词法位置**
-替换 → `cmake` 编译 → 装到 `~/.local`。约 1 分钟。
-
-```bash
-$P omasnap-zh          # 状态：missing / stock / zh / stale
-$P omasnap-zh-install  # 编译安装汉化版
-$P omasnap-zh-revert   # 装回上游原版（汉化版保留，再开不必重编）
-```
+替换 → `cmake` 编译 → 装到 `~/.local`。
 
 设计要点：
 
@@ -422,15 +483,27 @@ $P omasnap-zh-revert   # 装回上游原版（汉化版保留，再开不必重�
   就会 `fatal error: LayerShellQt/Window: No such file`）与
   `lib/cmake/LayerShellQt/` 放到 `~/.local` 即可，构建会自动找到。
 
+### 命令
+
+```bash
+P=~/.config/omarchy/plugins/horizon.setup/setup.sh
+$P zhcn                                  # 两层状态（TAB 分隔；映射表组 id 在首列）
+$P zhcn-apply keystroke                  # 应用 keystroke 的汉化
+$P zhcn-apply activity-monitor           # 应用活动监视器的汉化
+$P zhcn-revert keystroke                 # 还原英文
+$P omasnap-zh                            # Omasnap 状态：missing / stock / zh / stale
+$P omasnap-zh-install                    # 编译安装汉化版
+$P omasnap-zh-revert                     # 装回上游原版（汉化版保留，再开不必重编）
+```
+
 ## 配套推荐
 
 本插件只负责「输入习惯 / 工具链 / 防火墙 / 插件汉化」。下面几个项目补齐
-**中文体验**与**截图体验**，都是实测在用的：
+**中文输入**与**截图体验**，都是实测在用的：
 
 | 项目 | 说明 | Star |
 | --- | --- | --- |
 | [iDvel/rime-ice](https://github.com/iDvel/rime-ice) | **雾凇拼音** — 长期维护的简体词库，中文输入的首选方案。装完即可打字，`F4` 切换方案与开关功能 | 19.7k |
-| [QueedWen/omarchy-zh-cn](https://github.com/QueedWen/omarchy-zh-cn) | **Omarchy 简体中文界面** — 菜单、通知、天气、快捷键面板中文化，与本插件的中文面板互补 | 31 |
 | [omacom/omasnap](https://github.com/omacom/omasnap) | **Omasnap** — Omarchy 原生截图+标注一体（layer-shell 覆盖层）：智能选区、滚动拼接、OCR、贴图预览，MIT | 571 |
 
 ### 截图：Omasnap
@@ -438,52 +511,47 @@ $P omasnap-zh-revert   # 装回上游原版（汉化版保留，再开不必重�
 Linux 上没有 macshot（那是个 macOS 应用）。功能最接近的是 **Omasnap**：
 Omarchy 作者维护的原生 Wayland 截图器，MIT 许可、C++/Qt6 + layer-shell。
 
-与 Omarchy 自带的 grim+slurp+tensaku 相比，差的正是 macshot 那部分**截完之后的流**：
+Omarchy 0.4.5 已经用它替换了旧的 grim+slurp+tensaku（`migrations/1788129995.sh`
+里 `omarchy-pkg-drop satty tensaku`），所以它**就是** Omarchy 现在的截图流程，
+不再是二选一。与 macOS macshot 相比，差的正是那部分**截完之后的流**：
 
-| 能力 | Omasnap | Omarchy 自带（tensaku） |
+| 能力 | Omasnap | Omarchy 0.4.5 之前（tensaku，已移除） |
 | --- | --- | --- |
 | 智能选区（拖=区域 / 点=窗口 / 点空白=整屏） | ✅ 同一浮层里 | 分三个命令 |
 | 截完自动复制 + 10 秒浮动预览（可钉住、可拖进别的应用） | ✅ | ❌ 只有通知 |
-| 滚动长截图 | ✅ 手动/自动滚动拼接 | 仅 tensaku 0.29 的 `--scroll-capture` |
+| 滚动长截图 | ✅ 手动/自动滚动拼接 | 仅 `--scroll-capture`（要手拼） |
 | OCR | ✅ 整图或框选 | 独立命令 `omarchy-capture-text` |
-| 标注（箭头/形状/文字/马赛克/高光/序号） | ✅ 矢量图层，可改可移 | ✅ 更细（16 种工具、图层、粘贴图片） |
+| 标注（箭头/形状/文字/马赛克/高光/序号） | ✅ 矢量图层，可改可移 | ✅ 更细（16 种工具、图层） |
 | 美化（渐变底/阴影/圆角） | ✅ | ❌ |
 | 录屏 | ❌ 用 `omarchy screenrecord` | ❌ 用同一个 |
 | 界面汉化 | ✅ 面板一键（改源码重编译） | ❌ 上游无 i18n |
 
-安装：
+**Omarchy 已自带，无需 AUR**：`omasnap` 就在 Omarchy 官方仓库里
+（`pacman -Si omasnap` → `Repository: omarchy`），Omarchy 0.4.5 起默认装好，
+`omarchy-capture-screenshot` 本身就是它（见下）。只差中文 OCR 的话补一个词库：
 
 ```bash
-yay -S omasnap-bin                      # AUR，一次装齐（含 layer-shell-qt 依赖）
 sudo pacman -S tesseract-data-chi_sim   # 需要中文 OCR 才装
 ```
 
-> 手动装官方 tarball 时**必须另装 `layer-shell-qt`**：omasnap 硬链接
-> `libLayerShellQtInterface.so.6`，缺了它 `ldd` 报 not found、启动即失败。
-> 这是 AUR 包唯一比手动装多做的事。
+> 万一被卸掉了，装回来也只有一条：`sudo pacman -S omasnap`
+> （依赖 `hyprland layer-shell-qt qt6-base tesseract wayland wl-clipboard`
+> 由 pacman 一次带齐，不用 AUR）。
 
-> **没有 root 时**：把 Arch 官方 `layer-shell-qt` 包里的那一个 `.so` 解到
-> `~/.local/lib/omasnap/`，再用一个 3 行的启动器设 `LD_LIBRARY_PATH` 指向它
-> ——二进制保持上游原样（`sha256` 与上游 release 及 AUR PKGBUILD 一致）。
-> 系统日后装了 `layer-shell-qt`，系统路径优先命中，这份副本变冗余但不冲突。
-
-> **保存位置不一样**：omasnap 存 `~/Pictures/Screenshots`（可用
-> `[output] directory` 或 `OMASNAP_SCREENSHOT_DIR` 改），**不认** Omarchy 的
-> `OMARCHY_SCREENSHOT_DIR`。想跟 Omarchy 截图放一起，写
-> `~/.config/omasnap/omasnap.conf`：
->
-> ```toml
-> [output]
-> directory = ~/Pictures
-> ```
+> **保存位置**：设 `OMARCHY_SCREENSHOT_DIR` 即可，Omarchy 会替你转译成
+> omasnap 认识的 `OMASNAP_SCREENSHOT_DIR`（`bin/omarchy-capture-screenshot:9-10`
+> 就是这么写的），**不用**改 `~/.config/omasnap/omasnap.conf`。
+> 没设时 omasnap 默认存 `~/Pictures/Screenshots`。
 
 装完按 `Super+Shift+X` 即可用——本插件的 Mac 快捷键开关会**自动检测**：
-`omasnap` 在 `PATH` 里就用它，否则保持 Omarchy 原生流程，无需改配置。
+`omasnap` 在 `PATH` 里就直接调它，否则调 `omarchy-capture-screenshot`——而那
+命令现在转手也是 `exec omasnap`，两条路落到同一个程序。
 
 > **已知天花板**：omasnap 用 `hyprctl` 做显示器/窗口发现，只在 Hyprland 上成立；
-> 它的更新比 Omarchy 本体快（一周两版），面板不跟踪它的版本——升级请走
-> `yay -Syu`。想换回 Omarchy 原生的 `Print` 行为，直接按 `Print` 即可，
-> 两条键互不干扰。
+> 它的更新比 Omarchy 本体快（一周两版），面板不跟踪它的版本——升级跟系统走
+> （`omarchy update` 或 `sudo pacman -Syu`）。`Print` 键仍是 Omarchy 默认的
+> 截图入口（`default/hypr/bindings/utilities.lua:40`），与本插件的 `Cmd+Shift+X`
+> 互不干扰——两个键落到同一个 omasnap。
 
 ### 雾凇拼音（rime-ice）
 
@@ -511,20 +579,14 @@ cd "$HOME/.local/share/fcitx5/rime" && rime_deployer --build .
 > `~/.config/fcitx5/rime`（iBus / Weasel 那套路径）—— 在 **fcitx5 + Arch**
 > 上照抄会装进一个不存在的目录，然后「装了但打不出字」。
 
-### Omarchy 简体中文界面（omarchy-zh-cn）
+### Omarchy 界面中文（已自带，无需装）
 
-```bash
-git clone https://github.com/QueedWen/omarchy-zh-cn.git
-cd omarchy-zh-cn
-./install.sh --dry-run      # 先预览，看它会改哪些文件
-./install.sh                # 正式安装
-omarchy-zh-sync             # 之后与 Omarchy 更新同步
-./uninstall.sh              # 卸载
-```
+Omarchy 0.4.5 起**自带多语言**（`/usr/share/omarchy/default/i18n/<code>/`），
+菜单、通知、快捷键面板、CLI 都在内，不再需要第三方汉化项目（`omarchy-zh-cn`
+那套已作废）。切换：**菜单 → 设置 → 语言**（底层是 `omarchy-language <code>`，
+选择存在 `~/.config/omarchy/language`）。
 
-它从**本机已安装的 Omarchy 源文件**生成**用户级插件克隆**，不改动
-`/usr/share/omarchy`，也不在仓库里重新分发 Omarchy 的源码 —— 卸载干净、
-上游升级不冲突。
+这一层**不由本插件代劳**；本插件只管**第三方插件**的文案（见[插件汉化](#插件汉化)）。
 
 ## 工作原理
 
@@ -536,11 +598,14 @@ omarchy-zh-sync             # 之后与 Omarchy 更新同步
 | `lib/macos.sh` | 快捷键、自然滚动、剪贴板（读 `hyprctl` / `bindings.lua`） |
 | `lib/devtools.sh` | npm registry、git `insteadOf` |
 | `lib/firewall.sh` | ufw 规则的解析、校验、增删 |
-| `lib/zhcn.sh` | 插件汉化映射表的状态检测与重放（调 `apply-zh.py`） |
+| `lib/zhcn.sh` | 映射表组的状态检测与重放（keystroke / activity-monitor） |
+| `lib/apply-zh.py` | 映射表应用器：`check` / `apply` / `revert`，失配整体拒绝 |
+| `lib/zh-maps/*.json` | 映射表资产：精确片段 + 期望次数 + group 归属（随插件分发） |
+| `lib/omasnapzh.sh` | Omasnap 汉化：状态检测、改源码重编译、装回上游原版 |
 | `Panel.qml` | overlay 容器、Tab 栏、状态徽章 |
 | `ToggleList.qml` | 一组开关的展示壳 |
 | `FirewallTab.qml` | 防火墙 Tab（表单 + 规则列表） |
-| `ZhcnTab.qml` | 插件汉化 Tab（映射表列表 + 应用/还原） |
+| `ZhcnTab.qml` | 插件汉化 Tab（两层列表 + 应用/还原） |
 | `RuleList.qml` | 规则列表展示（纯展示，不自带滚动） |
 
 - **检测即真相**：不维护任何状态文件，状态全部从系统/配置实读
@@ -556,14 +621,17 @@ omarchy-zh-sync             # 之后与 Omarchy 更新同步
 bash tests/firewall_test.sh     # 防火墙层，用 fixture + 桩件，不碰真机
 bash tests/hosts_test.sh        # GitHub hosts 层
 bash tests/gtranslate_test.sh   # Google 翻译 hosts 层
+bash tests/zhcn_test.sh         # 插件汉化映射表组（幂等、fail-closed、分组聚合）
 bash tests/omasnap_zh_test.sh   # Omasnap 汉化层（词表 fail-closed、状态四态）
 ```
 
 `tests/fixtures/` 是真实机器规则的快照；`tests/fake/` 是 `pkexec`/`ufw` 桩件，
 因此测试**不触发任何授权框、不修改真实防火墙**。`hosts_test.sh` 与
 `gtranslate_test.sh` 同理：`curl`/`getent` 全部用桩件接管，
-**不联网、不写真实 `/etc/hosts`、不跑安装块**。`omasnap_zh_test.sh` 也不编译
-（真编译靠人跑一次），只验证词法的拼接与 fail-closed、以及状态四态。
+**不联网、不写真实 `/etc/hosts`、不跑安装块**。`zhcn_test.sh` 用临时 fixture
+映射表与假插件目录，不碰真实插件、也不读 `~/.local/share/omarchy-zh-cn/`。
+`omasnap_zh_test.sh` 也不编译（真编译靠人跑一次），只验证词法的拼接与
+fail-closed、以及状态四态。
 
 改 `Panel.qml` 等 QML 后 quickshell 会自动重载本地插件；若没生效：
 
@@ -597,7 +665,22 @@ sudo systemctl daemon-reload
 $P omasnap-zh-revert
 rm -rf ~/.local/share/omasnap-zh
 
-# 4. 移除插件并重启 shell
+# 3b. 若这台机器从 1.3.x 升上来（装过 omarchy-zh-cn）：跑一次迁移脚本。
+#     它清 8 类残留：shell.json 的 carvin.* 挂件、plugins/carvin.*、旧映射表目录、
+#     旧中文菜单副本（精简为只留用户自加条目，面板入口 setup.horizon 保住）、
+#     bindings.lua 的 zh 块（SUPER+K 回原生）、三个 omarchy-zh-* 脚本、
+#     post-update hook、~/.local/state/omarchy-zh。改文件前都先备份。
+M=~/.config/omarchy/plugins/horizon.setup/lib/migrate-drop-omarchy-zh-cn.sh
+bash "$M" --dry-run   # 先看它要删什么
+bash "$M"
+
+# 4. 先注销插件登记（否则 shell.json 里留着指向已删目录的引用）
+omarchy plugin disable horizon.setup
+# 顺带撤掉菜单入口：从 ~/.config/omarchy/extensions/omarchy-menu.jsonc 里
+# 删掉 "setup.horizon" 那一条（或整份文件，若里面只剩这一条）
+omarchy plugin list | grep horizon        # 应无输出
+
+# 5. 移除插件并重启 shell
 rm -rf ~/.config/omarchy/plugins/horizon.setup
 omarchy-restart-shell
 ```

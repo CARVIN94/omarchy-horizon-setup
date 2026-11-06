@@ -1,0 +1,561 @@
+{
+  "id": "stappmus.activity-monitor",
+  "group": "activity-monitor",
+  "title": "活动监视器",
+  "root": "~/.config/omarchy/plugins/stappmus.activity-monitor",
+  "note": "不动：配置枚举值(Efficient/Balanced/Fast/Celsius)、单位(KiB/°C/d h s/W/MT/s/MHz)、hwmon 传感器标签 fallback(Sensor/Package)、id/key/别名。测试断言 formatBytes/formatDuration/formatTemperature 的输出，其格式串保持原样。",
+  "replacements": [
+    {
+      "file": "Panel.qml",
+      "find": "? \"Process power estimates are disabled in Activity settings\"",
+      "replace": "? \"进程功耗估算已在活动监视器设置中关闭\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "? \"CPU package energy is unavailable on this system\"",
+      "replace": "? \"此系统无法读取 CPU 封装能耗\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "? \"Estimated CPU-time share of measured CPU package power\"",
+      "replace": "? \"按 CPU 时间占比估算的封装功耗\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": ": \"Measuring CPU package energy…\"))",
+      "replace": ": \"正在测量 CPU 封装能耗…\"))",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "return \"Swap \" + percentText(metrics.swap)",
+      "replace": "return \"交换 \" + percentText(metrics.swap)",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "return \"used — · cache —\"",
+      "replace": "return \"已用 — · 缓存 —\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "return \"used \" + usedText + \" · cache \" + cacheText",
+      "replace": "return \"已用 \" + usedText + \" · 缓存 \" + cacheText",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "if (frequency === 0) return \"IDLE\"",
+      "replace": "if (frequency === 0) return \"空闲\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "return speed ? \"RAM · \" + speed : \"RAM USAGE\"",
+      "replace": "return speed ? \"RAM · \" + speed : \"内存占用\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "return \"GPU · \" + adapters.length + \" adapters\"",
+      "replace": "return \"GPU · \" + adapters.length + \" 个适配器\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "Math.round(usage) + \"%\" : \"Sampling\"",
+      "replace": "Math.round(usage) + \"%\" : \"采样中\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "if (gpu && gpu.memoryKind === \"shared\") return \"Shared\"",
+      "replace": "if (gpu && gpu.memoryKind === \"shared\") return \"共享\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "return \"Memory\"",
+      "replace": "return \"显存\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "if (!isFinite(used) || used < 0) return \"Unavailable\"",
+      "replace": "if (!isFinite(used) || used < 0) return \"不可用\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "return gpuSnapshot.sample <= 0 ? \"Detecting\" : \"Not detected\"",
+      "replace": "return gpuSnapshot.sample <= 0 ? \"检测中\" : \"未检测到\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "if (adapters.length > 2) parts.push(adapters.length + \" adapters\")",
+      "replace": "if (adapters.length > 2) parts.push(adapters.length + \" 个适配器\")",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "if (!canCycleDisks) return \"Disk\"",
+      "replace": "if (!canCycleDisks) return \"磁盘\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "return activeDisk && activeDisk.id !== \"all\" ? String(activeDisk.name || \"Disk\") : \"Disk\"",
+      "replace": "return activeDisk && activeDisk.id !== \"all\" ? String(activeDisk.name || \"磁盘\") : \"磁盘\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "if (!canCycleStorage) return \"Storage\"",
+      "replace": "if (!canCycleStorage) return \"存储\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "Model.formatBytes(activeStorage.available) + \" free\"",
+      "replace": "Model.formatBytes(activeStorage.available) + \" 可用\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "return \"e collapse  ·  / search  ·  \"",
+      "replace": "return \"e 收起  ·  / 搜索  ·  \"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "+ \" sort  ·  r refresh  ·  s settings  ·  j/k select  ·  click/x close\"",
+      "replace": "+ \" 排序  ·  r 刷新  ·  s 设置  ·  j/k 选择  ·  点击/x 关闭\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "? \"  ·  d/v cycle drives\" : \"\"",
+      "replace": "? \"  ·  d/v 切换磁盘\" : \"\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "+ \"  ·  ? hide\"",
+      "replace": "+ \"  ·  ? 隐藏\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "if (kind === \"performance\") return \"P-core \" + index + \" · \" + usage + \"%\"",
+      "replace": "if (kind === \"performance\") return \"P 核 \" + index + \" · \" + usage + \"%\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "if (kind === \"efficiency\") return \"E-core \" + index + \" · \" + usage + \"%\"",
+      "replace": "if (kind === \"efficiency\") return \"E 核 \" + index + \" · \" + usage + \"%\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "return \"Core \" + index + \" · \" + usage + \"%\"",
+      "replace": "return \"核心 \" + index + \" · \" + usage + \"%\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "tooltipText: \"Activity\"",
+      "replace": "tooltipText: \"活动监视器\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "? \"Do you want to close \" + processActions.pendingAction.name + \"?\"",
+      "replace": "? \"确定关闭 \" + processActions.pendingAction.name + \" 吗？\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "confirmText: \"Close\"",
+      "replace": "confirmText: \"关闭\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "label: \"Network\"",
+      "replace": "label: \"网络\"",
+      "count": 2
+    },
+    {
+      "file": "Panel.qml",
+      "find": "label: \"Disk\"",
+      "replace": "label: \"磁盘\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "text: \"Busiest\"",
+      "replace": "text: \"占用最高\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "? \"No running processes\" : \"Sampling process activity…\"",
+      "replace": "? \"没有正在运行的进程\" : \"正在采样进程活动…\"",
+      "count": 2
+    },
+    {
+      "file": "Panel.qml",
+      "find": "text: processActions.status || \"e details  ·  s settings  ·  ? hide\"",
+      "replace": "text: processActions.status || \"e 详情  ·  s 设置  ·  ? 隐藏\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "text: \"Settings\"",
+      "replace": "text: \"设置\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "text: \"Changes apply immediately and are saved with your Omarchy bar layout.\"",
+      "replace": "text: \"更改即时生效，并随 Omarchy 面板布局保存。\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "label: \"Update speed\"",
+      "replace": "label: \"刷新速度\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "label: \"Efficient · 3 s\"",
+      "replace": "label: \"省电 · 3 秒\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "label: \"Balanced · 1.5 s\"",
+      "replace": "label: \"均衡 · 1.5 秒\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "label: \"Fast · 0.75 s\"",
+      "replace": "label: \"快速 · 0.75 秒\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "label: \"Graph history\"",
+      "replace": "label: \"历史曲线\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "label: \"Short · 30 samples\"",
+      "replace": "label: \"短 · 30 个采样点\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "label: \"Medium · 60 samples\"",
+      "replace": "label: \"中 · 60 个采样点\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "label: \"Long · 120 samples\"",
+      "replace": "label: \"长 · 120 个采样点\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "label: \"Temperature\"",
+      "replace": "label: \"温度\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "label: \"Open detailed view\"",
+      "replace": "label: \"打开详细视图\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "description: \"Start with GPU, graphs, and the full process table.\"",
+      "replace": "description: \"启动时显示 GPU、图表与完整进程表。\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "label: \"Show hardware speeds\"",
+      "replace": "label: \"显示硬件频率\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "description: \"Include CPU, RAM, and GPU speeds in headings.\"",
+      "replace": "description: \"在标题栏显示 CPU、内存与 GPU 频率。\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "label: \"Process power estimates\"",
+      "replace": "label: \"进程功耗估算\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "description: \"Measure package energy in detailed view; disable for less work.\"",
+      "replace": "description: \"在详细视图测量封装能耗；关闭可降低开销。\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "text: \"Reset defaults\"",
+      "replace": "text: \"恢复默认\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "text: \"Done\"",
+      "replace": "text: \"完成\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "tooltipText: root.canCycleDisks ? \"Next disk\" : \"\"",
+      "replace": "tooltipText: root.canCycleDisks ? \"下一个磁盘\" : \"\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "tooltipText: root.canCycleStorage ? \"Next volume\" : \"\"",
+      "replace": "tooltipText: root.canCycleStorage ? \"下一个存储卷\" : \"\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "text: \"Processes\"",
+      "replace": "text: \"进程\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "placeholderText: \"\\uf002 Search\"",
+      "replace": "placeholderText: \"\\uf002 搜索\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "title: \"Activity\"",
+      "replace": "title: \"活动监视器\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": ": \"Reading system\"",
+      "replace": ": \"正在读取系统\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "root.hintsVisible ? \"Hide keyboard shortcuts\" : \"Keyboard shortcuts\"",
+      "replace": "root.hintsVisible ? \"隐藏快捷键提示\" : \"快捷键提示\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "root.settingsOpen ? \"Close settings\" : \"Activity settings\"",
+      "replace": "root.settingsOpen ? \"关闭设置\" : \"活动监视器设置\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "expanded ? \"Collapse details\" : \"Expand details\"",
+      "replace": "expanded ? \"收起详情\" : \"展开详情\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "label: \"Name\"",
+      "replace": "label: \"名称\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "text: \"User\"",
+      "replace": "text: \"用户\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "label: \"RAM\"",
+      "replace": "label: \"内存\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "label: \"Time\"",
+      "replace": "label: \"时间\"",
+      "count": 1
+    },
+    {
+      "file": "Panel.qml",
+      "find": "text: String(processData.name || \"unknown\")",
+      "replace": "text: String(processData.name || \"未知\")",
+      "count": 1
+    },
+    {
+      "file": "ProcessActionController.qml",
+      "find": "name: String(process.name || \"process\"),",
+      "replace": "name: String(process.name || \"进程\"),",
+      "count": 1
+    },
+    {
+      "file": "ProcessActionController.qml",
+      "find": "_status = \"Ending \" + _activeAction.name + \"…\"",
+      "replace": "_status = \"正在结束 \" + _activeAction.name + \"…\"",
+      "count": 1
+    },
+    {
+      "file": "ProcessActionController.qml",
+      "find": "if (!action) _status = \"App ended\"",
+      "replace": "if (!action) _status = \"应用已退出\"",
+      "count": 1
+    },
+    {
+      "file": "ProcessActionController.qml",
+      "find": "else if (disposition === \"graceful\") _status = \"Closed \" + action.name",
+      "replace": "else if (disposition === \"graceful\") _status = \"已关闭 \" + action.name",
+      "count": 1
+    },
+    {
+      "file": "ProcessActionController.qml",
+      "find": "else if (disposition === \"escalated\") _status = \"Force-closed \" + action.name",
+      "replace": "else if (disposition === \"escalated\") _status = \"已强制关闭 \" + action.name",
+      "count": 1
+    },
+    {
+      "file": "ProcessActionController.qml",
+      "find": "else _status = \"Ended \" + action.name",
+      "replace": "else _status = \"已结束 \" + action.name",
+      "count": 1
+    },
+    {
+      "file": "ProcessActionController.qml",
+      "find": "_status = error || \"Could not end the selected app\"",
+      "replace": "_status = error || \"无法结束所选应用\"",
+      "count": 1
+    },
+    {
+      "file": "Model.js",
+      "find": "return \"Protected system process\"",
+      "replace": "return \"受保护的系统进程\"",
+      "count": 1
+    },
+    {
+      "file": "Model.js",
+      "find": "return \"Process identity is unavailable\"",
+      "replace": "return \"无法确认进程身份\"",
+      "count": 1
+    },
+    {
+      "file": "Model.js",
+      "find": "return \"Process has already stopped\"",
+      "replace": "return \"进程已停止\"",
+      "count": 1
+    },
+    {
+      "file": "Model.js",
+      "find": "return \"Only your own processes can be ended\"",
+      "replace": "return \"只能结束自己的进程\"",
+      "count": 1
+    },
+    {
+      "file": "Model.js",
+      "find": "return \"Desktop session is protected\"",
+      "replace": "return \"桌面会话受保护\"",
+      "count": 1
+    },
+    {
+      "file": "manifest.json",
+      "find": "\"name\": \"Activity Monitor\",",
+      "replace": "\"name\": \"活动监视器\",",
+      "count": 1
+    },
+    {
+      "file": "manifest.json",
+      "find": "\"description\": \"A calm, low-overhead glance at CPU, memory, GPU, storage, and processes — with a die that matches your chip\",",
+      "replace": "\"description\": \"低开销一目了然的 CPU、内存、GPU、存储与进程概览——芯片布局随硬件而变\",",
+      "count": 1
+    },
+    {
+      "file": "manifest.json",
+      "find": "\"displayName\": \"Activity Monitor\",",
+      "replace": "\"displayName\": \"活动监视器\",",
+      "count": 1
+    },
+    {
+      "file": "manifest.json",
+      "find": "\"description\": \"A calm system glance with an expandable process view and a CPU die that matches your hardware.\",",
+      "replace": "\"description\": \"安静的系统概览，可展开进程视图，芯片布局随硬件而变。\",",
+      "count": 1
+    },
+    {
+      "file": "manifest.json",
+      "find": "\"label\": \"Update speed\",",
+      "replace": "\"label\": \"刷新速度\",",
+      "count": 1
+    },
+    {
+      "file": "manifest.json",
+      "find": "\"description\": \"Efficient uses fewer samples; Fast makes the graphs react sooner.\"",
+      "replace": "\"description\": \"省电模式采样更少；快速模式图表反应更及时。\"",
+      "count": 1
+    },
+    {
+      "file": "manifest.json",
+      "find": "\"label\": \"History samples\",",
+      "replace": "\"label\": \"历史采样点数\",",
+      "count": 1
+    },
+    {
+      "file": "manifest.json",
+      "find": "\"label\": \"Temperature unit\",",
+      "replace": "\"label\": \"温度单位\",",
+      "count": 1
+    },
+    {
+      "file": "manifest.json",
+      "find": "\"label\": \"Show hardware speeds\",",
+      "replace": "\"label\": \"显示硬件频率\",",
+      "count": 1
+    },
+    {
+      "file": "manifest.json",
+      "find": "\"label\": \"Open detailed view\",",
+      "replace": "\"label\": \"打开详细视图\",",
+      "count": 1
+    },
+    {
+      "file": "manifest.json",
+      "find": "\"label\": \"Process power estimates\",",
+      "replace": "\"label\": \"进程功耗估算\",",
+      "count": 1
+    },
+    {
+      "file": "manifest.json",
+      "find": "\"description\": \"Disable to skip CPU package-energy sampling in the detailed view.\"",
+      "replace": "\"description\": \"关闭后详细视图不再采样 CPU 封装能耗。\"",
+      "count": 1
+    }
+  ]
+}

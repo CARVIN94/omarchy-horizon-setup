@@ -1,0 +1,1515 @@
+{
+  "id": "keystroke-ui",
+  "group": "keystroke",
+  "title": "Keystroke 界面",
+  "root": "~/.config/omarchy/plugins/evindor.keystroke",
+  "note": "顶层 UI 显示文案：Keystroke.qml/BarWidget.qml/manifest.json/bin 用法与提示/providers/*.qml/codex。只译 text/title/label/description/placeholder/tooltip/summary/hint/message/verb/section/previewLabel/confirmText 等显示串；不译 id/key/prefix/command 名/name(对象名)/keywords/examples(用户照敲的命令)/正则/路径/env/JSON 键/枚举值与 optionLabels 的 key、图标 nerd-font 字符、版本号。品牌名 Keystroke/Codex/Omarchy/OMARCHY/Claude/ChatGPT/Cursor/Google 与专有名词 fd/voxtype 保留；快捷键提示保留按键字母(↵/esc/ctrl 等)。跳过：BarWidget.qml(仅图标 text:\"\")、keystroke-paste(纯逻辑)、Policy.js(发给模型的 prompt 与 VERSION/MODEL 值)、CodexSession.title(\"Quick question\"/\"Task\"，与第159行比较逻辑耦合，视为内部标识)、AppServer.accountState(\"Signed in\"，与比较耦合)、AiWeb/Clipboard 的 optionLabels 值(品牌/快捷键名)、CommandsProvider 的 description 关键词串(搜索匹配用，非显示)、Providers/Extensions 的 name 字段(品牌/对象名)、action.title/scope 等结构键值(Omarchy/Codex 品牌)。core/ 与 extensions/ 由另两路负责。",
+  "replacements": [
+    {
+      "file": "manifest.json",
+      "find": "\"name\": \"Keystroke\"",
+      "replace": "\"name\": \"Keystroke 命令面板\"",
+      "count": 1
+    },
+    {
+      "file": "manifest.json",
+      "find": "\"description\": \"A Raycast-style command palette that replaces the Omarchy menu, with voice, Codex and community extensions\"",
+      "replace": "\"description\": \"Raycast 风格的命令面板，取代 Omarchy 菜单，支持语音、Codex 与社区扩展\"",
+      "count": 1
+    },
+    {
+      "file": "manifest.json",
+      "find": "\"displayName\": \"Keystroke\"",
+      "replace": "\"displayName\": \"Keystroke 命令面板\"",
+      "count": 1
+    },
+    {
+      "file": "manifest.json",
+      "find": "\"description\": \"Opens the Keystroke command palette\"",
+      "replace": "\"description\": \"打开 Keystroke 命令面板\"",
+      "count": 1
+    },
+    {
+      "file": "bin/keystroke",
+      "find": "Usage: bin/keystroke <command>",
+      "replace": "用法: bin/keystroke <命令>",
+      "count": 1
+    },
+    {
+      "file": "bin/keystroke",
+      "find": "  install     Copy this checkout (no symlinks, no tests/docs) to $TARGET, rescan and enable",
+      "replace": "  install     复制此检出（不含符号链接、测试/文档）到 $TARGET，重新扫描并启用",
+      "count": 1
+    },
+    {
+      "file": "bin/keystroke",
+      "find": "  uninstall   Disable, remove the copy, restore the stock Omarchy menu",
+      "replace": "  uninstall   禁用、移除副本，恢复原生 Omarchy 菜单",
+      "count": 1
+    },
+    {
+      "file": "bin/keystroke",
+      "find": "  enable      omarchy plugin enable $ID",
+      "replace": "  enable      启用插件 omarchy plugin enable $ID",
+      "count": 1
+    },
+    {
+      "file": "bin/keystroke",
+      "find": "  disable     omarchy plugin disable $ID (restores omarchy.menu)",
+      "replace": "  disable     禁用插件 omarchy plugin disable $ID（恢复 omarchy.menu）",
+      "count": 1
+    },
+    {
+      "file": "bin/keystroke",
+      "find": "  dictate     Open Dictate to Clipboard and start recording",
+      "replace": "  dictate     打开听写到剪贴板并开始录音",
+      "count": 1
+    },
+    {
+      "file": "bin/keystroke",
+      "find": "  toggle      Toggle the palette (routes through omarchy.menu)",
+      "replace": "  toggle      切换面板（经由 omarchy.menu 路由）",
+      "count": 1
+    },
+    {
+      "file": "bin/keystroke",
+      "find": "  open <q>    Open the palette with a query",
+      "replace": "  open <q>    带查询打开面板",
+      "count": 1
+    },
+    {
+      "file": "bin/keystroke",
+      "find": "  validate    omarchy plugin validate on this checkout",
+      "replace": "  validate    对此检出运行 omarchy plugin validate",
+      "count": 1
+    },
+    {
+      "file": "bin/keystroke",
+      "find": "  check-extensions [dir...]  Check extension folders (extensions/ by default): extension.json, QML lint, unit tests",
+      "replace": "  check-extensions [dir...]  检查扩展目录（默认 extensions/）：extension.json、QML lint、单元测试",
+      "count": 1
+    },
+    {
+      "file": "bin/keystroke",
+      "find": "  matching [small|large]  Prepare the local matching engine and fetch the model (default: small)",
+      "replace": "  matching [small|large]  准备本地匹配引擎并获取模型（默认 small）",
+      "count": 1
+    },
+    {
+      "file": "bin/keystroke",
+      "find": "  engine      Rebuild the static matching engine shipped in matching/bin in its pinned container (after editing matching/engine; needs docker or podman)",
+      "replace": "  engine      在固定的容器中重建 matching/bin 内置的静态匹配引擎（编辑 matching/engine 后；需 docker 或 podman）",
+      "count": 1
+    },
+    {
+      "file": "bin/keystroke",
+      "find": "  test        Run QML, voice lifecycle, time-zone checks, the extension checks, and qmllint",
+      "replace": "  test        运行 QML、语音生命周期、时区检查、扩展检查与 qmllint",
+      "count": 1
+    },
+    {
+      "file": "bin/keystroke",
+      "find": "echo \"Keystroke is now the Omarchy menu. Super+Space and every omarchy-menu caller route to it.\"",
+      "replace": "echo \"Keystroke 现在是 Omarchy 菜单。Super+Space 与所有 omarchy-menu 调用方都会路由到它。\"",
+      "count": 1
+    },
+    {
+      "file": "bin/keystroke",
+      "find": "echo \"Removed $TARGET; the stock Omarchy menu is active again.\"",
+      "replace": "echo \"已移除 $TARGET；原生 Omarchy 菜单已恢复。\"",
+      "count": 1
+    },
+    {
+      "file": "bin/keystroke",
+      "find": "echo \"Smart Match setup did not finish. Ordinary search remains available; retry in Keystroke Settings.\" >&2",
+      "replace": "echo \"智能匹配安装未完成。普通搜索仍可用；可在 Keystroke 设置中重试。\" >&2",
+      "count": 1
+    },
+    {
+      "file": "bin/keystroke",
+      "find": "\"title\":\"Dictate to Clipboard\"",
+      "replace": "\"title\":\"听写到剪贴板\"",
+      "count": 1
+    },
+    {
+      "file": "providers/AiWeb.qml",
+      "find": "description: \"Continue any query in Claude, ChatGPT, Cursor or Google\"",
+      "replace": "description: \"在 Claude、ChatGPT、Cursor 或 Google 中继续任意查询\"",
+      "count": 1
+    },
+    {
+      "file": "providers/AiWeb.qml",
+      "find": "label: \"Preferred assistant\"",
+      "replace": "label: \"首选助手\"",
+      "count": 1
+    },
+    {
+      "file": "providers/AiWeb.qml",
+      "find": "description: \"Listed first among the fallbacks\"",
+      "replace": "description: \"在备选项中排在最前\"",
+      "count": 1
+    },
+    {
+      "file": "providers/AiWeb.qml",
+      "find": "label: \"Open conversations in\"",
+      "replace": "label: \"在其中打开对话\"",
+      "count": 1
+    },
+    {
+      "file": "providers/AiWeb.qml",
+      "find": "description: \"Controls Claude and Cursor; ChatGPT opens in the browser. Codex has its own provider settings.\"",
+      "replace": "description: \"控制 Claude 与 Cursor；ChatGPT 在浏览器中打开。Codex 有其自己的提供方设置。\"",
+      "count": 1
+    },
+    {
+      "file": "providers/AiWeb.qml",
+      "find": "label: \"Send immediately in the browser\"",
+      "replace": "label: \"在浏览器中立即发送\"",
+      "count": 1
+    },
+    {
+      "file": "providers/AiWeb.qml",
+      "find": "description: \"ChatGPT only. Claude, Cursor and the desktop apps always let you review the prompt first\"",
+      "replace": "description: \"仅 ChatGPT。Claude、Cursor 与桌面应用总是先让你复核提示词\"",
+      "count": 1
+    },
+    {
+      "file": "providers/AiWeb.qml",
+      "find": "description: \"Absolute folder for agent --workspace; also sent to the desktop deeplink\"",
+      "replace": "description: \"agent --workspace 的绝对文件夹；也会发送到桌面深链\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Applications.qml",
+      "find": "description: \"Launch installed desktop apps\"",
+      "replace": "description: \"启动已安装的桌面应用\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Applications.qml",
+      "find": "title: \"Applications\"",
+      "replace": "title: \"应用\"",
+      "count": 2
+    },
+    {
+      "file": "providers/Applications.qml",
+      "find": "subtitle: \"Every app, one shortcut away\"",
+      "replace": "subtitle: \"每个应用，一键可达\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Applications.qml",
+      "find": "verb: \"Open\"",
+      "replace": "verb: \"打开\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Calculator.qml",
+      "find": "description: \"Private, instant arithmetic\"",
+      "replace": "description: \"私密、即时的算术\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Calculator.qml",
+      "find": "label: \"Significant digits\"",
+      "replace": "label: \"有效数字\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Calculator.qml",
+      "find": "title: \"Calculator\"",
+      "replace": "title: \"计算器\"",
+      "count": 2
+    },
+    {
+      "file": "providers/Calculator.qml",
+      "find": "subtitle: \"Try 128 * 1.24 or 15% of 80\"",
+      "replace": "subtitle: \"试试 128 * 1.24 或 80 的 15%\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Calculator.qml",
+      "find": "section: \"Calculator\"",
+      "replace": "section: \"计算器\"",
+      "count": 3
+    },
+    {
+      "file": "providers/Calculator.qml",
+      "find": "verb: \"Open\"",
+      "replace": "verb: \"打开\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Calculator.qml",
+      "find": "subtitle: \"Continue your calculation\"",
+      "replace": "subtitle: \"继续你的计算\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Calculator.qml",
+      "find": "verb: \"Keep typing\"",
+      "replace": "verb: \"继续输入\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Clipboard.qml",
+      "find": "description: \"Uses Omarchy's existing history\"",
+      "replace": "description: \"使用 Omarchy 现有的历史记录\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Clipboard.qml",
+      "find": "label: \"Maximum entries\"",
+      "replace": "label: \"最大条目数\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Clipboard.qml",
+      "find": "label: \"Paste on selection\"",
+      "replace": "label: \"选中即粘贴\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Clipboard.qml",
+      "find": "description: \"On, ↵ pastes into the window you came from and Ctrl+↵ copies. Off, the reverse\"",
+      "replace": "description: \"开启时，↵ 粘贴到你来自的窗口、Ctrl+↵ 复制；关闭时相反\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Clipboard.qml",
+      "find": "label: \"Paste shortcut\"",
+      "replace": "label: \"粘贴快捷键\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Clipboard.qml",
+      "find": "\"auto\": \"Automatic\"",
+      "replace": "\"auto\": \"自动\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Clipboard.qml",
+      "find": "description: \"Automatic uses Ctrl+Shift+V for terminals and Ctrl+V elsewhere\"",
+      "replace": "description: \"自动：终端用 Ctrl+Shift+V，其它地方用 Ctrl+V\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Clipboard.qml",
+      "find": "title: \"Clipboard History\"",
+      "replace": "title: \"剪贴板历史\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Clipboard.qml",
+      "find": "subtitle: \"Text & images, ready to use again\"",
+      "replace": "subtitle: \"文本与图片，随时可用\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Clipboard.qml",
+      "find": "section: \"Clipboard\"",
+      "replace": "section: \"剪贴板\"",
+      "count": 2
+    },
+    {
+      "file": "providers/Clipboard.qml",
+      "find": "verb: \"Open\"",
+      "replace": "verb: \"打开\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Clipboard.qml",
+      "find": "title: \"Clipboard\"",
+      "replace": "title: \"剪贴板\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "description: \"Ask here, follow up, or continue a task in Codex\"",
+      "replace": "description: \"在此提问、追问，或在 Codex 中继续任务\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "label: \"Model\"",
+      "replace": "label: \"模型\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "description: \"Must be available in your Codex subscription\"",
+      "replace": "description: \"需在你的 Codex 订阅中可用\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "label: \"Fast mode\"",
+      "replace": "label: \"快速模式\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "description: \"Uses more subscription allowance for priority processing\"",
+      "replace": "description: \"使用更多订阅额度以获得优先处理\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "label: \"Continue tasks in\"",
+      "replace": "label: \"在其中继续任务\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "title: \"Ask Codex here\"",
+      "replace": "title: \"在此询问 Codex\"",
+      "count": 2
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "verb: \"Ask\"",
+      "replace": "verb: \"询问\"",
+      "count": 2
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "altVerb: \"Open task in Codex\"",
+      "replace": "altVerb: \"在 Codex 中打开任务\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "section: \"Continue with\"",
+      "replace": "section: \"继续处理\"",
+      "count": 2
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "title: \"Open task in Codex\"",
+      "replace": "title: \"在 Codex 中打开任务\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "(root.preferences.destination === \"cli\" ? \"Terminal\" : \"Desktop\") + \" · full request ready to continue\"",
+      "replace": "(root.preferences.destination === \"cli\" ? \"终端\" : \"桌面\") + \" · 完整请求已就绪，可继续\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "verb: \"Open\"",
+      "replace": "verb: \"打开\"",
+      "count": 2
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "title: \"Do this here · desktop settings\"",
+      "replace": "title: \"在此执行 · 桌面设置\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "subtitle: \"Agent may edit ~/.config · uses the Omarchy skill\"",
+      "replace": "subtitle: \"助手可能编辑 ~/.config · 使用 Omarchy 技能\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "verb: \"Start task\"",
+      "replace": "verb: \"开始任务\"",
+      "count": 2
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "title: \"Do this here · working folder\"",
+      "replace": "title: \"在此执行 · 工作文件夹\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "subtitle: \"Quick questions, recent conversations and tasks\"",
+      "replace": "subtitle: \"快速提问、最近对话与任务\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": ": \"Resume last question\"",
+      "replace": ": \"恢复上次提问\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "section: \"Recent questions\"",
+      "replace": "section: \"最近提问\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Codex.qml",
+      "find": "verb: \"Resume\"",
+      "replace": "verb: \"恢复\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Colors.qml",
+      "find": "description: \"Screen eyedropper, HEX, RGB and HSL\"",
+      "replace": "description: \"屏幕取色、HEX、RGB 与 HSL\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Colors.qml",
+      "find": "label: \"Eyedropper format\"",
+      "replace": "label: \"取色格式\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Colors.qml",
+      "find": "title: \"Pick a Color\"",
+      "replace": "title: \"拾取颜色\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Colors.qml",
+      "find": "subtitle: \"Sample any pixel on your screen\"",
+      "replace": "subtitle: \"取样屏幕上的任意像素\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Colors.qml",
+      "find": "section: \"Colors\"",
+      "replace": "section: \"颜色\"",
+      "count": 2
+    },
+    {
+      "file": "providers/Colors.qml",
+      "find": "verb: \"Pick color\"",
+      "replace": "verb: \"取色\"",
+      "count": 1
+    },
+    {
+      "file": "providers/CommandsProvider.qml",
+      "find": "description: \"Every prefix you can type, with its arguments\"",
+      "replace": "description: \"所有可输入的触发词及其参数\"",
+      "count": 1
+    },
+    {
+      "file": "providers/CommandsProvider.qml",
+      "find": "title: \"What can I type?\"",
+      "replace": "title: \"我能输入什么？\"",
+      "count": 2
+    },
+    {
+      "file": "providers/CommandsProvider.qml",
+      "find": "summary: \"Lists every command with its arguments\"",
+      "replace": "summary: \"列出每条命令及其参数\"",
+      "count": 1
+    },
+    {
+      "file": "providers/CommandsProvider.qml",
+      "find": "hint: \"part of a name or prefix, to filter the list\"",
+      "replace": "hint: \"名称或触发词的一部分，用于过滤列表\"",
+      "count": 1
+    },
+    {
+      "file": "providers/CommandsProvider.qml",
+      "find": "subtitle: \"Every command and its arguments · or type /\"",
+      "replace": "subtitle: \"每条命令及其参数 · 或输入 /\"",
+      "count": 1
+    },
+    {
+      "file": "providers/CommandsProvider.qml",
+      "find": "title: \"Commands\"",
+      "replace": "title: \"命令\"",
+      "count": 1
+    },
+    {
+      "file": "providers/CommandsProvider.qml",
+      "find": "verb: \"Open\"",
+      "replace": "verb: \"打开\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Converter.qml",
+      "find": "description: \"Units and daylight-saving aware time zones\"",
+      "replace": "description: \"单位与时区（含夏令时）\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Converter.qml",
+      "find": "description: \"IANA name such as Europe/Tallinn. Empty uses the system zone.\"",
+      "replace": "description: \"IANA 名称，如 Europe/Tallinn。留空则用系统时区。\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Converter.qml",
+      "find": "title: \"Convert Anything\"",
+      "replace": "title: \"万能换算\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Converter.qml",
+      "find": "subtitle: \"Units, temperatures & time zones\"",
+      "replace": "subtitle: \"单位、温度与时区\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Converter.qml",
+      "find": "section: \"Converter\"",
+      "replace": "section: \"换算\"",
+      "count": 3
+    },
+    {
+      "file": "providers/Converter.qml",
+      "find": "verb: \"Open\"",
+      "replace": "verb: \"打开\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Converter.qml",
+      "find": "title: \"Converter\"",
+      "replace": "title: \"换算\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Dictation.qml",
+      "find": "description: \"Speak, copy, or paste into your previous window\"",
+      "replace": "description: \"说话即可复制，或粘贴到上一个窗口\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Dictation.qml",
+      "find": "title: \"Dictate to Clipboard\"",
+      "replace": "title: \"听写到剪贴板\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Dictation.qml",
+      "find": "subtitle: \"Speak · Enter copies · Ctrl+Enter pastes\"",
+      "replace": "subtitle: \"说话 · Enter 复制 · Ctrl+Enter 粘贴\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Dictation.qml",
+      "find": "verb: \"Dictate\"",
+      "replace": "verb: \"听写\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Dictation.qml",
+      "find": "title: \"Copy to Clipboard\"",
+      "replace": "title: \"复制到剪贴板\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Dictation.qml",
+      "find": "subtitle: \"Enter copies · Ctrl+Enter copies and pastes\"",
+      "replace": "subtitle: \"Enter 复制 · Ctrl+Enter 复制并粘贴\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Dictation.qml",
+      "find": "verb: \"Copy\"",
+      "replace": "verb: \"复制\"",
+      "count": 2
+    },
+    {
+      "file": "providers/Dictation.qml",
+      "find": "previewLabel: \"DICTATION\"",
+      "replace": "previewLabel: \"听写\"",
+      "count": 2
+    },
+    {
+      "file": "providers/Dictation.qml",
+      "find": "title: text ? \"Copy dictated text\" : \"Start speaking…\"",
+      "replace": "title: text ? \"复制听写文本\" : \"开始说话…\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Dictation.qml",
+      "find": "subtitle: \"Enter copies and closes · Ctrl+Enter pastes into your previous window\"",
+      "replace": "subtitle: \"Enter 复制并关闭 · Ctrl+Enter 粘贴到上一个窗口\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Emoji.qml",
+      "find": "description: \"Search by name, or type : followed by a feeling\"",
+      "replace": "description: \"按名称搜索，或输入 : 加心情\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Emoji.qml",
+      "find": "title: \"Emoji\"",
+      "replace": "title: \"表情符号\"",
+      "count": 2
+    },
+    {
+      "file": "providers/Emoji.qml",
+      "find": "summary: \"Find an emoji by name and copy it\"",
+      "replace": "summary: \"按名称查找表情并复制\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Emoji.qml",
+      "find": "hint: \"a name or a feeling: smile, cat, party\"",
+      "replace": "hint: \"名称或心情：smile、cat、party\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Emoji.qml",
+      "find": "title: \"Emoji Picker\"",
+      "replace": "title: \"表情选择器\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Emoji.qml",
+      "find": "section: \"Emoji\"",
+      "replace": "section: \"表情符号\"",
+      "count": 2
+    },
+    {
+      "file": "providers/Extensions.qml",
+      "find": "description: \"Turn the extensions that ship with Keystroke on and off\"",
+      "replace": "description: \"开启或关闭 Keystroke 自带的扩展\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Extensions.qml",
+      "find": "title: \"No such extension\"",
+      "replace": "title: \"没有该扩展\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Extensions.qml",
+      "find": "\"This extension has no setup script\"",
+      "replace": "\"该扩展没有安装脚本\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "description: \"Files and folders under your home folder, found with fd\"",
+      "replace": "description: \"主文件夹下的文件与目录，用 fd 查找\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "title: \"Find files\"",
+      "replace": "title: \"查找文件\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "summary: \"Files and folders under your home folder, found with fd\"",
+      "replace": "summary: \"主文件夹下的文件与目录，用 fd 查找\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "hint: \"part of a file or folder name, or a path like /Documents report\"",
+      "replace": "hint: \"文件或目录名的一部分，或类似 /Documents report 的路径\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "label: \"Search in the main palette\"",
+      "replace": "label: \"在主面板中搜索\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "description: \"Type ~ for fuzzy file and folder search in any mode. Searches under your home folder.\"",
+      "replace": "description: \"任何模式下输入 ~ 进行文件与目录的模糊搜索。在主文件夹下搜索。\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "label: \"Include files\"",
+      "replace": "label: \"包含文件\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "label: \"Include folders\"",
+      "replace": "label: \"包含目录\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "label: \"Include hidden entries\"",
+      "replace": "label: \"包含隐藏项\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "description: \"Dotfiles and dot-folders such as ~/.config. Slower on a large home folder.\"",
+      "replace": "description: \"点文件与点目录，如 ~/.config。主文件夹较大时较慢。\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "label: \"Results at the root\"",
+      "replace": "label: \"根级结果数\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "description: \"The Files screen shows more; this caps what mixes into the global search.\"",
+      "replace": "description: \"文件界面显示更多；此项限制混入全局搜索的数量。\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "title: \"Search Files\"",
+      "replace": "title: \"搜索文件\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "subtitle: \"Files and folders under ~\"",
+      "replace": "subtitle: \"~ 下的文件与目录\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "section: \"Files\"",
+      "replace": "section: \"文件\"",
+      "count": 2
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "verb: \"Open\"",
+      "replace": "verb: \"打开\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "title: \"fd is not installed\"",
+      "replace": "title: \"未安装 fd\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "subtitle: \"sudo pacman -S fd, then search again\"",
+      "replace": "subtitle: \"sudo pacman -S fd，然后重新搜索\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "title:\"Type a file or folder name\"",
+      "replace": "title:\"输入文件或目录名\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "subtitle:\"At least two characters · Searches under ~\"",
+      "replace": "subtitle:\"至少两个字符 · 在 ~ 下搜索\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Hotkeys.qml",
+      "find": "description: \"Omarchy's keybindings, searchable by what they do, with the keys shown next to each\"",
+      "replace": "description: \"Omarchy 的键绑定，可按功能搜索，每项旁显示按键\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Hotkeys.qml",
+      "find": "label: \"Results at the root\"",
+      "replace": "label: \"根级结果数\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Hotkeys.qml",
+      "find": "description: \"The Hotkeys screen lists every bind; this caps what mixes into the global search.\"",
+      "replace": "description: \"快捷键界面列出每个绑定；此项限制混入全局搜索的数量。\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Hotkeys.qml",
+      "find": "label: \"Show keyboard-only binds\"",
+      "replace": "label: \"显示仅键盘绑定\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Hotkeys.qml",
+      "find": "description: \"Binds Omarchy cannot run from a menu (Lua closures such as Close window) still appear, greyed, so the keys can be learned.\"",
+      "replace": "description: \"Omarchy 无法从菜单运行的绑定（如关闭窗口的 Lua 闭包）仍会灰显出现，便于记忆按键。\"",
+      "count": 1
+    },
+    {
+      "file": "providers/OmarchyMenu.qml",
+      "find": "description: \"The complete, live Omarchy menu\"",
+      "replace": "description: \"完整、实时的 Omarchy 菜单\"",
+      "count": 1
+    },
+    {
+      "file": "providers/OmarchyMenu.qml",
+      "find": "label: \"Confirm destructive actions\"",
+      "replace": "label: \"确认破坏性操作\"",
+      "count": 1
+    },
+    {
+      "file": "providers/OmarchyMenu.qml",
+      "find": "description: \"Confirm shutdown, reboot, logout, removal and config resets\"",
+      "replace": "description: \"确认关机、重启、注销、移除与配置重置\"",
+      "count": 1
+    },
+    {
+      "file": "providers/OmarchyMenu.qml",
+      "find": "title: \"Applications\"",
+      "replace": "title: \"应用\"",
+      "count": 1
+    },
+    {
+      "file": "providers/OmarchyMenu.qml",
+      "find": "title: \"Omarchy Menu\"",
+      "replace": "title: \"Omarchy 菜单\"",
+      "count": 1
+    },
+    {
+      "file": "providers/OmarchyMenu.qml",
+      "find": "subtitle: \"Your entire desktop, at your fingertips\"",
+      "replace": "subtitle: \"你的整个桌面，触手可及\"",
+      "count": 1
+    },
+    {
+      "file": "providers/OmarchyMenu.qml",
+      "find": "verb: \"Open\"",
+      "replace": "verb: \"打开\"",
+      "count": 1
+    },
+    {
+      "file": "providers/OpenUrl.qml",
+      "find": "description: \"Open a web address in your default browser\"",
+      "replace": "description: \"在默认浏览器中打开网址\"",
+      "count": 1
+    },
+    {
+      "file": "providers/OpenUrl.qml",
+      "find": "title: \"Open URL\"",
+      "replace": "title: \"打开网址\"",
+      "count": 1
+    },
+    {
+      "file": "providers/OpenUrl.qml",
+      "find": "summary: \"Open a web address in your default browser\"",
+      "replace": "summary: \"在默认浏览器中打开网址\"",
+      "count": 1
+    },
+    {
+      "file": "providers/OpenUrl.qml",
+      "find": "hint: \"a web address, with or without https://\"",
+      "replace": "hint: \"网址，可带或不带 https://\"",
+      "count": 1
+    },
+    {
+      "file": "providers/OpenUrl.qml",
+      "find": "subtitle: \"For example: example.com or http://localhost:3000\"",
+      "replace": "subtitle: \"例如：example.com 或 http://localhost:3000\"",
+      "count": 1
+    },
+    {
+      "file": "providers/OpenUrl.qml",
+      "find": "section: \"Open URL\"",
+      "replace": "section: \"打开网址\"",
+      "count": 2
+    },
+    {
+      "file": "providers/OpenUrl.qml",
+      "find": "verb: \"Keep typing\"",
+      "replace": "verb: \"继续输入\"",
+      "count": 1
+    },
+    {
+      "file": "providers/OpenUrl.qml",
+      "find": "title: \"Open \" + parsed.url",
+      "replace": "title: \"打开 \" + parsed.url",
+      "count": 1
+    },
+    {
+      "file": "providers/OpenUrl.qml",
+      "find": "subtitle: \"Open URL · Default browser\"",
+      "replace": "subtitle: \"打开网址 · 默认浏览器\"",
+      "count": 1
+    },
+    {
+      "file": "providers/OpenUrl.qml",
+      "find": "verb: \"Open URL\"",
+      "replace": "verb: \"打开网址\"",
+      "count": 1
+    },
+    {
+      "file": "providers/OpenUrl.qml",
+      "find": "previewLabel: \"URL\"",
+      "replace": "previewLabel: \"网址\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Registry.qml",
+      "find": "message: \"Pattern \"",
+      "replace": "message: \"模式 \"",
+      "count": 1
+    },
+    {
+      "file": "providers/Registry.qml",
+      "find": "message: \"Command \"",
+      "replace": "message: \"命令 \"",
+      "count": 1
+    },
+    {
+      "file": "providers/Registry.qml",
+      "find": "message: \"Needs Keystroke provider API 1, provider declares \"",
+      "replace": "message: \"需要 Keystroke 提供方 API 1，该提供方声明为 \"",
+      "count": 1
+    },
+    {
+      "file": "providers/Registry.qml",
+      "find": "message: \"Provider must define name and query(ctx)\"",
+      "replace": "message: \"提供方必须定义 name 与 query(ctx)\"",
+      "count": 1
+    },
+    {
+      "file": "providers/SettingsProvider.qml",
+      "find": "description: \"Providers, appearance and the config file\"",
+      "replace": "description: \"提供方、外观与配置文件\"",
+      "count": 1
+    },
+    {
+      "file": "providers/SettingsProvider.qml",
+      "find": "? \"Not set\" : String(value)",
+      "replace": "? \"未设置\" : String(value)",
+      "count": 1
+    },
+    {
+      "file": "providers/SettingsProvider.qml",
+      "find": "subtitle: \"Current value · type a new one\"",
+      "replace": "subtitle: \"当前值 · 输入新值\"",
+      "count": 1
+    },
+    {
+      "file": "providers/SettingsProvider.qml",
+      "find": "title: \"Save “\"",
+      "replace": "title: \"保存 “\"",
+      "count": 1
+    },
+    {
+      "file": "providers/SettingsProvider.qml",
+      "find": "verb: \"Save\"",
+      "replace": "verb: \"保存\"",
+      "count": 1
+    },
+    {
+      "file": "codex/AppServer.qml",
+      "find": "message: \"Codex connection closed\"",
+      "replace": "message: \"Codex 连接已关闭\"",
+      "count": 1
+    },
+    {
+      "file": "codex/AppServer.qml",
+      "find": "? \"Codex version mismatch. Keystroke requires a stable Codex CLI \"",
+      "replace": "? \"Codex 版本不匹配。Keystroke 需要稳定的 Codex CLI \"",
+      "count": 1
+    },
+    {
+      "file": "codex/AppServer.qml",
+      "find": "\" or newer\" : \"Codex stopped. Your conversation is saved; reopen it to continue.\"",
+      "replace": "\" 或更高版本\" : \"Codex 已停止。你的对话已保存；重新打开可继续。\"",
+      "count": 1
+    },
+    {
+      "file": "codex/CodexSession.qml",
+      "find": "= \"Could not read recent questions\"",
+      "replace": "= \"无法读取最近提问\"",
+      "count": 1
+    },
+    {
+      "file": "codex/CodexSession.qml",
+      "find": "error = \"Stop the current answer before starting another question\"",
+      "replace": "error = \"请先停止当前回答，再开始另一个问题\"",
+      "count": 1
+    },
+    {
+      "file": "codex/CodexSession.qml",
+      "find": "fail(\"Selected model is unavailable: \" + model)",
+      "replace": "fail(\"所选模型不可用： \" + model)",
+      "count": 1
+    },
+    {
+      "file": "codex/CodexSession.qml",
+      "find": "fail(\"Sign in using codex login, then reopen this question.\")",
+      "replace": "fail(\"请先用 codex login 登录，然后重新打开此问题。\")",
+      "count": 1
+    },
+    {
+      "file": "codex/CodexSession.qml",
+      "find": "activity = \"Connecting…\"",
+      "replace": "activity = \"连接中…\"",
+      "count": 1
+    },
+    {
+      "file": "codex/CodexSession.qml",
+      "find": "activity = \"Answering…\"",
+      "replace": "activity = \"回答中…\"",
+      "count": 1
+    },
+    {
+      "file": "codex/CodexSession.qml",
+      "find": "activity = \"Stopping…\"",
+      "replace": "activity = \"停止中…\"",
+      "count": 1
+    },
+    {
+      "file": "codex/CodexSession.qml",
+      "find": "rpc.fail(\"Codex did not acknowledge stopping. The connection was closed; reopen the saved question to continue.\")",
+      "replace": "rpc.fail(\"Codex 未确认停止。连接已关闭；重新打开已保存的问题以继续。\")",
+      "count": 1
+    },
+    {
+      "file": "codex/CodexSession.qml",
+      "find": "activity = \"Searching the web…\"",
+      "replace": "activity = \"搜索网页中…\"",
+      "count": 1
+    },
+    {
+      "file": "codex/CodexSession.qml",
+      "find": "activity = \"Running: \" + (item.command || \"command\")",
+      "replace": "activity = \"运行中： \" + (item.command || \"命令\")",
+      "count": 1
+    },
+    {
+      "file": "codex/CodexSession.qml",
+      "find": "activity = \"Updating files…\"",
+      "replace": "activity = \"更新文件中…\"",
+      "count": 1
+    },
+    {
+      "file": "codex/CodexSession.qml",
+      "find": "activity = \"Using \" + item.server",
+      "replace": "activity = \"使用 \" + item.server",
+      "count": 1
+    },
+    {
+      "file": "codex/CodexSession.qml",
+      "find": "? \"Stopped\" : p.turn.status === \"failed\" ? \"Failed\" : \"Done\"",
+      "replace": "? \"已停止\" : p.turn.status === \"failed\" ? \"失败\" : \"完成\"",
+      "count": 1
+    },
+    {
+      "file": "codex/CodexSession.qml",
+      "find": "\"This capability is unavailable for the current turn\"",
+      "replace": "\"当前回合无法使用此功能\"",
+      "count": 1
+    },
+    {
+      "file": "codex/CodexSession.qml",
+      "find": "activity = \"Waiting for your input\"",
+      "replace": "activity = \"等待你的输入\"",
+      "count": 1
+    },
+    {
+      "file": "codex/CodexSession.qml",
+      "find": "\"This request needs the full Codex app. Continue there to use it.\"",
+      "replace": "\"此请求需要完整的 Codex 应用。请到那里继续使用。\"",
+      "count": 1
+    },
+    {
+      "file": "codex/CodexSession.qml",
+      "find": "|| \"Cancelled\"",
+      "replace": "|| \"已取消\"",
+      "count": 1
+    },
+    {
+      "file": "codex/CodexSession.qml",
+      "find": "error = \"Send a question before continuing in Codex\"",
+      "replace": "error = \"请先发送问题，再在 Codex 中继续\"",
+      "count": 1
+    },
+    {
+      "file": "codex/ConversationView.qml",
+      "find": "tooltipText: \"Back to results\"",
+      "replace": "tooltipText: \"返回结果\"",
+      "count": 1
+    },
+    {
+      "file": "codex/ConversationView.qml",
+      "find": ": \"Quick question · \" + (session.settings.model",
+      "replace": ": \"快速提问 · \" + (session.settings.model",
+      "count": 1
+    },
+    {
+      "file": "codex/ConversationView.qml",
+      "find": "? \" · Standard\" : \" · Fast\"",
+      "replace": "? \" · 标准\" : \" · 快速\"",
+      "count": 1
+    },
+    {
+      "file": "codex/ConversationView.qml",
+      "find": "? \"Stop & continue ↗\" : \"Continue in Codex ↗\"",
+      "replace": "? \"停止并继续 ↗\" : \"在 Codex 中继续 ↗\"",
+      "count": 1
+    },
+    {
+      "file": "codex/ConversationView.qml",
+      "find": "? \"Finishing transcript…\" : \"Listening…\"",
+      "replace": "? \"正在完成转写…\" : \"聆听中…\"",
+      "count": 1
+    },
+    {
+      "file": "codex/ConversationView.qml",
+      "find": "? \"Update request\" : \"Send\"",
+      "replace": "? \"更新请求\" : \"发送\"",
+      "count": 1
+    },
+    {
+      "file": "codex/ConversationView.qml",
+      "find": "label: \"Stop\"",
+      "replace": "label: \"停止\"",
+      "count": 1
+    },
+    {
+      "file": "codex/ConversationView.qml",
+      "find": "label: \"Copy answer\"",
+      "replace": "label: \"复制回答\"",
+      "count": 1
+    },
+    {
+      "file": "codex/ConversationView.qml",
+      "find": "label: \"New question\"",
+      "replace": "label: \"新问题\"",
+      "count": 1
+    },
+    {
+      "file": "codex/ConversationView.qml",
+      "find": "= \"Answer copied\"",
+      "replace": "= \"回答已复制\"",
+      "count": 1
+    },
+    {
+      "file": "codex/ConversationView.qml",
+      "find": "text: \"Codex needs your input\"",
+      "replace": "text: \"Codex 需要你的输入\"",
+      "count": 1
+    },
+    {
+      "file": "codex/ConversationView.qml",
+      "find": "? \"Answer\" : \"Allow once\"",
+      "replace": "? \"回答\" : \"允许一次\"",
+      "count": 1
+    },
+    {
+      "file": "codex/ConversationView.qml",
+      "find": "label: \"Decline\"",
+      "replace": "label: \"拒绝\"",
+      "count": 1
+    },
+    {
+      "file": "codex/ConversationView.qml",
+      "find": "label: \"Stop & continue in Codex\"",
+      "replace": "label: \"停止并在 Codex 中继续\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "= \"Provider view is unavailable\"",
+      "replace": "= \"提供方视图不可用\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "label: \"Layout density\"",
+      "replace": "label: \"布局密度\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "description: \"Compact uses a narrower window and shorter rows\"",
+      "replace": "description: \"紧凑布局使用更窄的窗口和更矮的行\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "label: \"Accent color\"",
+      "replace": "label: \"强调色\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "description: \"Theme follows the active Omarchy theme\"",
+      "replace": "description: \"主题跟随当前 Omarchy 主题\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "label: \"Show result previews\"",
+      "replace": "label: \"显示结果预览\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "label: \"Animations\"",
+      "replace": "label: \"动画\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "description: \"Off shows every change at once; Snappy ties changes together over a couple of frames; Fluid eases them\"",
+      "replace": "description: \"关闭：所有变化立即呈现；利落：数帧内连贯呈现；流畅：带缓动呈现\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "label: \"Window transition\"",
+      "replace": "label: \"窗口过渡\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "instant: \"Instant\", fade: \"Fade\", slide: \"Slide up\"",
+      "replace": "instant: \"立即\", fade: \"淡入淡出\", slide: \"上滑\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "description: \"Instant maps and unmaps the palette at once; Fade and Slide up follow the animation tier\"",
+      "replace": "description: \"立即：面板一次性出现/消失；淡入淡出与上滑跟随动画层级\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "= \"Nothing heard\"",
+      "replace": "= \"没有听到声音\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "label: \"Voice command integration\"",
+      "replace": "label: \"语音命令集成\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "description: \"Hold the palette hotkey, or tap it again while the palette is open, to dictate the query\"",
+      "replace": "description: \"按住面板快捷键，或面板打开时再按一次，即可听写查询\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "label: \"Second tap of the hotkey\"",
+      "replace": "label: \"快捷键的第二次按下\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "description: \"Voice starts dictation and a third tap stops it (Esc closes); Close is the stock toggle\"",
+      "replace": "description: \"语音启动听写、第三次按下停止（Esc 关闭）；关闭则是原生切换\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "label: \"Hotkeys to hold\"",
+      "replace": "label: \"要按住的快捷键\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "description: \"Hyprland combos for the long-press bindings, comma-separated, e.g. SUPER + SPACE, SUPER + SHIFT + code:201\"",
+      "replace": "description: \"长按绑定的 Hyprland 组合键，逗号分隔，如 SUPER + SPACE、SUPER + SHIFT + code:201\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "\"Keystroke dictation\"",
+      "replace": "\"Keystroke 听写\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "= \"Could not read \" + root.bindingsPath",
+      "replace": "= \"无法读取 \" + root.bindingsPath",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "= \"Bindings written · Hyprland reloaded\"",
+      "replace": "= \"绑定已写入 · Hyprland 已重载\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "? \"Copy\" : voice.active ? \"Finish\"",
+      "replace": "? \"复制\" : voice.active ? \"完成\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "|| \"Select\"",
+      "replace": "|| \"选择\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "label: \"Paste\", key: \"ctrl ↵\"",
+      "replace": "label: \"粘贴\", key: \"ctrl ↵\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "label: \"Uninstall\", key: \"del\"",
+      "replace": "label: \"卸载\", key: \"del\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "? \"Settings\" : \"Provider settings\"",
+      "replace": "? \"设置\" : \"提供方设置\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "\"Keystroke closed\"",
+      "replace": "\"Keystroke 已关闭\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "= \"The launcher window lost its graphics resources. GPU memory may be exhausted; free some and try again.\"",
+      "replace": "= \"启动器窗口丢失了图形资源。显存可能耗尽；请释放一些后重试。\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "message: \"Uninstall \" + name + \"?\"",
+      "replace": "message: \"卸载 \" + name + \"？\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "detail: \"Removes the package from this computer.\"",
+      "replace": "detail: \"从这台电脑移除该软件包。\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "confirmText: \"Uninstall\"",
+      "replace": "confirmText: \"卸载\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "cancelText: \"Keep it\"",
+      "replace": "cancelText: \"保留\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": ": \"Keystroke command palette\"",
+      "replace": ": \"Keystroke 命令面板\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": ": \"Search commands, apps and extensions\"",
+      "replace": ": \"搜索命令、应用与扩展\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "? \"Speak or edit your dictation…\"",
+      "replace": "? \"说出或编辑你的听写…\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "? \"Search \" + root.scopeTitle.toLowerCase()",
+      "replace": "? \"搜索 \" + root.scopeTitle.toLowerCase()",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": ": \"What would you like to do?\"",
+      "replace": ": \"你想做什么？\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "? \"Search results\" : \"Apps, commands, answers · / lists what you can type\"",
+      "replace": "? \"搜索结果\" : \"应用、命令、回答 · /列出可输入的内容\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "? \"Finding your next move…\"",
+      "replace": "? \"正在寻找下一步…\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "? \"No matches for “\"",
+      "replace": "? \"没有匹配 “\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "? \"Your clipboard is empty\"",
+      "replace": "? \"剪贴板为空\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "? \"Type to search your home folder\"",
+      "replace": "? \"输入以搜索主文件夹\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": ": \"Nothing here yet\"",
+      "replace": ": \"这里还没有内容\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "? \"Try 2m in feet or 10 am in London\"",
+      "replace": "? \"试试 2m 换算成英尺，或伦敦时间上午 10 点\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "? \"Try sqrt(144) + 15% of 80\"",
+      "replace": "? \"试试 sqrt(144) + 80 的 15%\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": ": \"Search by name. Follow your curiosity.\"",
+      "replace": ": \"按名称搜索。追随你的好奇心。\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "? \"Listening… release to finish\"",
+      "replace": "? \"聆听中… 松开即完成\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": ": \"Listening… tap the hotkey again or press ↵ to finish\"",
+      "replace": ": \"聆听中… 再按快捷键或按 ↵ 完成\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "? \"Finishing transcript…\" : voice.phase === \"starting\" ? \"Starting voxtype…\"",
+      "replace": "? \"正在完成转写…\" : voice.phase === \"starting\" ? \"正在启动 voxtype…\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "? \"Searching…\"",
+      "replace": "? \"搜索中…\"",
+      "count": 1
+    },
+    {
+      "file": "Keystroke.qml",
+      "find": "? \"Needs attention: \"",
+      "replace": "? \"需要注意： \"",
+      "count": 1
+    }
+  ]
+}

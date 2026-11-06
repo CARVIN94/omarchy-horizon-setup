@@ -99,7 +99,10 @@ grep -qF 'fromLatin1("Free")' "$TMP/r3/src/three.cpp" && ok "同名裸词未被�
 printf '\n=== 4. 状态：stock/zh/stale/missing 从实际二进制读出 ===\n'
 export OMASNAP_BIN_DIR="$TMP/bin"
 export OMASNAP_ZH_MARK="$OMASNAP_BIN_DIR/.zh-version"
-export OMASNAP_ZH_PIN="1.23.0"
+# 本段测的是「标记与 pin 比对」这条逻辑，与 pin 的真实取值无关：用固定的
+# 假版本号，改 pin 时不必回来同步测试常量。
+PIN_FIXTURE="9.9.9"
+export OMASNAP_ZH_PIN="$PIN_FIXTURE"
 mkdir -p "$OMASNAP_BIN_DIR" "$TMP/emptybin"
 # shellcheck source=../lib/omasnapzh.sh
 source "$ROOT/lib/omasnapzh.sh"
@@ -119,14 +122,14 @@ eq "有启动器但没有 bin → missing" "$(omasnapzh_state)" "missing"
 printf 'stock' > "$OMASNAP_BIN_DIR/omasnap.bin"
 eq "只有 bin、无标记 → stock" "$(omasnapzh_state)" "stock"
 
-printf '1.23.0\n' > "$OMASNAP_ZH_MARK"
+printf '%s\n' "$PIN_FIXTURE" > "$OMASNAP_ZH_MARK"
 eq "标记与 pin 一致 → zh" "$(omasnapzh_state)" "zh"
 
-printf '1.22.0\n' > "$OMASNAP_ZH_MARK"
+printf '%s\n' "$PIN_FIXTURE-other" > "$OMASNAP_ZH_MARK"
 eq "标记与 pin 不一致 → stale" "$(omasnapzh_state)" "stale"
 
 printf '\n=== 5. revert：无汉化版时拒绝，不静默失败 ===\n'
-printf '1.23.0\n' > "$OMASNAP_ZH_MARK"
+printf '%s\n' "$PIN_FIXTURE" > "$OMASNAP_ZH_MARK"
 omasnapzh_revert >/dev/null 2>&1
 eq "没有 stock 二进制时 revert 失败" "$?" "1"
 
@@ -134,7 +137,7 @@ printf 'x' > "$OMASNAP_BIN_DIR/omasnap.stock.bin"
 printf 'y' > "$OMASNAP_BIN_DIR/omasnap.zh.bin"
 chmod +x "$OMASNAP_BIN_DIR/omasnap.stock.bin" "$OMASNAP_BIN_DIR/omasnap.zh.bin"
 ln -sfn omasnap.zh.bin "$OMASNAP_BIN_DIR/omasnap.bin"
-printf '1.23.0\n' > "$OMASNAP_ZH_MARK"
+printf '%s\n' "$PIN_FIXTURE" > "$OMASNAP_ZH_MARK"
 omasnapzh_revert >/dev/null 2>&1
 eq "revert 后退出码 0" "$?" "0"
 eq "revert 后指向 stock" "$(readlink "$OMASNAP_BIN_DIR/omasnap.bin")" "omasnap.stock.bin"
@@ -144,7 +147,7 @@ eq "revert 后状态为 stock" "$(omasnapzh_state)" "stock"
   || bad "汉化二进制被删了"
 
 printf '\n=== 6. 面板行契约：7 列 TAB 分隔，state 可被面板识别 ===\n'
-printf '1.23.0\n' > "$OMASNAP_ZH_MARK"
+printf '%s\n' "$PIN_FIXTURE" > "$OMASNAP_ZH_MARK"
 row=$(omasnapzh_row)
 eq "恰好 7 列" "$(awk -F'\t' '{print NF}' <<<"$row")" "7"
 eq "首列是 omasnap-ui（面板按 id 路由）" "$(cut -f1 <<<"$row")" "omasnap-ui"
@@ -164,13 +167,29 @@ grep -q 'stale:' "$ROOT/ZhcnTab.qml" && ok "面板认识 stale 状态" || bad "�
 # 回归闸门：面板按钮只看 clean/applied 时，omasnap 的 stock/zh 让按钮永远
 # 点不动（真发生过）。这里断言：本层汇报的每种 state 都能被面板的
 # canApply / canRevert 判据覆盖。
-for st in stock zh stale; do
-  if [ "$st" = "zh" ]; then
-    grep -q "canRevert: ({ applied: true, zh: true })" "$ROOT/ZhcnTab.qml" \
-      && ok "面板可还原 $st 态" || bad "面板不能还原 $st 态（按钮会点不动）"
+#
+# 不绑死判据的字面量——面板侧增删状态词会让硬编码断言假失败（真发生过：
+# panel 给 canRevert 补 stale，测试就红了）。改为从 ZhcnTab.qml 抽出两条
+# 判据行，按「状态词是否出现在该行」断言。
+tab="$ROOT/ZhcnTab.qml"
+apply_line=$(grep -m1 'canApply:' "$tab")
+revert_line=$(grep -m1 'canRevert:' "$tab")
+
+has_word() { case "$1" in *"$2:"*) return 0 ;; *) return 1 ;; esac; }
+
+# omasnapzh_install 覆盖 stock/stale；omasnapzh_revert 接受 zh|stale。
+for st in stock stale; do
+  if has_word "$apply_line" "$st"; then
+    ok "面板可汉化 $st 态"
   else
-    grep -q "canApply: ({ clean: true, stock: true, stale: true })" "$ROOT/ZhcnTab.qml" \
-      && ok "面板可汉化 $st 态" || bad "面板不能汉化 $st 态（按钮会点不动）"
+    bad "面板不能汉化 $st 态（按钮会点不动）" "canApply 行: $apply_line"
+  fi
+done
+for st in zh stale; do
+  if has_word "$revert_line" "$st"; then
+    ok "面板可还原 $st 态"
+  else
+    bad "面板不能还原 $st 态（按钮会点不动）" "canRevert 行: $revert_line"
   fi
 done
 # 按钮本身必须走判据，不能再写死某个状态词

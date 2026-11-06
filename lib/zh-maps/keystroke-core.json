@@ -1,0 +1,825 @@
+{
+  "id": "keystroke-core",
+  "group": "keystroke",
+  "title": "Keystroke 核心",
+  "root": "~/.config/omarchy/plugins/evindor.keystroke",
+  "note": "范围：core/*.js 的显示文案（title/summary/hint/description/label/subtitle/verb/confirm/previewLabel 等渲染字段、schema 的 label/description/optionLabels、渲染到 problems 列表的错误 message）。不动的类别与原因：①搜索语料 keywords 与 node 的 description 词堆（喂给 Match.match 的关键词，译了英文搜索失效）；②匹配引擎的正则/别名/家族枚举（Match.js/SmartMatch.js computeFamily/Intent.js 归一化词表/Patterns.js 的 regex/flags、Frecency.js）；③存档值/枚举值（options、type: string、settings keys、prefix、参数 name）；④VoiceBindings.js 的 BEGIN/END 块锚点（写入 bindings.lua 并按字节比对判断 installed/outdated，译了锚点失配）；⑤Calculator.js 的 CalcError 消息（evaluate() 吞掉异常只返回 partial/null，无 UI 消费点，grep 证实）；⑥Units.js throw Error 消息（Converter.qml catch 后静默丢弃）；⑦Hotkeys.js 的 MODIFIERS/键名图例（Super/Shift/↵/Esc 等按键字母，规则5保留）；⑧Colors.js 的 HEX/RGB/HSL（颜色格式标准缩写，同单位待遇）；⑨品牌/专名 Keystroke/Omarchy/Voxtype/Hyprland/产品 API 名。已知对齐义务（译 verb 后需 QML 批次同步）：ui/ResultRow.qml:139 的 verb === \"Open\" 判断、Keystroke.qml:464/965 的 Open/Run/Select 兜底、ui/PreviewPane.qml:137 的 \"Press return to \" 模板。另：本表译文会打破上游 tests/ 与 extensions/*/tests/ 对英文原文的断言（如 \"Turn on Hello?\"、section \"Hotkeys\"、previewLabel \"IMAGE\"、subtitle \"Optional\" 等），测试文件不在本表范围，需另做 tests 同步映射或接受测试红。",
+  "replacements": [
+    {
+      "file": "core/Commands.js",
+      "find": "label: \"Prefix\", \"default\": first ? first.prefix : \"\",",
+      "replace": "label: \"触发词\", \"default\": first ? first.prefix : \"\",",
+      "count": 1
+    },
+    {
+      "file": "core/Commands.js",
+      "find": "description: \"The word or sign that triggers it\" + (first ? \"; \" + first.prefix + \" unless you change it\" : \"\")",
+      "replace": "description: \"触发命令的词或符号\" + (first ? \"；默认 \" + first.prefix + \"，除非你更改\" : \"\")",
+      "count": 1
+    },
+    {
+      "file": "core/Commands.js",
+      "find": "errors: [\"commands must be an array\"]",
+      "replace": "errors: [\"commands 必须是数组\"]",
+      "count": 1
+    },
+    {
+      "file": "core/Commands.js",
+      "find": "errors.push(\"command \" + i + \" is not an object\")",
+      "replace": "errors.push(\"第 \" + i + \" 个 command 不是对象\")",
+      "count": 1
+    },
+    {
+      "file": "core/Commands.js",
+      "find": "\": prefix must be one word or a sign, at most \" + MAX_PREFIX + \" characters\")",
+      "replace": "\": prefix 必须是单个词或一个符号，最多 \" + MAX_PREFIX + \" 个字符\")",
+      "count": 1
+    },
+    {
+      "file": "core/Commands.js",
+      "find": "\": title is missing\")",
+      "replace": "\": 缺少 title\")",
+      "count": 1
+    },
+    {
+      "file": "core/Commands.js",
+      "find": "\"argument \" + a + \" needs a name\"",
+      "replace": "\"参数 \" + a + \" 需要一个 name\"",
+      "count": 1
+    },
+    {
+      "file": "core/Commands.js",
+      "find": "\"only the last argument may take the rest of the line\"",
+      "replace": "\"只有最后一个参数可以接收本行剩余内容\"",
+      "count": 1
+    },
+    {
+      "file": "core/Commands.js",
+      "find": "(p.arg.optional ? \" (optional)\" : \"\")",
+      "replace": "(p.arg.optional ? \"（可选）\" : \"\")",
+      "count": 1
+    },
+    {
+      "file": "core/Commands.js",
+      "find": "section: \"Commands\"",
+      "replace": "section: \"命令\"",
+      "count": 1
+    },
+    {
+      "file": "core/Commands.js",
+      "find": "verb: \"Type\"",
+      "replace": "verb: \"输入\"",
+      "count": 2
+    },
+    {
+      "file": "core/Commands.js",
+      "find": "section: \"Usage\"",
+      "replace": "section: \"用法\"",
+      "count": 4
+    },
+    {
+      "file": "core/Commands.js",
+      "find": "subtitle: (arg.optional ? \"Optional\" : \"Required\") + (arg.rest ? \" · the rest of the line\" : \"\")",
+      "replace": "subtitle: (arg.optional ? \"可选\" : \"必填\") + (arg.rest ? \" · 本行剩余内容\" : \"\")",
+      "count": 1
+    },
+    {
+      "file": "core/Commands.js",
+      "find": "subtitle: \"Try it\"",
+      "replace": "subtitle: \"试试看\"",
+      "count": 1
+    },
+    {
+      "file": "core/Commands.js",
+      "find": "verb: \"Try\"",
+      "replace": "verb: \"试一下\"",
+      "count": 1
+    },
+    {
+      "file": "core/Commands.js",
+      "find": "title: \"Prefix\", subtitle: settingsScope ? \"Change the word that triggers it\" : \"Turn the extension on to change the word that triggers it\",",
+      "replace": "title: \"触发词\", subtitle: settingsScope ? \"更改触发命令的词或符号\" : \"开启扩展后才能更改触发词\",",
+      "count": 1
+    },
+    {
+      "file": "core/Commands.js",
+      "find": "verb: settingsScope ? \"Change\" : \"\"",
+      "replace": "verb: settingsScope ? \"更改\" : \"\"",
+      "count": 1
+    },
+    {
+      "file": "core/Commands.js",
+      "find": "title: \"Prefix\" }",
+      "replace": "title: \"触发词\" }",
+      "count": 1
+    },
+    {
+      "file": "core/Commands.js",
+      "find": "if (!commands || !commands.length) return name + \" is on\"",
+      "replace": "if (!commands || !commands.length) return name + \" 已开启\"",
+      "count": 1
+    },
+    {
+      "file": "core/Commands.js",
+      "find": "return name + \" is on · type \" + usage(effective(commands[0], override, 0)) + \", or find it by name\"",
+      "replace": "return name + \" 已开启 · 输入 \" + usage(effective(commands[0], override, 0)) + \"，或按名字找到它\"",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "var ROOT_TITLE = \"Keystroke Settings\"",
+      "replace": "var ROOT_TITLE = \"Keystroke 设置\"",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "tint: \"\", section: \"Settings\", verb: \"Open\", order: 0,",
+      "replace": "tint: \"\", section: \"设置\", verb: \"打开\", order: 0,",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "out.push(row(n, s + n.lift, rel.parent || n.subtitle, \"Settings\"))",
+      "replace": "out.push(row(n, s + n.lift, rel.parent || n.subtitle, \"设置\"))",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "var r = row(n, 1, n.parts.slice(0, -1).join(\" › \") || n.subtitle, \"Settings\")",
+      "replace": "var r = row(n, 1, n.parts.slice(0, -1).join(\" › \") || n.subtitle, \"设置\")",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "verb: isBool ? \"Toggle\" : \"Change\"",
+      "replace": "verb: isBool ? \"切换\" : \"更改\"",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "subtitle: option === value ? \"Selected\" : \"\"",
+      "replace": "subtitle: option === value ? \"已选中\" : \"\"",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "verb: \"Select\"",
+      "replace": "verb: \"选择\"",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "if (!d) return \"daemon not running\"",
+      "replace": "if (!d) return \"守护进程未运行\"",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "return d === \"idle\" ? \"daemon ready\" : \"daemon \" + d",
+      "replace": "return d === \"idle\" ? \"守护进程就绪\" : \"守护进程 \" + d",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "rootParts.concat([\"Voice\"])",
+      "replace": "rootParts.concat([\"语音\"])",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "(on ? \"On\" : \"Off\") + \" · \" + engine",
+      "replace": "(on ? \"开\" : \"关\") + \" · \" + engine",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "daemonLabel(voice) : \"Voxtype is not installed\",",
+      "replace": "daemonLabel(voice) : \"未安装 Voxtype\",",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "parts.concat([\"Voxtype is not installed\"])",
+      "replace": "parts.concat([\"未安装 Voxtype\"])",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "subtitle: \"Voice is optional; Keystroke never installs it in the background\"",
+      "replace": "subtitle: \"语音是可选功能；Keystroke 绝不会在后台自动安装\"",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "parts.concat([\"Install dictation (voxtype)\"])",
+      "replace": "parts.concat([\"安装听写（voxtype）\"])",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "subtitle: \"Runs Omarchy's stock voxtype installer in a floating terminal\"",
+      "replace": "subtitle: \"在浮动终端中运行 Omarchy 自带的 voxtype 安装器\"",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "verb: \"Install\", order: 1, keywords: \"voxtype install\"",
+      "replace": "verb: \"安装\", order: 1, keywords: \"voxtype install\"",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "verb: st === \"installed\" ? \"Reinstall\" : st === \"outdated\" ? \"Update\" : \"Install\",",
+      "replace": "verb: st === \"installed\" ? \"重新安装\" : st === \"outdated\" ? \"更新\" : \"安装\",",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "\"Long-press and release binds are in \" + path",
+      "replace": "\"长按与松开绑定位于 \" + path",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": ": st === \"outdated\" ? \"The block in \" + path + \" does not match the hotkeys above\"",
+      "replace": ": st === \"outdated\" ? path + \" 中的块与上面的快捷键不一致\"",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": ": \"Adds long-press and release binds for the hotkeys above to \" + path,",
+      "replace": ": \"把上面快捷键的长按与松开绑定添加到 \" + path + \"，\",",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "accessory: st === \"installed\" ? \"Installed\" : st === \"outdated\" ? \"Outdated\" : \"Missing\",",
+      "replace": "accessory: st === \"installed\" ? \"已安装\" : st === \"outdated\" ? \"已过期\" : \"缺失\",",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "confirm: (st === \"missing\" ? \"Add\" : \"Rewrite\") + \" the Keystroke voice block in \" + path + \" and reload Hyprland?\",",
+      "replace": "confirm: (st === \"missing\" ? \"添加\" : \"重写\") + \" \" + path + \" 中的 Keystroke 语音块并重新加载 Hyprland？\",",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "\" · tap the hotkey again or hold it while the palette is open\"",
+      "replace": "\" · 再次轻点热键，或在面板打开时按住热键\"",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "subtitle: \"Providers, appearance and the config file\"",
+      "replace": "subtitle: \"提供商、外观与配置文件\"",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "navigate(\"settings\", \"Settings\")",
+      "replace": "navigate(\"settings\", \"设置\")",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "rootParts.concat([\"Appearance\"])",
+      "replace": "rootParts.concat([\"外观\"])",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "subtitle: \"Density, accent, previews and animations\"",
+      "replace": "subtitle: \"密度、强调色、预览与动画\"",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "navigate(\"settings/palette\", \"Appearance\")",
+      "replace": "navigate(\"settings/palette\", \"外观\")",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "rootParts.concat([\"Matching\"])",
+      "replace": "rootParts.concat([\"匹配\"])",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "subtitle: \"Smart match and model size\"",
+      "replace": "subtitle: \"智能匹配与模型大小\"",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "navigate(\"settings/matching\", \"Matching\")",
+      "replace": "navigate(\"settings/matching\", \"匹配\")",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "? \"Retry Smart Match\" : model.matching.status || \"Model unloaded\"",
+      "replace": "? \"重试智能匹配\" : model.matching.status || \"模型未加载\"",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "subtitle: model.matching.error || \"Models are downloaded once and matched locally\", verb: model.matching.error ? \"Retry\" : \"\",",
+      "replace": "subtitle: model.matching.error || \"模型仅下载一次，之后在本地匹配\", verb: model.matching.error ? \"重试\" : \"\",",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "rootParts.concat([\"Open config file\"])",
+      "replace": "rootParts.concat([\"打开配置文件\"])",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "verb: \"Open file\", order: 2,",
+      "replace": "verb: \"打开文件\", order: 2,",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "rootParts.concat([\"Learn Keystroke\"])",
+      "replace": "rootParts.concat([\"学习 Keystroke\"])",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "subtitle: \"The usage guide in your browser: every feature, key and prefix, with screenshots\"",
+      "replace": "subtitle: \"浏览器中的使用指南：每个功能、按键与触发词都有截图说明\"",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "verb: \"Open guide\", order: 3, lift: 1,",
+      "replace": "verb: \"打开指南\", order: 3, lift: 1,",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "var origin = extension ? (e.local ? \"Local extension\" : \"Extension\") : \"Bundled\"",
+      "replace": "var origin = extension ? (e.local ? \"本地扩展\" : \"扩展\") : \"内置\"",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "(e.enabled ? \"Enabled\" : \"Disabled\") + \" · \" + origin",
+      "replace": "(e.enabled ? \"已启用\" : \"已停用\") + \" · \" + origin",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "section: \"Providers\", order: 10 + i,",
+      "replace": "section: \"提供商\", order: 10 + i,",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "label: \"Enabled\",",
+      "replace": "label: \"启用\",",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "description: extension ? \"Runs the extension's code in your shell with your permissions\" : \"Include this provider in Keystroke\" }",
+      "replace": "description: extension ? \"在你的 shell 中以你的权限运行该扩展的代码\" : \"把该提供商纳入 Keystroke\" }",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "subtitle: enabledSchema.description, verb: \"Toggle\", order: -1, lift: 1,",
+      "replace": "subtitle: enabledSchema.description, verb: \"切换\", order: -1, lift: 1,",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "accessory: e.enabled ? \"On\" : \"Off\", keywords: \"enabled\"",
+      "replace": "accessory: e.enabled ? \"开\" : \"关\", keywords: \"enabled\"",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "parts.concat([\"Manage extension\"])",
+      "replace": "parts.concat([\"管理扩展\"])",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "subtitle: (e.loaded ? \"Loaded from \" : \"Off · \") + (e.dir || e.extensionId)",
+      "replace": "subtitle: (e.loaded ? \"加载自 \" : \"已关闭 · \") + (e.dir || e.extensionId)",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "icon: \"󰏓\", verb: \"Open\", order: 900,",
+      "replace": "icon: \"󰏓\", verb: \"打开\", order: 900,",
+      "count": 1
+    },
+    {
+      "file": "core/SettingsTree.js",
+      "find": "section: \"Extensions needing attention\", verb: \"\", order: 500 + p,",
+      "replace": "section: \"需要注意的扩展\", verb: \"\", order: 500 + p,",
+      "count": 1
+    },
+    {
+      "file": "core/Settings.js",
+      "find": "throw new Error(\"expected an object\")",
+      "replace": "throw new Error(\"应为对象\")",
+      "count": 1
+    },
+    {
+      "file": "core/Settings.js",
+      "find": "throw new Error(\"expected version: 1\")",
+      "replace": "throw new Error(\"应为 version: 1\")",
+      "count": 1
+    },
+    {
+      "file": "core/Settings.js",
+      "find": "throw new Error(\"palette must be an object\")",
+      "replace": "throw new Error(\"palette 必须是对象\")",
+      "count": 1
+    },
+    {
+      "file": "core/Settings.js",
+      "find": "throw new Error(\"providers must be an object\")",
+      "replace": "throw new Error(\"providers 必须是对象\")",
+      "count": 1
+    },
+    {
+      "file": "core/Settings.js",
+      "find": "\"Config kept at last valid version: \" + e.message",
+      "replace": "\"配置保留为上一个有效版本：\" + e.message",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "return { message: \"Folder name must be lowercase letters, digits and dashes\" }",
+      "replace": "return { message: \"文件夹名只能使用小写字母、数字和连字符\" }",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "return { message: \"The id \" + id + \" belongs to a bundled provider\" }",
+      "replace": "return { message: \"id \" + id + \" 属于内置提供商\" }",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "FILE + \" is not valid JSON\"",
+      "replace": "FILE + \" 不是有效的 JSON\"",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "FILE + \" must be an object\"",
+      "replace": "FILE + \" 必须是对象\"",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "\"Needs Keystroke provider API 1, \" + FILE + \" declares \"",
+      "replace": "\"需要 Keystroke provider API 1，而 \" + FILE + \" 声明的是 \"",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "FILE + \" needs a name\"",
+      "replace": "FILE + \" 需要 name\"",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "return { message: \"entry must be a .qml file inside the extension folder\" }",
+      "replace": "return { message: \"entry 必须是扩展文件夹内的 .qml 文件\" }",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "return { message: \"setup.run must be a script inside the extension folder\" }",
+      "replace": "return { message: \"setup.run 必须是扩展文件夹内的脚本\" }",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "message: \"commands must be an array\"",
+      "replace": "message: \"commands 必须是数组\"",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "return \"Turn on \" + e.name + \"?\"",
+      "replace": "return \"开启 \" + e.name + \"？\"",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "var ENABLE_LABELS = { confirmText: \"Turn on\", cancelText: \"Keep off\" }",
+      "replace": "var ENABLE_LABELS = { confirmText: \"开启\", cancelText: \"保持关闭\" }",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "if (e.local) return \"This is a local folder in \" + e.dir + \" that nobody has reviewed. It will run inside your shell with your permissions. Run it at your own risk, and check its code first.\"",
+      "replace": "if (e.local) return \"这是 \" + e.dir + \" 中的一个本地文件夹，未经任何人审查。它会以你的权限在你的 shell 中运行。风险自负，建议先检查它的代码。\"",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "return \"This extension was automatically checked and reviewed before it shipped with Keystroke, and it runs inside your shell with your permissions. Nonetheless, run it at your own risk. It's recommended to check the extension code first.\"",
+      "replace": "return \"该扩展在随 Keystroke 发布前经过自动检查与审查，它会以你的权限在你的 shell 中运行。尽管如此，仍请自负风险，建议先检查扩展代码。\"",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "return \"Open a terminal and run \" + e.setup.run + \" from \" + e.dir + \"?\" + (e.setup.summary ? \" \" + e.setup.summary : \"\")",
+      "replace": "return \"打开终端并在 \" + e.dir + \" 中运行 \" + e.setup.run + \"？\" + (e.setup.summary ? \" \" + e.setup.summary : \"\")",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "var sub = counts && counts.total ? counts.on + \" of \" + counts.total + \" on\" : \"Third-party providers that ship with Keystroke\"",
+      "replace": "var sub = counts && counts.total ? \"已开启 \" + counts.on + \" / \" + counts.total : \"Keystroke 附带的第三方提供商\"",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "title: \"Extensions\", subtitle: sub, icon: ICON, section: \"Keystroke\",",
+      "replace": "title: \"扩展\", subtitle: sub, icon: ICON, section: \"Keystroke\",",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "verb: \"Open\", tier: \"item\", score: score, order: 8, keywords: \"extensions plugins community\",",
+      "replace": "verb: \"打开\", tier: \"item\", score: score, order: 8, keywords: \"extensions plugins community\",",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "if (e.problem) return \"Needs attention\"",
+      "replace": "if (e.problem) return \"需要注意\"",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "return e.enabled ? \"On\" : \"Off\"",
+      "replace": "return e.enabled ? \"开\" : \"关\"",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "var origin = e.local ? \"local folder\" : \"ships with Keystroke\"",
+      "replace": "var origin = e.local ? \"本地文件夹\" : \"随 Keystroke 附带\"",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "e.enabled ? \"On · \" + origin : \"Off · \" + origin",
+      "replace": "e.enabled ? \"开 · \" + origin : \"关 · \" + origin",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "section: e.enabled ? \"On\" : \"Available\", verb: \"Open\", tier: \"item\", order: e.enabled ? 0 : 10,",
+      "replace": "section: e.enabled ? \"已开启\" : \"可用\", verb: \"打开\", tier: \"item\", order: e.enabled ? 0 : 10,",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "row.altVerb = \"Turn off\"",
+      "replace": "row.altVerb = \"关闭\"",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "title: \"Write your own\", subtitle: \"A folder in ~/.local/share/keystroke/extensions runs at once; a pull request ships it to everyone\",",
+      "replace": "title: \"自己动手写\", subtitle: \"放进 ~/.local/share/keystroke/extensions 的文件夹立即生效；提交 pull request 就能让所有人用上\",",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "section: \"Extend\", verb: \"Open guide\"",
+      "replace": "section: \"扩展开发\", verb: \"打开指南\"",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "title: \"No extensions found\", subtitle: \"Keystroke's extensions folder is empty\", icon: ICON, section: \"Available\",",
+      "replace": "title: \"未找到扩展\", subtitle: \"Keystroke 的扩展文件夹是空的\", icon: ICON, section: \"可用\",",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "title: \"Enabled\", subtitle: e.enabled ? \"Answering queries\" : \"Off: its code is not loaded\",",
+      "replace": "title: \"启用\", subtitle: e.enabled ? \"响应查询中\" : \"已关闭：代码未加载\",",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "verb: \"Toggle\", tier: \"item\", order: 0, accessory: e.enabled ? \"On\" : \"Off\",",
+      "replace": "verb: \"切换\", tier: \"item\", order: 0, accessory: e.enabled ? \"开\" : \"关\",",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "title: \"Needs attention\", subtitle: e.problem,",
+      "replace": "title: \"需要注意\", subtitle: e.problem,",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "title: \"Run setup\", subtitle: e.setup.summary || \"Opens a terminal and runs \" + e.setup.run,",
+      "replace": "title: \"运行安装脚本\", subtitle: e.setup.summary || \"打开终端并运行 \" + e.setup.run,",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "verb: \"Run\", tier: \"item\", order: 2,",
+      "replace": "verb: \"运行\", tier: \"item\", order: 2,",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "confirmText: \"Run setup\", cancelText: \"Not now\",",
+      "replace": "confirmText: \"运行安装脚本\", cancelText: \"暂不\",",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "title: \"Settings\", subtitle: e.enabled ? \"Keystroke Settings › \" + e.name : \"Turn the extension on to see its settings\",",
+      "replace": "title: \"设置\", subtitle: e.enabled ? \"Keystroke 设置 › \" + e.name : \"开启扩展后才能看到它的设置\",",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "verb: \"Open\", tier: \"item\", order: 3,",
+      "replace": "verb: \"打开\", tier: \"item\", order: 3,",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "title: \"Open folder\", subtitle: e.dir,",
+      "replace": "title: \"打开文件夹\", subtitle: e.dir,",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "title: \"Open source\", subtitle: e.homepage || SOURCE_URL + e.id,",
+      "replace": "title: \"查看源码\", subtitle: e.homepage || SOURCE_URL + e.id,",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "section: \"About\", verb: \"\", tier: \"item\", order: 20,",
+      "replace": "section: \"关于\", verb: \"\", tier: \"item\", order: 20,",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "? \"Also answers \" : \"Answers queries like \")",
+      "replace": "? \"也会回答 \" : \"回答类似这样的查询：\")",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "subtitle: \"Declared patterns lift this extension's results when a query matches\",",
+      "replace": "subtitle: \"声明的模式会在查询匹配时提升该扩展结果的排名\",",
+      "count": 1
+    },
+    {
+      "file": "core/Extensions.js",
+      "find": "section: \"About\", verb: \"\", tier: \"item\", order: 21,",
+      "replace": "section: \"关于\", verb: \"\", tier: \"item\", order: 21,",
+      "count": 1
+    },
+    {
+      "file": "core/Hotkeys.js",
+      "find": "if (!bind.dispatcher) return \"Only from the keyboard\"",
+      "replace": "if (!bind.dispatcher) return \"仅键盘直接触发\"",
+      "count": 1
+    },
+    {
+      "file": "core/Hotkeys.js",
+      "find": "section: \"Hotkeys\", verb: can ? \"Run\" : \"\",",
+      "replace": "section: \"快捷键\", verb: can ? \"运行\" : \"\",",
+      "count": 1
+    },
+    {
+      "file": "core/Hotkeys.js",
+      "find": "previewLabel: \"HOTKEY\",",
+      "replace": "previewLabel: \"热键\",",
+      "count": 1
+    },
+    {
+      "file": "core/Hotkeys.js",
+      "find": "title: \"Hotkeys\", subtitle: \"Every Omarchy keybinding, searchable\", icon: \"\", section: \"Hotkeys\",",
+      "replace": "title: \"快捷键\", subtitle: \"Omarchy 的全部键绑定，可搜索\", icon: \"\", section: \"快捷键\",",
+      "count": 1
+    },
+    {
+      "file": "core/Hotkeys.js",
+      "find": "verb: \"Open\", tier: \"item\", score: score, order: 8, action: { type: \"navigate\", scope: \"hotkeys\", title: \"Hotkeys\" } }",
+      "replace": "verb: \"打开\", tier: \"item\", score: score, order: 8, action: { type: \"navigate\", scope: \"hotkeys\", title: \"快捷键\" } }",
+      "count": 1
+    },
+    {
+      "file": "core/Files.js",
+      "find": "(entry.dir ? \" · Folder\" : \"\")",
+      "replace": "(entry.dir ? \" · 文件夹\" : \"\")",
+      "count": 1
+    },
+    {
+      "file": "core/Files.js",
+      "find": "section: \"Files\",",
+      "replace": "section: \"文件\",",
+      "count": 1
+    },
+    {
+      "file": "core/Files.js",
+      "find": "verb: entry.dir ? \"Open folder\" : \"Open\",",
+      "replace": "verb: entry.dir ? \"打开文件夹\" : \"打开\",",
+      "count": 1
+    },
+    {
+      "file": "core/Files.js",
+      "find": "altVerb: \"Open terminal\",",
+      "replace": "altVerb: \"打开终端\",",
+      "count": 1
+    },
+    {
+      "file": "core/Files.js",
+      "find": "out.previewLabel = \"IMAGE\";",
+      "replace": "out.previewLabel = \"图片\";",
+      "count": 1
+    },
+    {
+      "file": "core/Files.js",
+      "find": "out.previewDetail = \"Opens with the default app · the terminal opens in \" + parent",
+      "replace": "out.previewDetail = \"用默认应用打开 · 终端将在 \" + parent + \" 中打开\"",
+      "count": 1
+    },
+    {
+      "file": "core/Units.js",
+      "find": "? \"US liquid gallons · decimal KB/MB/GB\" : \"Unit conversion\"",
+      "replace": "? \"美制液体加仑 · 十进制 KB/MB/GB\" : \"单位换算\"",
+      "count": 1
+    },
+    {
+      "file": "core/SmartMatch.js",
+      "find": "label: \"Smart match\", description: \"Match queries using an embedding model\",",
+      "replace": "label: \"智能匹配\", description: \"用嵌入模型匹配查询\",",
+      "count": 1
+    },
+    {
+      "file": "core/SmartMatch.js",
+      "find": "optionLabels: { off: \"Off\", voice: \"Only voice\", all: \"Voice and text\" } }",
+      "replace": "optionLabels: { off: \"关闭\", voice: \"仅语音\", all: \"语音和文本\" } }",
+      "count": 1
+    },
+    {
+      "file": "core/SmartMatch.js",
+      "find": "label: \"Matching model\", description: \"Small uses less memory; large understands more phrasing\",",
+      "replace": "label: \"匹配模型\", description: \"small 占用内存更少；large 能理解更多表达方式\",",
+      "count": 1
+    },
+    {
+      "file": "core/SmartMatch.js",
+      "find": "optionLabels: { small: \"Small (2M)\", large: \"Large (8M)\" } }",
+      "replace": "optionLabels: { small: \"小 (2M)\", large: \"大 (8M)\" } }",
+      "count": 1
+    },
+    {
+      "file": "core/Patterns.js",
+      "find": "[\"patterns must be an array\"]",
+      "replace": "[\"patterns 必须是数组\"]",
+      "count": 1
+    },
+    {
+      "file": "core/Patterns.js",
+      "find": "errors.push(\"pattern \" + i + \" is not an object\")",
+      "replace": "errors.push(\"第 \" + i + \" 个 pattern 不是对象\")",
+      "count": 1
+    },
+    {
+      "file": "core/Patterns.js",
+      "find": "\": regex is missing\")",
+      "replace": "\": 缺少 regex\")",
+      "count": 1
+    },
+    {
+      "file": "core/Patterns.js",
+      "find": "\": regex longer than \" + MAX_REGEX_LENGTH + \" characters\")",
+      "replace": "\": regex 超过 \" + MAX_REGEX_LENGTH + \" 个字符\")",
+      "count": 1
+    },
+    {
+      "file": "core/Patterns.js",
+      "find": "\": flags may only be i, m, s, u\")",
+      "replace": "\": flags 只能是 i、m、s、u\")",
+      "count": 1
+    }
+  ]
+}

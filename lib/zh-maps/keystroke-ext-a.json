@@ -1,0 +1,729 @@
+{
+  "id": "keystroke-ext-a",
+  "group": "keystroke",
+  "root": "~/.config/omarchy/plugins/evindor.keystroke",
+  "title": "Keystroke 扩展（前批）",
+  "note": "前批 5 扩展（browser-profiles/browser-search/currency/gif-search/herdr）的显示文案。只译显示字段；不译 id/prefix/command 名/args 的 name/keywords/examples(照敲的命令)/icon/color/version/author/license/apiVersion/JSON 键/枚举与存档值(options 数组、\"default\")/正则/路径/单位/品牌名(Chrome/Firefox/Edge/Chromium/InPrivate/Incognito/GIPHY/Herdr/Frankfurter/EUR)。跳过：herdr/bin/herdr.py 全部（其 stderr 提示只随 exec 动作丢弃，不进面板 UI；ValueError 被 except 吞掉，UI 走 Service.qml 的统一兜底文案）；profiles.py 的 SKIP_DIRS(\"System Profile\"/\"Guest Profile\") 与 Chrome 配置目录名(标识符)；search.py 的 source 名(\"bookmarks\"/\"history\"，逻辑键)；GIPHY 归属语 \"Powered by GIPHY\"(品牌归属标记)；Herdr.js 的 title()(首字母大写函数，兼用于智能体名与状态词)、agent/workspace/tab/pane 的 kind 值(逻辑键)、status() 的 \"unknown\" 判定(值比较)；Currency.js 的 NAME(\"Currency\"，provider 注册名兼 section 源，section 已单独改为字面 \"货币\")；dateText 的日期格式串。注意：gif-search 的 \"Copied to clipboard\"/\"No GIFs found…\"/\"Could not reach GIPHY…\"/copy.py 的 \"Copy failed\" 与 browser-profiles 的 altVerb \"InPrivate window\" 被上游 tests/ 断言（palette_check.py:136/149/155/159、test_copy.py:52、browser-profiles palette_check.py:83），译后这些测试会红；tests/ 按分工未动，若需测试套件保持绿可另出 tests 断言同步补丁。",
+  "replacements": [
+    {
+      "file": "extensions/browser-profiles/extension.json",
+      "find": "\"name\": \"Browser profiles\"",
+      "replace": "\"name\": \"浏览器配置\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-profiles/extension.json",
+      "find": "\"description\": \"Open a new window in any browser profile: profile work\"",
+      "replace": "\"description\": \"在任意浏览器配置中打开新窗口: profile work\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-profiles/extension.json",
+      "find": "\"title\": \"Open a browser profile\"",
+      "replace": "\"title\": \"打开浏览器配置\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-profiles/extension.json",
+      "find": "\"summary\": \"A new window in one profile of an installed browser\"",
+      "replace": "\"summary\": \"在已安装浏览器的某个配置中打开新窗口\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-profiles/extension.json",
+      "find": "\"hint\": \"a profile name, optionally with the browser's name\"",
+      "replace": "\"hint\": \"配置名称，可带浏览器名\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/extension.json",
+      "find": "\"name\": \"Browser search\"",
+      "replace": "\"name\": \"浏览器搜索\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/extension.json",
+      "find": "\"description\": \"Search your default browser's history and bookmarks\"",
+      "replace": "\"description\": \"搜索默认浏览器的历史与书签\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/extension.json",
+      "find": "\"title\": \"Search browser\"",
+      "replace": "\"title\": \"搜索浏览器\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/extension.json",
+      "find": "\"summary\": \"Find a page in your default browser's history and bookmarks\"",
+      "replace": "\"summary\": \"在默认浏览器的历史与书签中查找页面\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/extension.json",
+      "find": "\"hint\": \"words from a page title or URL\"",
+      "replace": "\"hint\": \"页面标题或网址中的关键词\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/currency/extension.json",
+      "find": "\"name\": \"Currency\"",
+      "replace": "\"name\": \"货币\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/currency/extension.json",
+      "find": "\"description\": \"Currency conversion with daily rates from Frankfurter: 100 usd to eur, $100 in try, 129usd\"",
+      "replace": "\"description\": \"基于 Frankfurter 每日汇率的货币换算: 100 usd to eur, $100 in try, 129usd\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/extension.json",
+      "find": "\"name\": \"GIF Search\"",
+      "replace": "\"name\": \"GIF 搜索\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/extension.json",
+      "find": "\"description\": \"Search GIPHY and copy a GIF or its link: gif happy\"",
+      "replace": "\"description\": \"搜索 GIPHY 并复制 GIF 或其链接: gif happy\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/extension.json",
+      "find": "\"title\": \"Search GIFs\"",
+      "replace": "\"title\": \"搜索 GIF\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/extension.json",
+      "find": "\"summary\": \"Browse GIFs and copy one to the clipboard\"",
+      "replace": "\"summary\": \"浏览 GIF 并复制一个到剪贴板\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/extension.json",
+      "find": "\"hint\": \"a reaction or phrase\"",
+      "replace": "\"hint\": \"一个表情或短语\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/extension.json",
+      "find": "\"description\": \"Jump to a Herdr agent, workspace, tab or pane: % claude\"",
+      "replace": "\"description\": \"跳转到 Herdr 的智能体、工作区、标签页或窗格: % claude\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/extension.json",
+      "find": "\"title\": \"Go to a Herdr agent or pane\"",
+      "replace": "\"title\": \"跳转到 Herdr 的智能体或窗格\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/extension.json",
+      "find": "\"summary\": \"Agents, workspaces, tabs, panes and sessions of every running Herdr session\"",
+      "replace": "\"summary\": \"所有运行中 Herdr 会话的智能体、工作区、标签页、窗格与会话\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/extension.json",
+      "find": "\"hint\": \"an agent, workspace, tab or pane name\"",
+      "replace": "\"hint\": \"智能体、工作区、标签页或窗格的名称\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-profiles/Service.qml",
+      "find": "description: \"Open a new window in a browser profile\"",
+      "replace": "description: \"在浏览器配置中打开新窗口\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-profiles/Service.qml",
+      "find": "error: root.failure || \"Browser profile scan failed; check that Python 3 is installed\"",
+      "replace": "error: root.failure || \"浏览器配置扫描失败；请确认已安装 Python 3\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-profiles/Service.qml",
+      "find": "root.failure = \"Browser profile scan timed out; reopen the palette to retry\"",
+      "replace": "root.failure = \"浏览器配置扫描超时；请重新打开面板后重试\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/Service.qml",
+      "find": "description: \"Search your default browser's history and bookmarks\"",
+      "replace": "description: \"搜索默认浏览器的历史与书签\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/Service.qml",
+      "find": "? Browser.status(\"History and bookmark search are off\", \"Enable a source in Browser search settings\")",
+      "replace": "? Browser.status(\"历史与书签搜索已关闭\", \"请在浏览器搜索设置中启用数据源\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/Service.qml",
+      "find": ": Browser.status(\"Type a page title or URL\", \"At least two characters\")]",
+      "replace": ": Browser.status(\"输入页面标题或网址\", \"至少两个字符\")]",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/Service.qml",
+      "find": "error: root.failure || \"Browser search helper failed; check that Python 3 is installed\"",
+      "replace": "error: root.failure || \"浏览器搜索助手失败；请确认已安装 Python 3\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/Service.qml",
+      "find": "root.failure = \"Browser search timed out; try again after reopening the palette\"",
+      "replace": "root.failure = \"浏览器搜索超时；请重新打开面板后重试\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/currency/Service.qml",
+      "find": "description: \"Currency conversion with daily rates from Frankfurter\"",
+      "replace": "description: \"基于 Frankfurter 每日汇率的货币换算\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/currency/Service.qml",
+      "find": "label: \"Preferred currency\", \"default\": \"\",",
+      "replace": "label: \"首选货币\", \"default\": \"\",",
+      "count": 1
+    },
+    {
+      "file": "extensions/currency/Service.qml",
+      "find": "description: \"Target for amounts that name none, like 129usd: a code such as EUR. Empty uses your locale's currency\" },",
+      "replace": "description: \"未指定目标币种的金额（如 129usd）所用的目标：填如 EUR 的币种代码。留空则跟随系统区域\" },",
+      "count": 1
+    },
+    {
+      "file": "extensions/currency/Service.qml",
+      "find": "label: \"Target for amounts that name none\", \"default\": \"preferred\", options: [\"preferred\", \"automatic\"],",
+      "replace": "label: \"未指定目标币种时的目标\", \"default\": \"preferred\", options: [\"preferred\", \"automatic\"],",
+      "count": 1
+    },
+    {
+      "file": "extensions/currency/Service.qml",
+      "find": "optionLabels: { preferred: \"Preferred currency\", automatic: \"The one I convert to most\" },",
+      "replace": "optionLabels: { preferred: \"首选货币\", automatic: \"最常换算的币种\" },",
+      "count": 1
+    },
+    {
+      "file": "extensions/currency/Service.qml",
+      "find": "description: \"Automatic counts the targets you name (100 usd to eur) and uses the most frequent one\" }",
+      "replace": "description: \"自动统计你指定过的目标币种（如 100 usd to eur），取最常用的那一个\" }",
+      "count": 1
+    },
+    {
+      "file": "extensions/currency/Service.qml",
+      "find": "root.body.trim() ? \"Frankfurter's answer could not be read\" : \"Frankfurter answered nothing\"",
+      "replace": "root.body.trim() ? \"无法解析 Frankfurter 的响应\" : \"Frankfurter 没有返回内容\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/currency/Service.qml",
+      "find": "root.host.errorMessage = \"Currency: \" + root.error",
+      "replace": "root.host.errorMessage = \"货币换算：\" + root.error",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/Service.qml",
+      "find": "description: \"Search GIPHY and copy GIFs\", view: view,",
+      "replace": "description: \"搜索 GIPHY 并复制 GIF\", view: view,",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/Service.qml",
+      "find": "label: \"Default action\", \"default\": \"image\",",
+      "replace": "label: \"默认操作\", \"default\": \"image\",",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/Service.qml",
+      "find": "options: [\"image\", \"link\"], optionLabels: { image: \"Copy image\", link: \"Copy link\" },",
+      "replace": "options: [\"image\", \"link\"], optionLabels: { image: \"复制图片\", link: \"复制链接\" },",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/Service.qml",
+      "find": "description: \"Enter uses this action; Ctrl+Enter uses the other\" },",
+      "replace": "description: \"Enter 使用此操作；Ctrl+Enter 使用另一个\" },",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/Service.qml",
+      "find": "label: \"Close after copy\", \"default\": false",
+      "replace": "label: \"复制后关闭\", \"default\": false",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/Service.qml",
+      "find": "throw new Error(\"Could not reach GIPHY. Check your connection and retry.\")",
+      "replace": "throw new Error(\"无法连接 GIPHY，请检查网络后重试。\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/Service.qml",
+      "find": "message = items.length ? \"\" : \"No GIFs found. Try another search.\"",
+      "replace": "message = items.length ? \"\" : \"未找到 GIF，换个关键词试试。\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/Service.qml",
+      "find": "message = link ? \"Copying link...\" : \"Copying GIF...\"",
+      "replace": "message = link ? \"正在复制链接…\" : \"正在复制 GIF…\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/Service.qml",
+      "find": "message = copyExit === 0 ? \"Copied to clipboard\" : (copyBody.trim() || \"Could not copy to the clipboard\")",
+      "replace": "message = copyExit === 0 ? \"已复制到剪贴板\" : (copyBody.trim() || \"无法复制到剪贴板\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/Service.qml",
+      "find": "description: \"Jump to a Herdr agent, workspace, tab or pane\"",
+      "replace": "description: \"跳转到 Herdr 的智能体、工作区、标签页或窗格\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/Service.qml",
+      "find": "error: root.failure || \"Herdr helper failed; check that Python 3 is installed\"",
+      "replace": "error: root.failure || \"Herdr 助手启动失败；请确认已安装 Python 3\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/Service.qml",
+      "find": "root.failure = \"Herdr did not answer in time; reopen the palette to retry\"",
+      "replace": "root.failure = \"Herdr 未及时响应；请重新打开面板后重试\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-profiles/core/Profiles.js",
+      "find": "var SECTION = \"Browser profiles\"",
+      "replace": "var SECTION = \"浏览器配置\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-profiles/core/Profiles.js",
+      "find": "label: \"Show profiles in the main search\", \"default\": true,",
+      "replace": "label: \"在主搜索中显示配置\", \"default\": true,",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-profiles/core/Profiles.js",
+      "find": "description: \"Off: profiles appear only after the profile command or on this extension's screen\" }",
+      "replace": "description: \"关闭时：配置仅在输入 profile 命令或本扩展界面中显示\" }",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-profiles/core/Profiles.js",
+      "find": "return browser.private === \"--inprivate\" ? \"InPrivate window\" : browser.private === \"--incognito\" ? \"Incognito window\" : \"Private window\"",
+      "replace": "return browser.private === \"--inprivate\" ? \"InPrivate 窗口\" : browser.private === \"--incognito\" ? \"Incognito 窗口\" : \"隐私窗口\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-profiles/core/Profiles.js",
+      "find": "verb: \"New window\", altVerb: privateVerb(b),",
+      "replace": "verb: \"新窗口\", altVerb: privateVerb(b),",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-profiles/core/Profiles.js",
+      "find": "out.push(status(\"No browser profiles found\", \"Chromium-family browsers and Firefox-family browsers are supported\"))",
+      "replace": "out.push(status(\"未找到浏览器配置\", \"支持 Chromium 系与 Firefox 系浏览器\"))",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-profiles/core/Profiles.js",
+      "find": "error: \"Could not read the browser profile list\" }",
+      "replace": "error: \"无法读取浏览器配置列表\" }",
+      "count": 2
+    },
+    {
+      "file": "extensions/browser-search/core/Browser.js",
+      "find": "label: \"Search history\", \"default\": true,",
+      "replace": "label: \"搜索历史\", \"default\": true,",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/core/Browser.js",
+      "find": "description: \"Include pages visited in your default browser\" },",
+      "replace": "description: \"包含默认浏览器中访问过的页面\" },",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/core/Browser.js",
+      "find": "label: \"Search bookmarks\", \"default\": true,",
+      "replace": "label: \"搜索书签\", \"default\": true,",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/core/Browser.js",
+      "find": "description: \"Include bookmarks saved in your default browser\" }",
+      "replace": "description: \"包含默认浏览器中保存的书签\" }",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/core/Browser.js",
+      "find": "error: \"Browser search could not read browser data\" }",
+      "replace": "error: \"浏览器搜索无法读取浏览器数据\" }",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/core/Browser.js",
+      "find": "return { id: \"status\", title: title, subtitle: subtitle || \"\", icon: ICON, section: \"Browser search\",",
+      "replace": "return { id: \"status\", title: title, subtitle: subtitle || \"\", icon: ICON, section: \"浏览器搜索\",",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/core/Browser.js",
+      "find": "icon: bookmark ? \"󰃀\" : ICON, section: \"Browser search\",",
+      "replace": "icon: bookmark ? \"󰃀\" : ICON, section: \"浏览器搜索\",",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/core/Browser.js",
+      "find": "verb: \"Open\", altVerb: \"Copy URL\",",
+      "replace": "verb: \"打开\", altVerb: \"复制网址\",",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/core/Browser.js",
+      "find": "out.push(status(\"No matching pages\", result.browser))",
+      "replace": "out.push(status(\"没有匹配的页面\", result.browser))",
+      "count": 1
+    },
+    {
+      "file": "extensions/currency/core/Currency.js",
+      "find": "verb: \"Copy result\", tier: \"answer\", score: 195,",
+      "replace": "verb: \"复制结果\", tier: \"answer\", score: 195,",
+      "count": 1
+    },
+    {
+      "file": "extensions/currency/core/Currency.js",
+      "find": "icon: ICON, section: NAME,",
+      "replace": "icon: ICON, section: \"货币\",",
+      "count": 2
+    },
+    {
+      "file": "extensions/currency/core/Currency.js",
+      "find": "previewLabel: \"CURRENCY\",",
+      "replace": "previewLabel: \"货币\",",
+      "count": 1
+    },
+    {
+      "file": "extensions/currency/core/Currency.js",
+      "find": "subtitle: detail + \" · rates from \" + dateText(pair.date), icon: ICON,",
+      "replace": "subtitle: detail + \" · 汇率日期 \" + dateText(pair.date), icon: ICON,",
+      "count": 1
+    },
+    {
+      "file": "extensions/currency/core/Currency.js",
+      "find": "previewDetail: detail + \"\\nRates from \" + dateText(pair.date) + \"\\n\" + fetchedText(cache.fetchedAt, nowMs) + (failed ? \" · refresh failed\" : \"\")",
+      "replace": "previewDetail: detail + \"\\n汇率日期 \" + dateText(pair.date) + \"\\n\" + fetchedText(cache.fetchedAt, nowMs) + (failed ? \" · 刷新失败\" : \"\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/currency/core/Currency.js",
+      "find": "+ \"\\nFrankfurter (ECB reference rates)\" + (failed ? \"\\n\" + status.error : \"\") + \"\\nCtrl+Enter copies the number alone\",",
+      "replace": "+ \"\\nFrankfurter（ECB 参考汇率）\" + (failed ? \"\\n\" + status.error : \"\") + \"\\nCtrl+Enter 仅复制数字\",",
+      "count": 1
+    },
+    {
+      "file": "extensions/currency/core/Currency.js",
+      "find": "if (!isFinite(t)) return \"fetched at an unknown time\"",
+      "replace": "if (!isFinite(t)) return \"抓取时间未知\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/currency/core/Currency.js",
+      "find": "return \"fetched \" + (sameDay ? \"today \" : Qt.formatDate(d, \"d MMM \") ) + Qt.formatTime(d, \"HH:mm\")",
+      "replace": "return \"抓取于 \" + (sameDay ? \"今天 \" : Qt.formatDate(d, \"d MMM \") ) + Qt.formatTime(d, \"HH:mm\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/currency/core/Currency.js",
+      "find": "title: fetching ? \"Downloading exchange rates…\" : \"Exchange rates unavailable\",",
+      "replace": "title: fetching ? \"正在下载汇率…\" : \"汇率不可用\",",
+      "count": 1
+    },
+    {
+      "file": "extensions/currency/core/Currency.js",
+      "find": "subtitle: fetching ? \"From Frankfurter, once a day\" : (error || \"Could not reach Frankfurter\") + \" · tried again in a few minutes\",",
+      "replace": "subtitle: fetching ? \"来自 Frankfurter，每日一次\" : (error || \"无法连接 Frankfurter\") + \" · 稍后自动重试\",",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/core/Gifs.js",
+      "find": "title: String(gif.title || \"Untitled GIF\"), url: url, preview: preview }",
+      "replace": "title: String(gif.title || \"无标题 GIF\"), url: url, preview: preview }",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/core/Gifs.js",
+      "find": "throw new Error(\"GIPHY returned an unreadable response\")",
+      "replace": "throw new Error(\"GIPHY 返回了无法解析的响应\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/core/Gifs.js",
+      "find": "var row = { id: \"gif-search-open\", title: \"Search GIFs\", subtitle: term || \"Browse trending GIFs on GIPHY\",",
+      "replace": "var row = { id: \"gif-search-open\", title: \"搜索 GIF\", subtitle: term || \"浏览 GIPHY 热门 GIF\",",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/core/Gifs.js",
+      "find": "icon: ICON, keywords: \"gif giphy reactions\", section: \"GIF Search\", verb: \"Browse\",",
+      "replace": "icon: ICON, keywords: \"gif giphy reactions\", section: \"GIF 搜索\", verb: \"浏览\",",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/core/Herdr.js",
+      "find": "{ kind: \"agent\", section: \"Herdr agents\", icon: \"󱚣\" },",
+      "replace": "{ kind: \"agent\", section: \"Herdr 智能体\", icon: \"󱚣\" },",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/core/Herdr.js",
+      "find": "{ kind: \"workspace\", section: \"Herdr workspaces\", icon: \"\" },",
+      "replace": "{ kind: \"workspace\", section: \"Herdr 工作区\", icon: \"\" },",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/core/Herdr.js",
+      "find": "{ kind: \"tab\", section: \"Herdr tabs\", icon: \"\" },",
+      "replace": "{ kind: \"tab\", section: \"Herdr 标签页\", icon: \"\" },",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/core/Herdr.js",
+      "find": "{ kind: \"pane\", section: \"Herdr panes\", icon: \"\" },",
+      "replace": "{ kind: \"pane\", section: \"Herdr 窗格\", icon: \"\" },",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/core/Herdr.js",
+      "find": "{ kind: \"session\", section: \"Herdr sessions\", icon: \"\" }",
+      "replace": "{ kind: \"session\", section: \"Herdr 会话\", icon: \"\" }",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/core/Herdr.js",
+      "find": "label: \"Show agents and workspaces in the main search\", \"default\": true,",
+      "replace": "label: \"在主搜索中显示智能体与工作区\", \"default\": true,",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/core/Herdr.js",
+      "find": "description: \"Off: Herdr appears only after the % command or on this extension's screen\" },",
+      "replace": "description: \"关闭时：Herdr 仅在输入 % 命令或本扩展界面中显示\" },",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/core/Herdr.js",
+      "find": "label: \"List panes\", \"default\": true,",
+      "replace": "label: \"列出窗格\", \"default\": true,",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/core/Herdr.js",
+      "find": "description: \"Panes running an agent are always listed once, as the agent\" },",
+      "replace": "description: \"运行智能体的窗格只列出一次，显示为该智能体\" },",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/core/Herdr.js",
+      "find": "label: \"List tabs\", \"default\": true }",
+      "replace": "label: \"列出标签页\", \"default\": true }",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/core/Herdr.js",
+      "find": "return { sessions: [], error: \"Could not read Herdr's state\" }",
+      "replace": "return { sessions: [], error: \"无法读取 Herdr 状态\" }",
+      "count": 2
+    },
+    {
+      "file": "extensions/herdr/core/Herdr.js",
+      "find": "return label && label !== number ? label : \"Tab \" + number",
+      "replace": "return label && label !== number ? label : \"标签页 \" + number",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/core/Herdr.js",
+      "find": "function count(n, word) { n = n || 0; return n + \" \" + word + (n === 1 ? \"\" : \"s\") }",
+      "replace": "function count(n, word) { n = n || 0; return n + \" 个\" + word }",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/core/Herdr.js",
+      "find": "String(s.workspaces[w].label || \"Workspace \" + (s.workspaces[w].number || \"\"))",
+      "replace": "String(s.workspaces[w].label || \"工作区 \" + (s.workspaces[w].number || \"\"))",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/core/Herdr.js",
+      "find": "count(ws.tab_count, \"tab\") + \" · \" + count(ws.pane_count, \"pane\")",
+      "replace": "count(ws.tab_count, \"标签页\") + \" · \" + count(ws.pane_count, \"窗格\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/core/Herdr.js",
+      "find": "s.attached ? \"Attached\" : \"Detached, opens a terminal\", \"\"",
+      "replace": "s.attached ? \"已连接\" : \"未连接，将打开终端\", \"\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/core/Herdr.js",
+      "find": "keywords: kind, verb: \"Go to\", remember: true, rank: GROUPS.indexOf(g),",
+      "replace": "keywords: kind, verb: \"跳转\", remember: true, rank: GROUPS.indexOf(g),",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/core/Herdr.js",
+      "find": "items.push(statusRow(\"Herdr session \" + broken[0].name + \" did not answer\", broken[0].error))",
+      "replace": "items.push(statusRow(\"Herdr 会话 \" + broken[0].name + \" 无响应\", broken[0].error))",
+      "count": 1
+    },
+    {
+      "file": "extensions/herdr/core/Herdr.js",
+      "find": "else items.push(statusRow(\"No Herdr session is running\", \"Start one with herdr\"))",
+      "replace": "else items.push(statusRow(\"没有正在运行的 Herdr 会话\", \"用 herdr 启动一个\"))",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/GifView.qml",
+      "find": "Accessible.name: \"Search GIFs\"",
+      "replace": "Accessible.name: \"搜索 GIF\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/GifView.qml",
+      "find": "text: \"Search GIFs...\"",
+      "replace": "text: \"搜索 GIF...\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/GifView.qml",
+      "find": "text: preview.status === Image.Error ? \"Preview unavailable\" : \"Loading...\"",
+      "replace": "text: preview.status === Image.Error ? \"预览不可用\" : \"加载中...\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/GifView.qml",
+      "find": "Accessible.name: \"Copy \" + tile.modelData.title",
+      "replace": "Accessible.name: \"复制 \" + tile.modelData.title",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/GifView.qml",
+      "find": "text: \"Previous\"",
+      "replace": "text: \"上一页\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/GifView.qml",
+      "find": "text: \"Next\"",
+      "replace": "text: \"下一页\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/GifView.qml",
+      "find": "text: \"Retry\"",
+      "replace": "text: \"重试\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/GifView.qml",
+      "find": "? \"Enter copies link  ·  Ctrl+Enter copies GIF  ·  Tab switches to grid\"",
+      "replace": "? \"Enter 复制链接  ·  Ctrl+Enter 复制 GIF  ·  Tab 切换到网格\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/GifView.qml",
+      "find": ": \"Enter copies GIF  ·  Ctrl+Enter copies link  ·  Tab switches to grid\")",
+      "replace": ": \"Enter 复制 GIF  ·  Ctrl+Enter 复制链接  ·  Tab 切换到网格\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-profiles/bin/profiles.py",
+      "find": "\"Could not list browser profiles: %s\" % type(exc).__name__",
+      "replace": "\"无法列出浏览器配置：%s\" % type(exc).__name__",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/bin/search.py",
+      "find": "raise ValueError(\"Default browser is not supported\" if desktop else \"Could not detect the default browser\")",
+      "replace": "raise ValueError(\"不支持的默认浏览器\" if desktop else \"无法检测默认浏览器\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/bin/search.py",
+      "find": "raise ValueError(\"Bookmark file exceeds 16 MB\")",
+      "replace": "raise ValueError(\"书签文件超过 16 MB\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/bin/search.py",
+      "find": "raise ValueError(\"Invalid bookmark roots\")",
+      "replace": "raise ValueError(\"书签根节点无效\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/bin/search.py",
+      "find": "result[\"error\"] = str(exc) if isinstance(exc, ValueError) else \"Could not read browser profiles\"",
+      "replace": "result[\"error\"] = str(exc) if isinstance(exc, ValueError) else \"无法读取浏览器数据\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/bin/search.py",
+      "find": "result[\"error\"] = \"No browser profiles found in the standard location\"",
+      "replace": "result[\"error\"] = \"未在标准位置找到浏览器配置\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/bin/search.py",
+      "find": "result[\"error\"] = \"Could not read some \" + \" and \".join(sorted(errors)) + \"; reopen the palette to retry\"",
+      "replace": "result[\"error\"] = \"无法读取的来源：\" + \" 和 \".join(sorted(errors)) + \"；请重新打开面板后重试\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/browser-search/bin/search.py",
+      "find": "result[\"error\"] = \"No enabled browser data found in the detected profiles\"",
+      "replace": "result[\"error\"] = \"在检测到的配置中没有已启用的浏览器数据\"",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/bin/copy.py",
+      "find": "raise ValueError(\"Invalid GIPHY media URL\")",
+      "replace": "raise ValueError(\"GIPHY 媒体网址无效\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/bin/copy.py",
+      "find": "raise ValueError(\"Unknown copy action\")",
+      "replace": "raise ValueError(\"未知的复制操作\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/bin/copy.py",
+      "find": "raise ValueError(\"GIF exceeds the 25 MB copy limit; copy its link instead\")",
+      "replace": "raise ValueError(\"GIF 超过 25 MB 复制上限，请改为复制链接\")",
+      "count": 2
+    },
+    {
+      "file": "extensions/gif-search/bin/copy.py",
+      "find": "raise ValueError(\"The download is not a GIF\")",
+      "replace": "raise ValueError(\"下载的内容不是 GIF\")",
+      "count": 1
+    },
+    {
+      "file": "extensions/gif-search/bin/copy.py",
+      "find": "print(\"Copy failed: \" + str(error))",
+      "replace": "print(\"复制失败：\" + str(error))",
+      "count": 1
+    }
+  ]
+}

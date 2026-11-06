@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# horizon.setup 插件汉化层测试。全部使用临时 fixture 映射表与假插件目录，
-# 不触碰 ~/.local/share/omarchy-zh-cn/ 与真实插件。
+# horizon.setup 插件汉化层测试。映射表用临时 fixture，插件目录用假桩，
+# 不触碰真实插件；应用器用插件自带的 lib/apply-zh.py（不依赖任何外部目录）。
 #
 # 核心闸门：
 #   ① 幂等：apply 两次 == apply 一次；revert 后与原始字节逐位一致。
 #   ② fail-closed：任何一条失配，apply/revert 整体拒绝且文件一字不动。
 #   ③ 状态即真相：clean/applied/mismatch/missing 四态照实汇报，不猜。
+#   ④ 脱钩：lib/、setup.sh、tests/ 里不得出现旧外部资产目录的名字。
 #
 # 运行：bash tests/zhcn_test.sh
 set -uo pipefail
@@ -22,13 +23,11 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
 # ---- 桩件：假插件目录 + fixture 映射表 -------------------------------------
-export ZH_ROOT="$TMP/zh"
-export ZH_APPLY="$ZH_ROOT/apply-zh.py"
-export ZH_MAPS="$ZH_ROOT/maps"
-# 隔离真实 shell.json：用例自己按需覆盖到 fixture。
-export ZH_SHELL_JSON="$TMP/shell-absent.json"
+# 只覆盖 ZH_MAPS：映射表必须来自 TMP，测试不能被真实映射表污染。
+# 应用器直接用插件自带的那份，不做拷贝。
+export ZH_APPLY="$ROOT/lib/apply-zh.py"
+export ZH_MAPS="$TMP/maps"
 mkdir -p "$ZH_MAPS" "$TMP/plugin-a"
-cp "$HOME/.local/share/omarchy-zh-cn/apply-zh.py" "$ZH_APPLY"
 
 cat > "$TMP/plugin-a/View.qml" <<'EOF'
 Item {
@@ -145,36 +144,28 @@ eq "组 apply 计数正确" "$(grprow grp | cut -f4)" "3"
 zhcn_revert grp >/dev/null
 eq "组 revert 后回 clean" "$(grprow grp | cut -f3)" "clean"
 
-# ---- ⑦ omarchy-shell 组：bar 挂件切换（fixture shell.json）------------------
-export ZH_SHELL_JSON="$TMP/shell.json"
-cat > "$ZH_SHELL_JSON" <<'EOF'
-{
-  "bar": {
-    "layout": {
-      "left": [ { "id": "omarchy.workspaces" } ],
-      "center": [
-        { "id": "omarchy.clock", "format": "HH:mm" },
-        { "id": "omarchy.keyboard-layout" }
-      ],
-      "right": [ { "id": "omarchy.audio" }, { "id": "carvin.weather" } ]
-    }
-  },
-  "disabledPlugins": [ "omarchy.menu" ],
-  "cloneSourceRestores": [ "evindor.keystroke" ]
-}
-EOF
-# 可汉化集里只有 clock/audio/weather 三个出现在 fixture；weather 已是中文。
-eq "系统汉化混合态=mismatch" "$(zhcn_rows | awk -F'\t' '$1=="omarchy-shell"' | cut -f3)" "mismatch"
-zhcn_apply omarchy-shell >/dev/null
-eq "apply 后=applied" "$(zhcn_rows | awk -F'\t' '$1=="omarchy-shell"' | cut -f3)" "applied"
-eq "非挂件字段不动(disabledPlugins)" "$(jq -r '.disabledPlugins[0]' "$ZH_SHELL_JSON")" "omarchy.menu"
-eq "非挂件字段不动(cloneSourceRestores)" "$(jq -r '.cloneSourceRestores[0]' "$ZH_SHELL_JSON")" "evindor.keystroke"
-eq "挂件配置字段不动(clock.format)" "$(jq -r '.bar.layout.center[0].format' "$ZH_SHELL_JSON")" "HH:mm"
-eq "无中文版挂件保留原 id(workspaces)" "$(jq -r '.bar.layout.left[0].id' "$ZH_SHELL_JSON")" "omarchy.workspaces"
-eq "无中文版挂件保留原 id(keyboard-layout)" "$(jq -r '.bar.layout.center[1].id' "$ZH_SHELL_JSON")" "omarchy.keyboard-layout"
-zhcn_revert omarchy-shell >/dev/null
-eq "revert 后回 clean" "$(zhcn_rows | awk -F'\t' '$1=="omarchy-shell"' | cut -f3)" "clean"
-eq "revert 恢复原 id(audio)" "$(jq -r '.bar.layout.right[0].id' "$ZH_SHELL_JSON")" "omarchy.audio"
+# ---- ⑦ 脱钩：资产随插件分发，不再指向任何外部共享目录 ----------------------
+# 旧目录名只允许出现在两处：迁移脚本（它的职责就是点名并清理它）与本文件
+# （这条断言本身）。其余一律零命中。
+legacy_files=$(grep -rl "omarchy-zh-cn" "$ROOT/lib" "$ROOT/setup.sh" "$ROOT/tests" \
+  --exclude=zhcn_test.sh | sed "s#^$ROOT/##" | sort || true)
+unexpected=$(printf '%s\n' "$legacy_files" | grep -v '^lib/migrate-' || true)
+eq "旧目录只在迁移脚本里出现" "${unexpected:-<none>}" "<none>"
+# -w：避免误伤 OMASNAP_ZH_ROOT 这类同缀但无关的变量名。
+var_hits=$(grep -rnw "ZH_ROOT" "$ROOT/lib" "$ROOT/setup.sh" "$ROOT/tests" \
+  --exclude=zhcn_test.sh || true)
+eq "无遗留 ZH_ROOT 变量" "${var_hits:-<none>}" "<none>"
+eq "应用器用插件自带副本" "$ZH_APPLY" "$ROOT/lib/apply-zh.py"
+# 自带的每张映射表都必须能被应用器直接吃下（id/root/replacements 齐全、
+# root 用 ~ 前缀而非写死的主目录）；不锁张数，免得日后增删表就误报。
+bad_maps=$(for m in "$ROOT"/lib/zh-maps/*.json; do
+  jq -e '(.id | type == "string") and (.root | type == "string")
+         and (.replacements | type == "array" and length > 0)' "$m" >/dev/null 2>&1 \
+    || basename "$m"
+done)
+eq "自带映射表结构完整" "${bad_maps:-<none>}" "<none>"
+eq "映射表无写死的用户主目录" \
+  "$(grep -l '/home/' "$ROOT"/lib/zh-maps/*.json | wc -l | tr -d ' ')" "0"
 
 echo
 echo "zhcn_test: $PASS ok, $FAIL failed"
