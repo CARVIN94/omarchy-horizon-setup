@@ -2,48 +2,36 @@
   "id": "keystroke-tests-2",
   "title": "Keystroke 测试断言同步 · 修订",
   "root": "~/.config/omarchy/plugins/evindor.keystroke",
-  "note": "v1（keystroke-tests）已应用后的增量修正：期望值对照当前源码逐字核对。修正：detailRows/screenRows 的 accessory 是单字「开/关」（stateText），section 是「已开启/可用」；dictation fallback 行 title 是「复制到剪贴板」（非入口行「听写到剪贴板」）。还原：navRow action.title 与 voice 开关 accessory 现值未译（navigate(KEY,\"Extensions\")、switch 标准 accessory）v1 误改。增补：commands 错误消息「参数 0 需要一个 name」、usage「必填 · 本行剩余内容」、extensions「id calculator 属于内置提供商」、detailRows enabled 行 title「启用」、settingstree 搜索结果 title「启用」/设置屏数组「启用」/无语音屏「外观,打开配置文件」。已知不修：tst_settingstree 缩写搜索（'setaiprv' 等英文缩写对中文标题的匹配为翻译行为副作用，需决定缩写策略，超出断言同步范围）；其余 v1 note 的跳过项不变。",
+  "note": "v1（keystroke-tests）已应用后的增量修正，期望值以真机最终态为准。修正：detailRows/screenRows 的 accessory 是单字「开/关」(stateText)，section 是「已开启/可用」；dictation fallback 行 title 是「复制到剪贴板」（非入口行「听写到剪贴板」）。本表 find 必须写成「干净上游 → 最终态」一步到位：早期版本把 find 写成某个中间态（accessory 已是「开」但 section 仍是「On」），而没有任何表会产出该状态，从干净上游 apply 必失配。已删除 3 条空操作条目（干净上游已是目标态：navRow title、voice 开关 accessory、tst_settingstree「语音」）。已知不修：tst_settingstree 缩写搜索（'setaiprv' 等英文缩写对中文标题的匹配为翻译行为副作用）。",
   "replacements": [
     {
       "file": "tests/tst_extensions.qml",
-      "find": "        compare(rows[0].accessory, \"开\"); compare(rows[0].section, \"开\"); compare(rows[0].badge, \"extension\")",
+      "find": "        compare(rows[0].accessory, \"On\"); compare(rows[0].section, \"On\"); compare(rows[0].badge, \"extension\")",
       "replace": "        compare(rows[0].accessory, \"开\"); compare(rows[0].section, \"已开启\"); compare(rows[0].badge, \"extension\")",
       "count": 1
     },
     {
       "file": "tests/tst_extensions.qml",
-      "find": "        compare(rows[1].accessory, \"关闭\"); compare(rows[1].section, \"可用\"); compare(rows[1].badge, \"local\")",
+      "find": "        compare(rows[1].accessory, \"Off\"); compare(rows[1].section, \"Available\"); compare(rows[1].badge, \"local\")",
       "replace": "        compare(rows[1].accessory, \"关\"); compare(rows[1].section, \"可用\"); compare(rows[1].badge, \"local\")",
       "count": 1
     },
     {
       "file": "tests/tst_extensions.qml",
-      "find": "        compare(rows[0].accessory, \"关闭\")",
+      "find": "        compare(rows[0].accessory, \"Off\")",
       "replace": "        compare(rows[0].accessory, \"关\")",
       "count": 1
     },
     {
       "file": "tests/palette_extensions_check.py",
-      "find": "     test.check(row(\"启用\") && row(\"启用\").accessory === \"关闭\" && row(\"启用\").confirm === \"开启 Probe？\", \"turning on asks first: \" + (row(\"启用\") && row(\"启用\").confirm))",
+      "find": "     test.check(row(\"Enabled\") && row(\"Enabled\").accessory === \"Off\" && row(\"Enabled\").confirm === \"Turn on Probe?\", \"turning on asks first: \" + (row(\"Enabled\") && row(\"Enabled\").confirm))",
       "replace": "     test.check(row(\"启用\") && row(\"启用\").accessory === \"关\" && row(\"启用\").confirm === \"开启 Probe？\", \"turning on asks first: \" + (row(\"启用\") && row(\"启用\").confirm))",
       "count": 1
     },
     {
       "file": "tests/tst_dictation.qml",
-      "find": "    compare(rows[0].title, \"听写到剪贴板\")",
+      "find": "    compare(rows[0].title, \"Copy to Clipboard\")",
       "replace": "    compare(rows[0].title, \"复制到剪贴板\")",
-      "count": 1
-    },
-    {
-      "file": "tests/tst_extensions.qml",
-      "find": "        compare(Extensions.navRow(8).action, { type: \"navigate\", scope: \"extensions\", title: \"扩展\" })",
-      "replace": "        compare(Extensions.navRow(8).action, { type: \"navigate\", scope: \"extensions\", title: \"Extensions\" })",
-      "count": 1
-    },
-    {
-      "file": "tests/tst_settingstree.qml",
-      "find": "        compare(screen[0].accessory, \"开\")",
-      "replace": "        compare(screen[0].accessory, \"On\")",
       "count": 1
     },
     {
@@ -224,12 +212,6 @@
       "file": "tests/tst_settingstree.qml",
       "find": "        verify(hello[0].confirmDetail.indexOf(\"run it at your own risk\") > 0)",
       "replace": "        verify(hello[0].confirmDetail.indexOf(\"仍请自负风险\") > 0)",
-      "count": 1
-    },
-    {
-      "file": "tests/tst_settingstree.qml",
-      "find": "        compare(rows[0].title, \"语音\")",
-      "replace": "        compare(rows[0].title, \"Voice\")",
       "count": 1
     },
     {

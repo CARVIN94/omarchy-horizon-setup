@@ -103,9 +103,10 @@ zhcn_rows() {
     g_total[$group]=$(( ${g_total[$group]:-0} + ${t:-0} ))
   done
 
-  # 稳定行序：keystroke → activity-monitor → 其它按名字典序。
-  local g ordered
-  ordered=$(printf '%s\n' "${!g_seen[@]}" | sort | awk '
+  # 稳定**输出行序**（与下面 ZH_MAP_ORDER 的**应用顺序**是两件事）：
+  # keystroke → activity-monitor → 其它按名字典序。
+  local g row_order
+  row_order=$(printf '%s\n' "${!g_seen[@]}" | sort | awk '
     $0 == "keystroke" { k = 1; next }
     $0 == "activity-monitor" { a = 1; next }
     { rest = rest $0 "\n" }
@@ -121,28 +122,56 @@ zhcn_rows() {
     fi
     printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
       "$g" "${g_title[$g]}" "$state" "${g_state_a[$g]:-0}" "${g_state_c[$g]:-0}" "${g_state_m[$g]:-0}" "${g_total[$g]:-0}"
-  done <<< "$ordered"
+  done <<< "$row_order"
+}
+
+# ---- 应用顺序：表之间有产出-消费依赖，不能靠 glob 字典序 -------------------
+# keystroke-ui 产出中文（如 providers/Dictation.qml 的 verb: "复制"），而
+# keystroke-align / keystroke-tests-2 的 find 里含这些中文——生产者必须先跑。
+# glob 字典序恰好相反（align 最先、ui 最后），从干净上游点「汉化」会直接
+# fail-closed 失败（1.5.1 就如此，非 1.5.2 引入）。
+#
+# apply 按 ZH_MAP_ORDER 正序；revert 必须逆序——先还原 ui 会让 tests-2 的
+# replace 找不到目标。未登记的表按名字典序排在最后，不会被静默漏掉。
+ZH_MAP_ORDER="keystroke-ui keystroke-core keystroke-align keystroke-ext-a
+keystroke-ext-b keystroke-tests keystroke-tests-2 stappmus.activity-monitor"
+
+zhcn_map_paths() {
+  local id m listed=" " extra=()
+  for id in $ZH_MAP_ORDER; do
+    listed="$listed$id "
+    m="$ZH_MAPS/$id.json"
+    [ -f "$m" ] && printf '%s\n' "$m"
+  done
+  for m in "$ZH_MAPS"/*.json; do
+    [ -f "$m" ] || continue
+    id=$(basename "$m" .json)
+    case "$listed" in *" $id "*) ;; *) extra+=("$m") ;; esac
+  done
+  [ ${#extra[@]} -gt 0 ] && printf '%s\n' "${extra[@]}"
+  return 0
 }
 
 zhcn_apply() {
   # omasnap 不是映射表组：它要改源码并重新编译（约 3 分钟）。
   if [ "$1" = "omasnap-ui" ]; then omasnapzh_install; return; fi
   local m group n=0
-  for m in "$ZH_MAPS"/*.json; do
-    [ -f "$m" ] || continue
+  while IFS= read -r m; do
     group=$(zh_group_of "$m")
     [ "$group" = "$1" ] || continue
     python3 "$ZH_APPLY" apply "$m" || return 1
     n=$((n + 1))
-  done
+  done < <(zhcn_map_paths)
   [ "$n" -gt 0 ] || { echo "unknown group: $1" >&2; return 2; }
 }
 
 zhcn_revert() {
   if [ "$1" = "omasnap-ui" ]; then omasnapzh_revert; return; fi
-  local m group n=0
-  for m in "$ZH_MAPS"/*.json; do
-    [ -f "$m" ] || continue
+  local paths=() m group i n=0
+  while IFS= read -r m; do paths+=("$m"); done < <(zhcn_map_paths)
+  # 逆序：消费者先还原，生产者最后——见上面 ZH_MAP_ORDER 的注释。
+  for (( i=${#paths[@]}-1; i>=0; i-- )); do
+    m="${paths[$i]}"
     group=$(zh_group_of "$m")
     [ "$group" = "$1" ] || continue
     python3 "$ZH_APPLY" revert "$m" || return 1

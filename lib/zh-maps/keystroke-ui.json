@@ -133,8 +133,8 @@
     },
     {
       "file": "providers/AiWeb.qml",
-      "find": "description: \"Continue any query in Claude, ChatGPT, Cursor or Google\"",
-      "replace": "description: \"在 Claude、ChatGPT、Cursor 或 Google 中继续任意查询\"",
+      "find": "description: \"Continue any query in Claude, ChatGPT, Cursor or a web search\"",
+      "replace": "description: \"在 Claude、ChatGPT、Cursor 或网页搜索中继续任意查询\"",
       "count": 1
     },
     {
@@ -177,6 +177,36 @@
       "file": "providers/AiWeb.qml",
       "find": "description: \"Absolute folder for agent --workspace; also sent to the desktop deeplink\"",
       "replace": "description: \"agent --workspace 的绝对文件夹；也会发送到桌面深链\"",
+      "count": 1
+    },
+    {
+      "file": "providers/AiWeb.qml",
+      "find": "title: \"Search the web\"",
+      "replace": "title: \"搜索网页\"",
+      "count": 1
+    },
+    {
+      "file": "providers/AiWeb.qml",
+      "find": "summary: \"Open your search engine with the text\"",
+      "replace": "summary: \"用这段文本打开你的搜索引擎\"",
+      "count": 1
+    },
+    {
+      "file": "providers/AiWeb.qml",
+      "find": "hint: \"words to search for\"",
+      "replace": "hint: \"要搜索的词\"",
+      "count": 1
+    },
+    {
+      "file": "providers/AiWeb.qml",
+      "find": "label: \"Search engine\"",
+      "replace": "label: \"搜索引擎\"",
+      "count": 1
+    },
+    {
+      "file": "providers/AiWeb.qml",
+      "find": "description: \"For the search under every query and the search command (g)\"",
+      "replace": "description: \"用于每条查询下方的搜索，以及搜索命令 (g)\"",
       "count": 1
     },
     {
@@ -607,9 +637,9 @@
     },
     {
       "file": "providers/Dictation.qml",
-      "find": "verb: \"Copy\"",
-      "replace": "verb: \"复制\"",
-      "count": 2
+      "find": "score: 100, verb: \"Copy\", disabled: !text.trim(),",
+      "replace": "score: 100, verb: \"复制\", disabled: !text.trim(),",
+      "count": 1
     },
     {
       "file": "providers/Dictation.qml",
@@ -801,6 +831,18 @@
       "file": "providers/Files.qml",
       "find": "subtitle:\"At least two characters · Searches under ~\"",
       "replace": "subtitle:\"至少两个字符 · 在 ~ 下搜索\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "label: \"Search mounted filesystems\"",
+      "replace": "label: \"搜索已挂载的文件系统\"",
+      "count": 1
+    },
+    {
+      "file": "providers/Files.qml",
+      "find": "description: \"Include filesystems mounted under your home folder. Cloud and network mounts can block searches and sleep.\"",
+      "replace": "description: \"包含挂载在主文件夹下的文件系统。云盘与网络挂载可能阻塞搜索并导致休眠。\"",
       "count": 1
     },
     {
@@ -1315,12 +1357,6 @@
     },
     {
       "file": "Keystroke.qml",
-      "find": "\"Keystroke dictation\"",
-      "replace": "\"Keystroke 听写\"",
-      "count": 1
-    },
-    {
-      "file": "Keystroke.qml",
       "find": "= \"Could not read \" + root.bindingsPath",
       "replace": "= \"无法读取 \" + root.bindingsPath",
       "count": 1
@@ -1509,6 +1545,12 @@
       "file": "Keystroke.qml",
       "find": "? \"Needs attention: \"",
       "replace": "? \"需要注意： \"",
+      "count": 1
+    },
+    {
+      "file": "voice/ClipboardTransfer.qml",
+      "find": "root.fail(\"Could not copy to the clipboard\")",
+      "replace": "root.fail(\"无法复制到剪贴板\")",
       "count": 1
     }
   ]

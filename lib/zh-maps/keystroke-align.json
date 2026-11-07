@@ -109,14 +109,20 @@
     },
     {
       "file": "core/AiTargets.js",
-      "find": "title: \"Search Google\", subtitle: prompt, icon: ICONS.google, section: \"Continue with\",",
-      "replace": "title: \"Google 搜索\", subtitle: prompt, icon: ICONS.google, section: \"继续用\",",
+      "find": "title: \"Search \" + ENGINES[engine].name, subtitle: query,",
+      "replace": "title: \"搜索 \" + ENGINES[engine].name, subtitle: query,",
       "count": 1
     },
     {
       "file": "core/AiTargets.js",
-      "find": "verb: \"Search\", tier: \"fallback\", score: 2,",
-      "replace": "verb: \"搜索\", tier: \"fallback\", score: 2,",
+      "find": "verb: \"Search\", action: { type: \"url\", url: url }, altAction: { type: \"copy\", text: url }, altVerb: \"Copy URL\" }",
+      "replace": "verb: \"搜索\", action: { type: \"url\", url: url }, altAction: { type: \"copy\", text: url }, altVerb: \"复制网址\" }",
+      "count": 1
+    },
+    {
+      "file": "core/AiTargets.js",
+      "find": "search.section = \"Continue with\"",
+      "replace": "search.section = \"继续用\"",
       "count": 1
     },
     {
@@ -163,7 +169,7 @@
     },
     {
       "file": "providers/Dictation.qml",
-      "find": "section: \"Continue with\", tier: \"fallback\", score: 1, verb: \"复制\",",
+      "find": "section: \"Continue with\", tier: \"fallback\", score: 1, verb: \"Copy\",",
       "replace": "section: \"继续用\", tier: \"fallback\", score: 1, verb: \"复制\",",
       "count": 1
     },

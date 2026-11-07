@@ -216,6 +216,84 @@
       "count": 1
     },
     {
+      "file": "tests/tst_ai.qml",
+      "find": "        compare(row.title, \"Search DuckDuckGo\")",
+      "replace": "        compare(row.title, \"搜索 DuckDuckGo\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_ai.qml",
+      "find": "        compare(row.section, \"Continue with\")",
+      "replace": "        compare(row.section, \"继续用\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_ai.qml",
+      "find": "        compare(Ai.rows({}, all, \"x\")[0].title, \"Search Google\")",
+      "replace": "        compare(Ai.rows({}, all, \"x\")[0].title, \"搜索 Google\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_ai.qml",
+      "find": "        compare(rows[0].title, \"Search Brave\")",
+      "replace": "        compare(rows[0].title, \"搜索 Brave\")",
+      "count": 1
+    },
+    {
+      "file": "tests/tst_ai.qml",
+      "find": "        compare(rows[0].altVerb, \"Copy URL\")",
+      "replace": "        compare(rows[0].altVerb, \"复制网址\")",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_websearch_check.py",
+      "find": "     check(palette.rows.length === 1 && r.providerKey === \"ai\" && r.title === \"Search Google\" && r.tier === \"answer\"",
+      "replace": "     check(palette.rows.length === 1 && r.providerKey === \"ai\" && r.title === \"搜索 Google\" && r.tier === \"answer\"",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_websearch_check.py",
+      "find": "     check(r && r.title === \"Search Google\" && r.tier === \"fallback\" && r.section === \"Continue with\", \"ordinary query keeps the fallback\")",
+      "replace": "     check(r && r.title === \"搜索 Google\" && r.tier === \"fallback\" && r.section === \"继续用\", \"ordinary query keeps the fallback\")",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_websearch_check.py",
+      "find": "     check(row(\"Search the web\") && row(\"Search the web\").accessory === \"g\", \"command appears in help\")",
+      "replace": "     check(row(\"搜索网页\") && row(\"搜索网页\").accessory === \"g\", \"command appears in help\")",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_websearch_check.py",
+      "find": "     check(palette.rows.length === 1 && d.title === \"Search DuckDuckGo\" && d.tier === \"answer\"",
+      "replace": "     check(palette.rows.length === 1 && d.title === \"搜索 DuckDuckGo\" && d.tier === \"answer\"",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_websearch_check.py",
+      "find": "     check(search() && search().title === \"Search DuckDuckGo\" && search().tier === \"fallback\", \"fallback follows the engine\")",
+      "replace": "     check(search() && search().title === \"搜索 DuckDuckGo\" && search().tier === \"fallback\", \"fallback follows the engine\")",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_websearch_check.py",
+      "find": "     if (palette.pending || !row(\"Search engine\")) return",
+      "replace": "     if (palette.pending || !row(\"搜索引擎\")) return",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_websearch_check.py",
+      "find": "     check(row(\"Search engine\").accessory === \"DuckDuckGo\", \"engine setting shows its label\")",
+      "replace": "     check(row(\"搜索引擎\").accessory === \"DuckDuckGo\", \"engine setting shows its label\")",
+      "count": 1
+    },
+    {
+      "file": "tests/palette_websearch_check.py",
+      "find": "     check(row(\"Prefix\") && row(\"Prefix\").accessory === \"s\", \"prefix setting shows the user's prefix\")",
+      "replace": "     check(row(\"触发词\") && row(\"触发词\").accessory === \"s\", \"prefix setting shows the user's prefix\")",
+      "count": 1
+    },
+    {
       "file": "tests/tst_commands.qml",
       "find": "        verify(c.errors[3].indexOf(\"only the last argument\") > 0, c.errors[3])",
       "replace": "        verify(c.errors[3].indexOf(\"只有最后一个参数\") > 0, c.errors[3])",

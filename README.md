@@ -449,6 +449,25 @@ Omarchy 自身的界面语言不用本插件管：**菜单 → 设置 → 语言
   上游 `git pull` 把英文带回来即转「未汉化」，重新点汉化即可；
   上游改动了文案字面量则转「已失配」，此时按钮禁用、先更新映射表。
 - **免授权**：写的是插件目录（用户自己的文件），不碰系统配置。
+- **顺序有依赖，不能按文件名排**：多张表之间有产出-消费关系（`keystroke-ui`
+  产出的中文是 `keystroke-align` / `keystroke-tests-2` 的 `find` 上下文），
+  故 `lib/zhcn.sh` 的 `ZH_MAP_ORDER` 显式定序，apply 正序、revert 逆序。
+  新增表要登记进这个常量，否则会排到末尾。
+
+**升级第三方插件（先还原、再升级、再汉化）**：
+
+```bash
+# 1. 先把汉化还原成英文——否则插件目录是脏工作区，git 会拒绝切换
+$P zhcn-revert keystroke          # 逐表逆序还原，文件应回到上游原文
+# 2. 升级插件本体（在插件目录里，不是本插件）
+git -C ~/.config/omarchy/plugins/evindor.keystroke pull   # 或 checkout 新 tag
+# 3. 重新汉化
+$P zhcn-apply keystroke
+```
+
+若第 2 步后状态是「已失配」，说明上游改了词表覆盖的文案字面量——照
+`lib/apply-zh.py check` 的 `mismatch-detail` 逐条更新映射表（`find` 必须写成
+**上游原文 → 译文**的一步到位形式，不能依赖前序表产出）。
 
 ### Omasnap 界面汉化（需编译）
 
