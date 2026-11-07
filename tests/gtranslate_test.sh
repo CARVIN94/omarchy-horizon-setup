@@ -244,9 +244,24 @@ rm -rf "$TMP/sys-bin" "$TMP/sys-unit"
 gt_installed && bad "未安装时 gt_installed 应为假" || ok "未安装时 gt_installed 为假"
 rc=0; err=$(gt_write 1 2>&1) || rc=$?
 [ "$rc" != "0" ] && ok "未安装时 gt_write 返回非 0" || bad "未安装时竟成功"
-echo "$err" | grep -q 'gtranslate-install-block' && ok "错误提示给出安装命令" || bad "提示不含安装命令" "$err"
+echo "$err" | grep -q 'gtranslate-install-block > /tmp/gt-install.sh' && ok "提示给出落盘命令" || bad "提示不含落盘命令" "$err"
+echo "$err" | grep -q 'cat /tmp/gt-install.sh' && ok "提示给出审阅命令" || bad "提示不含审阅命令" "$err"
+echo "$err" | grep -q 'bash /tmp/gt-install.sh' && ok "提示给出执行与 sudo 说明" || bad "提示不含执行命令" "$err"
+echo "$err" | grep -q '需要一次 sudo' && ok "提示明说需要 sudo" || bad "提示没说需要 sudo" "$err"
+echo "$err" | grep -q "$ROOT/setup.sh" && ok "提示用实际 setup.sh 路径" || bad "提示未用实际 setup.sh 路径" "$err"
+echo "$err" | grep -q 'gtranslate-install-block | bash' && bad "提示仍是管道形式（旧文案）" || ok "提示不是管道形式"
+echo "$err" | grep -q '/home/' && bad "提示写死了用户主目录" || ok "提示未写死用户主目录"
 eq "未安装时不调用 systemctl" "$(wc -l < "$GT_ACTIONS")" "0"
 echo "$err" | grep -qi 'pkexec' && bad "回落到 pkexec（不该）" || ok "未回落 pkexec"
+
+# 未安装时 gt_refresh 也走同一套引导（不再只丢一句「尚未安装」）。
+printf '127.0.0.1 localhost\n%s\n1.2.3.4 translate.googleapis.com\n%s\n' "$GT_START" "$GT_END" > "$GT_FILE"
+: > "$GT_ACTIONS"
+rm -rf "$TMP/sys-bin" "$TMP/sys-unit"
+rc=0; rerr=$(gt_refresh 2>&1) || rc=$?
+[ "$rc" != "0" ] && ok "未安装时 gt_refresh 返回非 0" || bad "未安装时 gt_refresh 竟成功"
+echo "$rerr" | grep -q '需要一次 sudo' && ok "gt_refresh 未安装提示同样含 sudo 说明" || bad "gt_refresh 提示缺 sudo 说明" "$rerr"
+echo "$rerr" | grep -q 'cat /tmp/gt-install.sh' && ok "gt_refresh 未安装提示同样含三步" || bad "gt_refresh 提示缺三步" "$rerr"
 
 # E2. 已安装 ⇒ 走 systemctl start <unit>@on/off
 mkdir -p "$TMP/sys-bin" "$TMP/sys-unit"

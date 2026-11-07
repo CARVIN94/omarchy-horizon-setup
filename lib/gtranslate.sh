@@ -8,13 +8,14 @@
 #     全部 TCP 超时），于是浏览器翻译整体失效。
 #   * 网上流传的做法（「ping google.cn 拿到 IP 写进 hosts」）**今天已失效**：
 #     实测 113.108.239.x（www.google.cn 所在段）整个 /24 没有一个 IP 带翻译
-#     后端；120.253.255.98 这类老答案对 /translate_a/* 一律 404。
+#     后端；120.253.255.98 这类老答案对 /translate_a/* 一律 404。证书 CN 不是
+#     判据（命中节点的 CN 看着像上传服务也照样返回译文），只有译文才是。
 #   * 真正可用的是少数国家 GFE 节点，且**与 DNS 答案不在同一主机地址**：实测
 #     同一 /24 里 DNS 给的 .95 是死的，而 .101/.138/.139/.148 可用。故候选池
 #     必须包含「同 /24 的邻居」，光用 DNS 答案一定全灭。
-#   * 命中率极低：实测 108.177.0.0/16 约 2800 个地址里只有 9 个可用（约 0.3%），
-#     且状态小时级漂移（同一 IP 十分钟前 200、十分钟后 429/超时）。所以：
-#     每天重探、把**所有**存活 IP 全量写进 hosts（glibc 会逐个 connect）。
+#   * 命中率低且随时间漂移：2026-11-07 实测 1200 个候选、24 并发、99.5 秒
+#     命中 53 个（4.4%）；同一 IP 十分钟前 200、十分钟后 429/超时也会发生。
+#     所以：每天重探、把**所有**存活 IP 全量写进 hosts（glibc 会逐个 connect）。
 #
 # 判据（不能只看状态码，本机踩过）：
 #   绝大多数 IP 对 translate.googleapis.com 会回 **200/404 但内容是 Google 的
@@ -47,6 +48,22 @@ GT_CACHE="${GT_CACHE:-/var/lib/horizon-setup/gtranslate-ips}"
 
 gt_err() { printf 'horizon.setup: %s\n' "$*" >&2; }
 
+# 未安装时给「先落盘 → cat 看一眼 → 再 bash」的三步引导，与 README 安装小节
+# 逐字一致。setup.sh 的路径由本文件位置推导（lib/.. = 插件根），不写死用户主目录；
+# 被 setup.sh source 或直接被测试 source 时都指向同一个 setup.sh。
+gt_install_hint() {
+  local setup
+  setup=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/setup.sh
+  gt_err "$(cat <<EOF
+尚未安装 Google 翻译 hosts 刷新器。先跑：
+  P=$setup
+  \$P gtranslate-install-block > /tmp/gt-install.sh
+  cat /tmp/gt-install.sh     # 先看一眼
+  bash /tmp/gt-install.sh    # 需要一次 sudo；冷启动探活约 100 秒
+EOF
+)"
+}
+
 # ---- 检测 -----------------------------------------------------------------
 
 # hosts 管理块是否存在。
@@ -73,7 +90,7 @@ gt_write() {
   if gt_installed; then
     systemctl start "${GT_SYS_UNIT}@${inst}.service"
   else
-    gt_err "尚未安装 Google 翻译 hosts。一次性安装: setup.sh gtranslate-install-block | bash"
+    gt_install_hint
     return 1
   fi
 }
@@ -81,7 +98,7 @@ gt_write() {
 # 供每日定时/手动调用：只在「已开启」时刷新（关闭态不动 hosts）。
 gt_refresh() {
   gt_on || return 0
-  gt_installed || { gt_err "尚未安装 Google 翻译 hosts"; return 1; }
+  gt_installed || { gt_install_hint; return 1; }
   systemctl start "${GT_SYS_UNIT}@refresh.service"
 }
 
