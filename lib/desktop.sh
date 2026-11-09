@@ -11,6 +11,8 @@
 # 后端只回答「开没开、阵容是什么」，两边靠 setup.sh 的文本契约解耦。
 
 DESKTOP_CONF="${HORIZON_SETUP_CONF:-$HOME/.config/omarchy/horizon-setup.conf}"
+# 桌面层脚本相对本文件定位，不依赖调用者的当前目录。
+DESKTOP_SELF=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 # 种类白名单是 CLI 校验与面板选项的唯一来源：两边各写一份必然漂移，
 # 新增一种鲨鱼要改两处、漏一处就变成「面板能选、脚本拒收」。
@@ -92,6 +94,7 @@ desktop_write_ocean() { # $1=0|1
   # 关闭时保留 desktop_ocean=0 整行而不是删掉：状态要可读，
   # 删行会让「从没配过」和「明确关掉」在文件里长得一样。
   desktop_conf_set desktop_ocean "$1"
+  desktop_ensure_running
 }
 
 desktop_write_sharks() { # $1=csv
@@ -101,6 +104,27 @@ desktop_write_sharks() { # $1=csv
     return 2
   fi
   desktop_conf_set desktop_sharks "$csv"
+  desktop_ensure_running
+}
+
+# ---- 桌面进程 ---------------------------------------------------------------
+
+# 幂等拉起桌面层。桌面层自己轮询配置、关掉时自行退出，故这里只负责
+# 「开的时候保证有一个在跑」，不需要记 PID、也不去杀进程（杀不干净会
+# 留下幽灵 layer）。判活靠 pgrep 精确匹配脚本绝对路径。
+desktop_ensure_running() {
+  desktop_ocean_on || return 0
+  local host="${DESKTOP_HOST:-$DESKTOP_SELF/../shark/bin/shark-desktop.py}"
+  [ -f "$host" ] || { echo "桌面层缺失: $host" >&2; return 1; }
+  local libdir="${HORIZON_SHARK_LIB_DIR:-$HOME/.local/lib}"
+  if pgrep -f "/usr/bin/python3 $host" >/dev/null 2>&1; then return 0; fi
+  LD_LIBRARY_PATH="$libdir${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+  GI_TYPELIB_PATH="$libdir/girepository-1.0${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH}" \
+  WEBKIT_DISABLE_DMABUF_RENDERER=1 \
+  HORIZON_SETUP_CONF="$DESKTOP_CONF" \
+  HORIZON_SHARK_LIB_DIR="$libdir" \
+    nohup /usr/bin/python3 "$host" >/dev/null 2>&1 &
+  disown || true
 }
 
 # ---- 面板消费 ---------------------------------------------------------------

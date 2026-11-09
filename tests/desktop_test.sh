@@ -119,9 +119,12 @@ desktop_write_ocean 1
 desktop_write_sharks "classic"
 eq "多次写后仍无残留" "$(ls -A "$TMP/conf" | tr '\n' ' ' | sed 's/ $//')" "horizon-setup.conf"
 
-printf '\n=== 7. 脱钩：后端不引用渲染实现 ===\n'
-hits=$(grep -n 'ocean/' "$ROOT/lib/desktop.sh" "$ROOT/setup.sh" || true)
-eq "lib/desktop.sh 与 setup.sh 不出现 ocean/ 引用" "${hits:-<none>}" "<none>"
+printf '\n=== 7. 后端不硬编码渲染层路径 ===\n'
+# 桌面层的路径只能由 DESKTOP_SELF 相对推导，不能用绝对路径或写死目录名；
+# 否则插件换个安装位置就找不到。启动入口只应有一处。
+hits=$(grep -nE '"(/|\$HOME/|/usr/|/tmp/)[^"]*(shark|desktop\.py)' "$ROOT/lib/desktop.sh" "$ROOT/setup.sh" || true)
+eq "lib/desktop.sh 与 setup.sh 不硬编码绝对路径" "${hits:-<none>}" "<none>"
+eq "启动入口只有一处" "$(grep -c 'desktop_ensure_running()' "$ROOT/lib/desktop.sh")" "1"
 
 # 面板预设的 csv 是白名单的第二份拷贝：两边漂移就会「面板能选、脚本拒收」。
 # 不 import QML（纯 shell 环境跑不了），改为把 csv 抠出来交给同一个校验函数。

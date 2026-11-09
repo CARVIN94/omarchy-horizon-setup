@@ -1,0 +1,31 @@
+--- a/src/renderer.ts
++++ b/src/renderer.ts
+@@ -318,7 +318,7 @@
+   private fishStyles = FISH_ALPHAS.map((a) => `rgba(230,238,255,${a})`);
+ 
+   constructor(private canvas: HTMLCanvasElement) {
+-    const ctx = canvas.getContext("2d", { alpha: false });
++    const ctx = canvas.getContext("2d", { alpha: true });
+     if (!ctx) throw new Error("2D canvas unavailable");
+     this.ctx = ctx;
+     this.bg = document.createElement("canvas");
+@@ -395,8 +395,9 @@
+     if (!g) return;
+     const { width: W, height: H, dpr, cw, ch } = this;
+     g.setTransform(dpr, 0, 0, dpr, 0, 0);
+-    g.fillStyle = "#000";
+-    g.fillRect(0, 0, W, H);
++    // 透明底：让下层壁纸/主题透上来，而不是刷成纯黑。
++    // 这是接入层改动，仿真与光栅逻辑一行未动。
++    g.clearRect(0, 0, W, H);
+     paintGrid(g, W, H, cw, ch, dpr);
+   }
+ 
+@@ -411,6 +412,7 @@
+     this.diffuse(dt);
+ 
+     ctx.setTransform(1, 0, 0, 1, 0, 0);
++    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+     ctx.drawImage(this.bg, 0, 0);
+     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+ 

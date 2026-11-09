@@ -70,6 +70,9 @@ Item {
   function open(payloadJson) {
     root.opened = true
     root.refresh()
+    // 手改配置文件或重启后，桌面层可能还没被拉起；开面板时幂等补一次。
+    ensureProc.running = false
+    ensureProc.running = true
     Qt.callLater(function() { keyCatcher.forceActiveFocus() })
   }
 
@@ -116,6 +119,11 @@ Item {
       waitForEnd: true
       onStreamFinished: root.applyStatus(text)
     }
+  }
+
+  Process {
+    id: ensureProc
+    command: [root.setupSh, "desktop-ensure"]
   }
 
   Process {

@@ -107,6 +107,7 @@ $P fw-del 3082 tcp 192.168.0.0/24 'DSH web'   # 精确删除（同样授权）
 $P desktop                    # 桌面海洋状态（TAB 分隔行）
 $P desktop-ocean 1            # 开/关桌面海洋
 $P desktop-sharks classic,tiger   # 鲨鱼阵容（最多 6 条）
+$P desktop-ensure                # 手改配置/重启后幂等拉起桌面层
 ```
 
 ## 面板
@@ -126,31 +127,37 @@ $P desktop-sharks classic,tiger   # 鲨鱼阵容（最多 6 条）
 
 ### 桌面海洋（ASCII 鲨鱼群）
 
-「桌面」Tab 打开后，桌面背景换成 ASCII 鲨鱼群：小鱼成群游动、鲨鱼在后面追捕食，
-受惊的鱼群会一整片炸开，进食处留下红色热斑。移植自
-[stackedlol/ascii-sharks](https://github.com/stackedlol/ascii-sharks)（MIT）。
+「桌面」Tab 打开后，ASCII 鲨鱼群叠在**当前主题壁纸上**：小鱼成群游动、鲨鱼追捕食，
+受惊的鱼群会一整片炸开，进食处留下红色热斑。用的是
+[stackedlol/ascii-sharks](https://github.com/stackedlol/ascii-sharks)（MIT）的
+**原版引擎**，仿真与光栅逻辑一行未动，接入层只把画布底改透明让壁纸透上来。
 
 - 配置项写在 `~/.config/omarchy/horizon-setup.conf`，与 Omarchy 自身配置分开：
   `desktop_ocean=1` 开启，`desktop_sharks=classic,hammerhead` 指定阵容（最多 6 条，
-  第一个最大）。缺省是关。也可用 `P desktop-ocean 1` / `P desktop-sharks …` 命令行切换。
+  第一个最大）。缺省是关。也可用 `P desktop-ocean 1` / `P desktop-sharks …` 切换。
 - 阵容只认 `classic` / `hammerhead` / `greathammer` / `tiger` / `zebra` /
   `mako` / `thresher` / `nurse`；面板给五档预设，不做自由编辑。
-- 由插件的 `service` 入口（[ocean/DesktopOcean.qml](ocean/DesktopOcean.qml)）常驻，
-  画在 Hyprland 的 `WlrLayer.Bottom`（壁纸之上、窗口之下），并设空输入区域让点击
-  穿透：桌面图标、右键菜单、拖拽文件都照常。开启状态由配置文件热更新，改完即生效。
-- 关掉时窗口隐藏且定时器停止，零渲染开销。用户执行 `omarchy toggle animations`
-  关掉动画后也会暂停 —— 这类机器往往是 CPU 弱才关的。
+- 桌面层是独立进程（[shark/bin/shark-desktop.py](shark/bin/shark-desktop.py)）：
+  GTK + `gtk-layer-shell` 建真·layer surface，画在壁纸之上、窗口之下；
+  WebKit2 跑原版 JS。窗口与视图都透明，所以**主题壁纸直接透上来**，不是纯黑底。
+  空输入形状让点击穿透：桌面图标、右键菜单、拖拽文件都照常。
+- 开关由 `setup.sh desktop-ensure` 幂等拉起；桌面进程自己轮询配置，关掉即退出，
+  零残留、零 CPU。手改配置或重启后跑一次 `P desktop-ensure`，或打开面板即自动补。
+- `gtk-layer-shell` 从 Arch 包解包到 `~/.local/lib`，不需要 root。
+  WebKit 必须设 `WEBKIT_DISABLE_DMABUF_RENDERER=1`，否则 DMA-BUF subsurface
+  与 layer surface 组合会让 Hyprland 报 protocol error 71（本机实测）。
 
-实现上的硬约束（本机实测，改渲染层前务必先读）：QML Canvas 逐格 `fillText`
-画 1600 格只有约 10fps，旋转/切片贴图是 4~12fps；这里改成「按行拼字符串分批绘制」
-（每帧约 180 次 `fillText`），并把鲨鱼体型预计算成查表，避免逐格遍历 19 段脊线。
-仿真固定 15Hz 步长，光栅同步，实测 1920×1080 / dpr 2 / 4 条鲨鱼 + 340 条鱼约
-25~30fps。
+为什么不重写进 Quickshell：试过把上游 1500 行引擎移植到 QML Canvas（软件光栅、
+无 JIT），逐格 `fillText` 只有 10fps、按行批处理勉强 30fps，还引出字形方向、
+dpr 缩放、主题配色一堆妥协，效果始终与原版有差距。QtWebEngine 在 Quickshell
+进程内又会因 QCoreApplication 冲突直接崩。原版引擎 + 独立 WebKit 进程是唯一能
+同时拿到「原版效果」「真桌面层」「壁纸透底」的组合，详见
+[shark/README.md](shark/README.md)。
 
-已知天花板：常驻动画会占用可观 CPU（实测单核 100% 上下），这是 QML 的 JS 解释器
-跑 Reynolds boids + 全屏 Canvas 的固定成本，降帧能缓解但不能消除；不需要时应关掉。
-多屏各自独立一份仿真。点击穿透依据 `mask: Region {}` 与 Omarchy 自身
-`Background.qml` 的同一模式，未做真实鼠标点击的端到端注入验证。
+已知天花板：常驻一个 WebKit 渲染进程，内存/CPU 开销高于纯静态壁纸，不需要时关掉。
+页面由 `127.0.0.1` 上的随机端口本地静态服务提供（ES module 在 `file://` 下会被
+CORS 拒绝），不对外暴露、不联网。多屏目前只覆盖主屏。点击穿透依据
+`input_shape_combine_region(None)`，未做真实鼠标点击的端到端注入验证。
 
 ### GitHub 代理（git fetch 镜像）
 
@@ -661,7 +668,7 @@ Omarchy 0.4.5 起**自带多语言**（`/usr/share/omarchy/default/i18n/<code>/`
 | `ZhcnTab.qml` | 插件汉化 Tab（两层列表 + 应用/还原） |
 | `DesktopTab.qml` | 桌面 Tab（海洋开关 + 阵容预设） |
 | `RuleList.qml` | 规则列表展示（纯展示，不自带滚动） |
-| `ocean/` | 桌面海洋渲染层：仿真（World）与 ASCII 光栅（Render），见下 |
+| `shark/` | 桌面海洋：原版引擎构建产物 + GTK layer-shell 桌面层，见下 |
 
 - **检测即真相**：不在内存里维护状态副本，每次都从系统/配置实读
   （`hyprctl getoption`、标记块、`~/.npmrc`、`git config`、`/etc/ufw/user*.rules`、

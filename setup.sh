@@ -34,6 +34,7 @@
 #   setup.sh desktop                   # 桌面海洋状态（TAB 分隔行）
 #   setup.sh desktop-ocean <0|1>       # 桌面海洋开关
 #   setup.sh desktop-sharks <csv>      # 鲨鱼阵容（逗号分隔，最多 6 条）
+#   setup.sh desktop-ensure            # 幂等拉起桌面层（开机/手改配置后补一次）
 set -euo pipefail
 
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -140,6 +141,7 @@ usage:
   setup.sh desktop
   setup.sh desktop-ocean <0|1>
   setup.sh desktop-sharks <classic,hammerhead,zebra,tiger,greathammer,mako,thresher,nurse>
+  setup.sh desktop-ensure
 USAGE
 }
 
@@ -214,6 +216,9 @@ main() {
     desktop)
       # 与 rules/zhcn 同为只读清单（TAB 分隔行）。
       desktop_rows
+      ;;
+    desktop-ensure)
+      desktop_ensure_running
       ;;
     desktop-ocean)
       [ -n "${2:-}" ] || { usage; exit 2; }
