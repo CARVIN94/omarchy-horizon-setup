@@ -36,7 +36,7 @@ PanelWindow {
   // 画面就永远是一小团（实测踩过，故此处直接忽略不合理的尺寸）。
   readonly property real minSpan: 200
 
-  function ensureWorld() {
+  function ensureWorld(force) {
     if (width < minSpan || height < minSpan) return
     if (!state) state = Render.makeState()
     // 先定网格，再用网格尺寸播种：个人空间是按格给的。
@@ -45,7 +45,7 @@ PanelWindow {
     // World.resize 只会把跑到界外的鱼拉回来，不会重新分布。
     var colsChanged = state.cols !== lastCols
     lastCols = state.cols
-    if (!world || colsChanged) {
+    if (!world || colsChanged || force === true) {
       world = World.makeWorld({ sharks: ocean.parseSharks(ocean.sharksSpec) })
       World.resize(world, width, height, state.cw, state.ch, Species)
     }
@@ -60,8 +60,10 @@ PanelWindow {
     target: ocean
     function onSharksSpecChanged() {
       if (!win.world) return
-      win.world = World.makeWorld({ sharks: ocean.parseSharks(ocean.sharksSpec) })
-      win.ensureWorld()
+      // 必须让 ensureWorld 自己建并播种：在外面先 makeWorld 会让 world 非空，
+      // 而 colsChanged 为 false 时它就不调 World.resize，新世界一条鱼都没有
+      // （实测全黑）。种子只能由一处负责。
+      win.ensureWorld(true)
     }
   }
 
