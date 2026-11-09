@@ -21,11 +21,11 @@
   <a href="#卸载">卸载</a>
 </p>
 
-把输入习惯调成 Mac 手感，并顺手管好包管理、网络代理、**ufw 防火墙**与
-**第三方插件汉化**的一键面板。
+把输入习惯调成 Mac 手感，并顺手管好包管理、网络代理、**ufw 防火墙**、
+**第三方插件汉化**与**桌面海洋**的一键面板。
 所有开关**可检测、可切换、幂等**——不用再猜「刚才那条命令到底生效没」。
 
-面板是 Omarchy overlay，入口在 **菜单 → 设置**，不占顶栏；内部按用途分四个 Tab。
+面板是 Omarchy overlay，入口在 **菜单 → 设置**，不占顶栏；内部按用途分五个 Tab。
 
 ## 快速安装
 
@@ -104,12 +104,15 @@ $P rules                      # 当前 ufw 规则（TAB 分隔）
 $P toggle keys                # 开/关 Mac 快捷键
 $P fw-add 3082 tcp 192.168.0.0/24 'DSH web'   # 新增放行（会弹一次授权）
 $P fw-del 3082 tcp 192.168.0.0/24 'DSH web'   # 精确删除（同样授权）
+$P desktop                    # 桌面海洋状态（TAB 分隔行）
+$P desktop-ocean 1            # 开/关桌面海洋
+$P desktop-sharks classic,tiger   # 鲨鱼阵容（最多 6 条）
 ```
 
 ## 面板
 
 **菜单 → 设置 → Horizon Setup**，overlay 窗口（`Esc` 或点空白关闭）。
-四个 Tab 按「这块配置属于谁」分组：
+五个 Tab 按「这块配置属于谁」分组：
 
 | Tab | 内容 | 说明 |
 | --- | --- | --- |
@@ -117,8 +120,37 @@ $P fw-del 3082 tcp 192.168.0.0/24 'DSH web'   # 精确删除（同样授权）
 | **开发环境** | npm 换源、GitHub 加速、Google 翻译修复 | 包管理与网络。 |
 | **防火墙** | ufw 规则列表 + 增删 | 读写分离：读免权限，写走一次授权。 |
 | **插件汉化** | 第三方插件中文文案与 Omasnap 界面的汉化/还原 | 映射表组改文案 + Omasnap 改源码重编译，都免授权。 |
+| **桌面** | 桌面海洋（ASCII 鲨鱼群）开关与阵容 | 只写本插件自有配置，不碰 Omarchy 配置。 |
 
 头部显示 `已启用/总数` 胶囊徽章；底部在写配置时显示进行中。
+
+### 桌面海洋（ASCII 鲨鱼群）
+
+「桌面」Tab 打开后，桌面背景换成 ASCII 鲨鱼群：小鱼成群游动、鲨鱼在后面追捕食，
+受惊的鱼群会一整片炸开，进食处留下红色热斑。移植自
+[stackedlol/ascii-sharks](https://github.com/stackedlol/ascii-sharks)（MIT）。
+
+- 配置项写在 `~/.config/omarchy/horizon-setup.conf`，与 Omarchy 自身配置分开：
+  `desktop_ocean=1` 开启，`desktop_sharks=classic,hammerhead` 指定阵容（最多 6 条，
+  第一个最大）。缺省是关。也可用 `P desktop-ocean 1` / `P desktop-sharks …` 命令行切换。
+- 阵容只认 `classic` / `hammerhead` / `greathammer` / `tiger` / `zebra` /
+  `mako` / `thresher` / `nurse`；面板给五档预设，不做自由编辑。
+- 由插件的 `service` 入口（[ocean/DesktopOcean.qml](ocean/DesktopOcean.qml)）常驻，
+  画在 Hyprland 的 `WlrLayer.Bottom`（壁纸之上、窗口之下），并设空输入区域让点击
+  穿透：桌面图标、右键菜单、拖拽文件都照常。开启状态由配置文件热更新，改完即生效。
+- 关掉时窗口隐藏且定时器停止，零渲染开销。用户执行 `omarchy toggle animations`
+  关掉动画后也会暂停 —— 这类机器往往是 CPU 弱才关的。
+
+实现上的硬约束（本机实测，改渲染层前务必先读）：QML Canvas 逐格 `fillText`
+画 1600 格只有约 10fps，旋转/切片贴图是 4~12fps；这里改成「按行拼字符串分批绘制」
+（每帧约 180 次 `fillText`），并把鲨鱼体型预计算成查表，避免逐格遍历 19 段脊线。
+仿真固定 15Hz 步长，光栅同步，实测 1920×1080 / dpr 2 / 4 条鲨鱼 + 340 条鱼约
+25~30fps。
+
+已知天花板：常驻动画会占用可观 CPU（实测单核 100% 上下），这是 QML 的 JS 解释器
+跑 Reynolds boids + 全屏 Canvas 的固定成本，降帧能缓解但不能消除；不需要时应关掉。
+多屏各自独立一份仿真。点击穿透依据 `mask: Region {}` 与 Omarchy 自身
+`Background.qml` 的同一模式，未做真实鼠标点击的端到端注入验证。
 
 ### GitHub 代理（git fetch 镜像）
 
@@ -622,16 +654,21 @@ Omarchy 0.4.5 起**自带多语言**（`/usr/share/omarchy/default/i18n/<code>/`
 | `lib/apply-zh.py` | 映射表应用器：`check` / `apply` / `revert`，失配整体拒绝 |
 | `lib/zh-maps/*.json` | 映射表资产：精确片段 + 期望次数 + group 归属（随插件分发） |
 | `lib/omasnapzh.sh` | Omasnap 汉化：状态检测、改源码重编译、装回上游原版 |
+| `lib/desktop.sh` | 桌面海洋的开关与阵容（本插件自有 `horizon-setup.conf`） |
 | `Panel.qml` | overlay 容器、Tab 栏、状态徽章 |
 | `ToggleList.qml` | 一组开关的展示壳 |
 | `FirewallTab.qml` | 防火墙 Tab（表单 + 规则列表） |
 | `ZhcnTab.qml` | 插件汉化 Tab（两层列表 + 应用/还原） |
+| `DesktopTab.qml` | 桌面 Tab（海洋开关 + 阵容预设） |
 | `RuleList.qml` | 规则列表展示（纯展示，不自带滚动） |
+| `ocean/` | 桌面海洋渲染层：仿真（World）与 ASCII 光栅（Render），见下 |
 
-- **检测即真相**：不维护任何状态文件，状态全部从系统/配置实读
-  （`hyprctl getoption`、标记块、`~/.npmrc`、`git config`、`/etc/ufw/user*.rules`）。
+- **检测即真相**：不在内存里维护状态副本，每次都从系统/配置实读
+  （`hyprctl getoption`、标记块、`~/.npmrc`、`git config`、`/etc/ufw/user*.rules`、
+  `~/.config/omarchy/horizon-setup.conf`）。桌面海洋的开关与阵容是唯一由本插件
+  自有配置文件记录的状态，其余开关的状态都落在各自被管的系统配置里。
 - **幂等写入**：每个开关写带 `-- horizon.setup:xxx` 标记的块，重复 toggle
-  只翻转块的存在性，不产生重复条目。
+  只翻转块的存在性，不产生重复条目；桌面配置用同值跳过 + 原子替换。
 - **凭据安全**：提权只针对 root 所有的 `/usr/bin/ufw`，插件自身永不提权；
   所有参数（端口/协议/来源/备注）在无权限侧按白名单校验后才下发。
 
@@ -643,6 +680,7 @@ bash tests/hosts_test.sh        # GitHub hosts 层
 bash tests/gtranslate_test.sh   # Google 翻译 hosts 层
 bash tests/zhcn_test.sh         # 插件汉化映射表组（幂等、fail-closed、分组聚合）
 bash tests/omasnap_zh_test.sh   # Omasnap 汉化层（词表 fail-closed、状态四态）
+bash tests/desktop_test.sh      # 桌面海洋配置层（缺省、幂等、白名单、原子写）
 ```
 
 `tests/fixtures/` 是真实机器规则的快照；`tests/fake/` 是 `pkexec`/`ufw` 桩件，
