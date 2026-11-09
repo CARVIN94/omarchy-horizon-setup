@@ -2,7 +2,9 @@
 """ASCII 鲨鱼桌面层：GTK + gtk-layer-shell + WebKit2 跑上游原版引擎。
 
 真·wlr layer surface，画在壁纸之上、窗口之下；WebKit 视图透明，
-Omarchy 的壁纸从下面透上来。页面是 stackedlol/ascii-sharks 的构建产物，
+Omarchy 的壁纸从下面透上来。必须落在 BOTTOM 层：Omarchy shell 的
+omarchy-background 也占 BACKGROUND 层，同层后启动者会盖住先启动者，
+shell 一重启就把海洋整块挡掉。页面是 stackedlol/ascii-sharks 的构建产物，
 引擎逻辑一行未动（透明化补丁见 ../transparent.patch）。
 
 生命周期由本进程自己管：轮询 horizon-setup.conf，desktop_ocean=0 就退出。
@@ -85,7 +87,10 @@ class SharkDesktop:
 
         GtkLayerShell.init_for_window(self.window)
         GtkLayerShell.set_namespace(self.window, "horizon-ocean")
-        GtkLayerShell.set_layer(self.window, GtkLayerShell.Layer.BACKGROUND)
+        # BOTTOM 而非 BACKGROUND：omarchy-background 是同属 BACKGROUND 层的
+        # Quickshell layer，其创建晚于本进程时会按同层顺序盖住海洋（shell
+        # 重启即复现）。升一层后壁纸仍透底、窗口仍在上，但叠放次序稳定。
+        GtkLayerShell.set_layer(self.window, GtkLayerShell.Layer.BOTTOM)
         GtkLayerShell.set_keyboard_mode(self.window, GtkLayerShell.KeyboardMode.NONE)
         for edge in (GtkLayerShell.Edge.TOP, GtkLayerShell.Edge.BOTTOM,
                      GtkLayerShell.Edge.LEFT, GtkLayerShell.Edge.RIGHT):

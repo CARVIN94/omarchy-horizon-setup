@@ -8,6 +8,7 @@
 #   ④ fail-closed：未知鲨鱼种类/超长序列一律拒绝，文件一字不动。
 #   ⑤ 原子写：写完不留临时文件（半截文件会让读者看到坏配置）。
 #   ⑥ 脱钩：后端不得引用渲染实现（ocean/ 目录属另一个组件）。
+#   ⑦ 叠放：宿主必须落在 BOTTOM 层，否则 shell 重启后壁纸盖住海洋。
 #
 # 运行：bash tests/desktop_test.sh
 set -uo pipefail
@@ -137,7 +138,17 @@ eq "首个预设等于缺省阵容" \
   "$(grep -o 'csv: "[^"]*"' "$ROOT/DesktopTab.qml" | head -1 | cut -d'"' -f2)" \
   "$DESKTOP_SHARK_DEFAULT"
 
-printf '\n=== 8. setup.sh 契约 ===\n'
+printf '\n=== 8. 宿主叠放层级 ===\n'
+# Omarchy shell 的 omarchy-background 也是 BACKGROUND 层；同层后创建者盖住
+# 先创建者，故 shell 一重启海洋就消失。宿主必须明确升到 BOTTOM 层，
+# 这条断言挡住「为了透底改回 BACKGROUND」的回归。
+host="$ROOT/shark/bin/shark-desktop.py"
+eq "宿主落 BOTTOM 层" \
+  "$(grep -c 'set_layer(self.window, GtkLayerShell.Layer.BOTTOM)' "$host")" "1"
+eq "宿主不再落 BACKGROUND 层" \
+  "$(grep -c 'set_layer(self.window, GtkLayerShell.Layer.BACKGROUND)' "$host")" "0"
+
+printf '\n=== 9. setup.sh 契约 ===\n'
 # 状态行按名取值：前五个字段的历史顺序不能被本层改动影响。
 line=$(HORIZON_SETUP_CONF="$HORIZON_SETUP_CONF" bash "$ROOT/setup.sh" status 2>/dev/null)
 eq "status 含 desktop 字段" "$(printf '%s' "$line" | tr ' ' '\n' | grep -c '^desktop=')" "1"

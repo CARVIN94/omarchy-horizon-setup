@@ -138,9 +138,12 @@ $P desktop-ensure                # 手改配置/重启后幂等拉起桌面层
 - 阵容只认 `classic` / `hammerhead` / `greathammer` / `tiger` / `zebra` /
   `mako` / `thresher` / `nurse`；面板给五档预设，不做自由编辑。
 - 桌面层是独立进程（[shark/bin/shark-desktop.py](shark/bin/shark-desktop.py)）：
-  GTK + `gtk-layer-shell` 建真·layer surface，画在壁纸之上、窗口之下；
-  WebKit2 跑原版 JS。窗口与视图都透明，所以**主题壁纸直接透上来**，不是纯黑底。
-  空输入形状让点击穿透：桌面图标、右键菜单、拖拽文件都照常。
+  GTK + `gtk-layer-shell` 建真·layer surface，落在 **`BOTTOM` 层**，画在壁纸之上、
+  窗口之下；WebKit2 跑原版 JS。窗口与视图都透明，所以**主题壁纸直接透上来**，
+  不是纯黑底。空输入形状让点击穿透：桌面图标、右键菜单、拖拽文件都照常。
+  不能放 `BACKGROUND` 层：Omarchy shell 的 `omarchy-background` 同属该层，
+  后启动/重启 shell 会按同层顺序把海洋整块盖掉（表现为「开关是开的、进程在跑、
+  桌面却什么都没有」）。高一级既保住透底又让叠放次序与启动先后无关。
 - 开关由 `setup.sh desktop-ensure` 幂等拉起；桌面进程自己轮询配置，关掉即退出，
   零残留、零 CPU。手改配置或重启后跑一次 `P desktop-ensure`，或打开面板即自动补。
 - `gtk-layer-shell` 从 Arch 包解包到 `~/.local/lib`，不需要 root。
