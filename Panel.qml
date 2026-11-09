@@ -8,11 +8,12 @@ import qs.Ui
 // Horizon Setup 配置面板：全屏 overlay 居中小卡（与剪贴板同形态），
 // 不占顶栏。呼出：omarchy-shell shell toggle horizon.setup（菜单/快捷键）。
 //
-// 四个 Tab 按「这块配置属于谁」分组，而不是按实现方式：
+// 五个 Tab 按「这块配置属于谁」分组，而不是按实现方式：
 //   Mac 习惯   —— 与 macOS 肌肉记忆直接相关
 //   开发环境   —— npm / GitHub，与 Mac 习惯无关
 //   防火墙     —— ufw 规则（读写分离：读免权限，写走 pkexec 授权）
 //   插件汉化   —— 第三方插件映射表重放 + Omasnap 改源码重编译（都写用户态目录，免权限）
+//   桌面       —— 桌面海洋（ASCII 鲨鱼群）：开关与阵容，只写本插件自有配置
 //
 // 检测/写盘逻辑全部在 setup.sh 与 lib/*.sh，本文件只是展示壳，
 // 不持有任何状态副本。
@@ -22,7 +23,7 @@ Item {
   property bool opened: false
   property var switches: ({ keys: false, scroll: false, clip: false,
                          npm: false, ghproxy: false, gtranslate: false,
-                         ufw: false, rules: 0 })
+                         ufw: false, rules: 0, desktop: false, sharks: "classic" })
   property bool busy: false
   // 写配置失败时的提示（只来自 stderr）。成功则为空。
   // 下方状态栏优先展示它 —— 否则失败时面板没有任何反馈。
@@ -33,7 +34,8 @@ Item {
     { value: "mac", label: "Mac 习惯" },
     { value: "dev", label: "开发环境" },
     { value: "lan", label: "防火墙" },
-    { value: "zh", label: "插件汉化" }
+    { value: "zh", label: "插件汉化" },
+    { value: "desk", label: "桌面" }
   ]
 
   readonly property var macItems: [
@@ -58,7 +60,8 @@ Item {
       + (switches.clip ? 1 : 0) + (switches.npm ? 1 : 0) + (switches.ghproxy ? 1 : 0)
       + (switches.gtranslate ? 1 : 0)
       + (switches.ufw ? 1 : 0)
-  readonly property int totalCount: 7
+      + (switches.desktop ? 1 : 0)
+  readonly property int totalCount: 8
 
   readonly property string setupSh: Qt.resolvedUrl("setup.sh").toString().replace("file://", "")
 
@@ -92,7 +95,8 @@ Item {
 
   function applyStatus(text) {
     // status 行形如：
-    // keys=1 scroll=0 clip=1 npm=1 ghproxy=1 ufw=1 rules=10 ghhosts=0 ghtimer=1 gtranslate=0
+    // keys=1 scroll=0 clip=1 npm=1 ghproxy=1 ufw=1 rules=10 ghhosts=0 ghtimer=1 gtranslate=0 desktop=1 sharks=classic
+    // 按名取值，故 setup.sh 追加字段不影响这里；未知键只是被多存一份。
     var out = String(text).trim()
     var next = {}
     out.split(/\s+/).forEach(function(pair) {
@@ -243,7 +247,7 @@ Item {
 
               Text {
                 textFormat: Text.PlainText
-                text: "Omarchy · 输入习惯 · 工具链 · 防火墙 · 汉化"
+                text: "Omarchy · 输入习惯 · 工具链 · 防火墙 · 汉化 · 桌面"
                 color: Qt.darker(root.foreground, 1.5)
                 font.family: Style.font.menuFamily
                 font.pixelSize: Style.font.caption
@@ -294,11 +298,14 @@ Item {
           // ---- Tab 内容 ----
           Item {
             width: parent.width
-            implicitHeight: root.activeTab === "lan"
-                ? lanTab.implicitHeight
-                : (root.activeTab === "zh"
-                    ? zhTab.implicitHeight
-                    : Math.max(macList.implicitHeight, devList.implicitHeight))
+            // 各 Tab 自报高度：隐藏的 Tab 高度为 0，取 max 会随最后一个可见项跳变，
+            // 故按 activeTab 显式分派（新增 Tab 在这里补一行即可）。
+            implicitHeight: {
+              if (root.activeTab === "lan") return lanTab.implicitHeight
+              if (root.activeTab === "zh") return zhTab.implicitHeight
+              if (root.activeTab === "desk") return deskTab.implicitHeight
+              return Math.max(macList.implicitHeight, devList.implicitHeight)
+            }
 
             ToggleList {
               id: macList
@@ -343,6 +350,18 @@ Item {
               height: implicitHeight
               visible: root.activeTab === "zh"
               // 同 FirewallTab：busy 单一真相在 Panel，本 Tab 只上报起止。
+              externalBusy: root.busy
+              foreground: root.foreground
+              onBusyStarted: root.busy = true
+              onBusyFinished: root.busy = false
+            }
+
+            DesktopTab {
+              id: deskTab
+              width: parent.width
+              height: implicitHeight
+              visible: root.activeTab === "desk"
+              // 同上：busy 只上报，不在此写 root.busy。
               externalBusy: root.busy
               foreground: root.foreground
               onBusyStarted: root.busy = true

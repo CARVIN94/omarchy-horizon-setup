@@ -4,7 +4,7 @@
   "name": "Horizon Setup",
   "version": "1.4.0",
   "author": "carvin",
-  "description": "Omarchy 配置面板：快捷键/滚动/剪贴板、npm 换源/GitHub 代理、ufw 防火墙规则管理、第三方插件与 Omasnap 界面汉化",
+  "description": "Omarchy 配置面板：快捷键/滚动/剪贴板、npm 换源/GitHub 代理、ufw 防火墙规则管理、第三方插件与 Omasnap 界面汉化、桌面海洋（ASCII 鲨鱼群）",
   "kinds": ["overlay"],
   "keepLoaded": true,
   "entryPoints": {

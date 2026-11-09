@@ -13,6 +13,7 @@
 #   lib/firewall.sh 防火墙：ufw 规则的读取与增删（读免权限，写走 pkexec）
 #   lib/zhcn.sh     插件汉化：第三方插件显示文案的状态检测与重放
 #   lib/omasnapzh.sh Omasnap 汉化：源码打词表 + 重编译（上游无 i18n，只能改源码）
+#   lib/desktop.sh  桌面海洋：鲨鱼群开关与阵容（本插件自有配置文件，不碰 Omarchy 配置）
 #
 # 用法:
 #   setup.sh status
@@ -30,6 +31,9 @@
 #   setup.sh omasnap-zh-revert         # 装回上游原版
 #   setup.sh fw-add <port> <proto> <src> <comment> [action]
 #   setup.sh fw-del <port> <proto> <src> <comment> [action]
+#   setup.sh desktop                   # 桌面海洋状态（TAB 分隔行）
+#   setup.sh desktop-ocean <0|1>       # 桌面海洋开关
+#   setup.sh desktop-sharks <csv>      # 鲨鱼阵容（逗号分隔，最多 6 条）
 set -euo pipefail
 
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -47,6 +51,8 @@ source "$HERE/lib/firewall.sh"
 source "$HERE/lib/zhcn.sh"
 # shellcheck source=lib/omasnapzh.sh
 source "$HERE/lib/omasnapzh.sh"
+# shellcheck source=lib/desktop.sh
+source "$HERE/lib/desktop.sh"
 
 mac_ensure_hypr_env
 
@@ -55,11 +61,13 @@ b() { if "$1"; then echo 1; else echo 0; fi; }
 status() {
   # 前五个字段的历史契约保持不变（面板与既有脚本依赖此顺序）。
   # 末尾追加 ghhosts/ghtimer/gtranslate：hosts 改写与两个每日定时的独立状态。
-  printf 'keys=%s scroll=%s clip=%s npm=%s ghproxy=%s ufw=%s rules=%s ghhosts=%s ghtimer=%s gtranslate=%s\n' \
+  # desktop/sharks 再加在最后：面板按名取值，位置不影响既有消费者。
+  printf 'keys=%s scroll=%s clip=%s npm=%s ghproxy=%s ufw=%s rules=%s ghhosts=%s ghtimer=%s gtranslate=%s desktop=%s sharks=%s\n' \
     "$(b mac_keys_on)" "$(b mac_scroll_on)" "$(b mac_clip_on)" \
     "$(b dev_npm_on)" "$(b dev_ghproxy_on)" \
     "$(b fw_enabled)" "$(fw_list_merged | wc -l)" \
-    "$(b hst_on)" "$(b hst_sys_timer_on)" "$(b gt_on)"
+    "$(b hst_on)" "$(b hst_sys_timer_on)" "$(b gt_on)" \
+    "$(b desktop_ocean_on)" "$(desktop_sharks)"
 }
 
 # 规则列表：面板消费，每行一条（TAB 分隔）。
@@ -129,6 +137,9 @@ usage:
   setup.sh omasnap-zh
   setup.sh omasnap-zh-install
   setup.sh omasnap-zh-revert
+  setup.sh desktop
+  setup.sh desktop-ocean <0|1>
+  setup.sh desktop-sharks <classic,hammerhead,zebra,tiger,greathammer,mako,thresher,nurse>
 USAGE
 }
 
@@ -199,6 +210,20 @@ main() {
     omasnap-zh-revert)
       omasnapzh_revert || true
       omasnapzh_row
+      ;;
+    desktop)
+      # 与 rules/zhcn 同为只读清单（TAB 分隔行）。
+      desktop_rows
+      ;;
+    desktop-ocean)
+      [ -n "${2:-}" ] || { usage; exit 2; }
+      desktop_write_ocean "$2"
+      desktop_rows
+      ;;
+    desktop-sharks)
+      [ -n "${2:-}" ] || { usage; exit 2; }
+      desktop_write_sharks "$2"
+      desktop_rows
       ;;
     *)
       usage
